@@ -1,0 +1,231 @@
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>FuroUI</title>
+  </head>
+  <body style="background-color:#333743;color:white">
+    <div>
+      <select id="typeEars">
+        <option value="custom">custom</option>
+        <option value="rainbow">rainbow</option>
+        <option value="test">test</option>
+      </select>
+      <label for="typeEars"> Select type of animation for ears</label>
+      <br>
+      <p>Ears:</p>
+      <div id="earsDiv">
+        <hr>
+        <div id="divForSvg">
+          <svg id="svg1" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg"><g fill="black"><path id="37" d="m350 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="36" d="m286.36 256.36a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="35" d="m260 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="34" d="m286.36 383.64a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="33" d="m350 410a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="32" d="m413.64 383.64a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="31" d="m440 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="30" d="m413.64 256.36a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="29" d="m350 230a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="28" d="m260 164.12a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="27" d="m194.12 230a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="26" d="m170 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="25" d="m194.12 410a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="24" d="m260 475.88a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="23" d="m350 500a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="22" d="m440 475.88a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="21" d="m505.88 410a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="20" d="m530 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="19" d="m505.88 230a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="18" d="m440 164.12a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="17" d="m350 140a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="16" d="m248.86 69.66a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="15" d="m159.08 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="14" d="m101.464 214.5a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="13" d="m80 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="12" d="m99.66 421.14a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="11" d="m159.08 510.92a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="10" d="m244.5 568.54a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="9" d="m350 590a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="8" d="m451.14 570.34a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="7" d="m540.92 510.92a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="6" d="m598.54 425.5a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="5" d="m620 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="4" d="m600.34 218.86a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="3" d="m540.92 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="2" d="m455.5 71.464a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/><path id="1" d="m350 50a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/></g></svg>
+        </div>
+        <br>
+        <input type="color" id="color" value="#000000">
+        <label for="color"> Pick color to color with (black means off/blacker = darker)</label>
+        <br>
+        <button onclick="fillBlack()">Fill black</button>
+        <br>
+        <input type="number" id="timespanEars" value="500" min="1">
+        <label for="timespanEars"> Frame timespan</label>
+        <br>
+        <button onclick="frameGenEars(-1)">Add ears frame</button>
+        <p>Frames:</p>
+        <div id="earsFramesP"></div>
+        <br>
+        <div id="editDivEars" style="display:none">
+          <button id="saveEditFrameEars" value="0">Save frame</button>
+          <button onclick="deleteFrameEars()">Delete frame</button>
+        </div>
+        <hr>
+      </div>
+    </div>
+    <hr>
+    <div>
+      <br>
+      <select id="typeVisor">
+        <option value="custom">custom</option>
+        <option value="rainbow">rainbow</option>
+        <option value="test">test</option>
+      </select>
+      <label for="typeVisor"> Select type of animation for visor</label>
+      <br>
+      <p>Visor:</p>
+      <div id="earsDiv">
+        <hr>
+        <div> <!-- matrix-->
+xd
+        </div>
+        <br>
+        <input type="number" id="timespanVisor" value="500" min="1">
+        <label for="timespanVisor"> Frame timespan</label>
+        <br>
+        <button onclick="frameGenVisor(-1)">Add visor frame</button>
+        <p>Frames:</p>
+        <div id="visorFramesP"></div>
+        <br>
+        <div id="editDivVisor" style="display:none">
+          <button id="saveEditFrameVisor" value="0">Save frame</button>
+          <button onclick="deleteFrameVisor()">Delete frame</button>
+        </div>
+        <hr>
+      </div>
+    </div>
+	<hr><br>
+    <button onclick="completeGen()">Generate final JSON</button><br>
+	<form action="./savefile" method="post">
+	  Name of file/animation: <input type="text" name="file" required><br>
+	  File content:<br>
+	  <textarea rows="5" cols="80" name="content" id="output" required></textarea>
+	  <br><br>
+	  <input type="submit" value="Save to SPIFFS"/>
+	</form>
+  </body>
+</html>
+
+<script src="jquerymin.js"></script>
+<script>
+  //clone svg to save on file size
+  $('#svg1').clone().appendTo($('#divForSvg'));
+  $('#divForSvg svg:nth-child(2)').attr("id","svg2");
+
+  //on color selected, set to global
+  var curColor = "#000000";
+  $("#color").change(function() {
+    curColor = $(this).val();
+  });
+
+  //colors SVG dots with selected color
+  $("path").on('click', function() {
+    $(this).attr('fill',curColor);
+    $(this).attr('stroke',"gray");
+  });
+
+  //fills all black, what more to say
+  function fillBlack() {
+    for(var x = 1;x<38;x++) {
+      $("#svg1").find("#"+x).attr('fill',"#000000");
+      $("#svg2").find("#"+x).attr('fill',"#000000");
+    }
+  }
+  fillBlack();
+
+  //hides animator if not needed
+  $("#typeEars").change(function() {
+    if($("#typeEars").val() == "custom") {
+      $("#earsDiv").show();
+    } else {
+      $("#earsDiv").hide();
+    }
+  });
+
+  var nowEditEarsFrame = 0;
+  //deletes selected frame
+  function deleteFrameEars(){
+    if (nowEditEarsFrame > -1) {
+      framesEars.splice(nowEditEarsFrame, 1);
+    }
+    nowEditEarsFrame = 0;
+    loadEarsFrame();
+    $("#earsFramesP").html("");
+    for(var x = 0;x<framesEars.length;x++){
+      $("#earsFramesP").append("<a id=\""+x+"\">"+x+"</a>");
+    }
+  }
+
+  //detects click on frame to edit, call function to load it
+  $("#earsFramesP").on('click',"a", function() {
+    if($(this).closest('div').attr('id') == "earsFramesP") {
+      nowEditEarsFrame = $(this).attr('id');
+      loadEarsFrame();
+    }
+  });
+
+  //loads selected frame from array
+  function loadEarsFrame() {
+    var obj = JSON.parse(framesEars[nowEditEarsFrame]);
+    $("#timespanEars").val(obj.timespan);
+    for(var x = 0;x<obj.leds.length;x++) {
+      if(x<37) {
+        $("#svg1").find("#"+(x+1)).attr('fill',"#"+obj.leds[x]);
+      } else {
+        $("#svg2").find("#"+(x-36)).attr('fill',"#"+obj.leds[x]);
+      }
+    }
+    $("#editDivEars").show();
+    $("#saveEditFrameEars").attr('value',nowEditEarsFrame);
+  }
+
+  //calls frame generator to save currently editing frame
+  $("#saveEditFrameEars").on('click', function() {
+    frameGenEars($(this).attr('value'));
+    $("#editDivEars").hide();
+  });
+
+  //get json code for ears and visor, generates final usable code and resets stuff
+  function completeGen() {
+    var ears = earsGen();
+    var visor = visorGen();
+    var output = "{"+ears+","+visor+"}";
+	output = output.replace(/"000000"/g, "\"0\"");
+    $("#output").text(output);
+    $("#earsFramesP").empty();
+    $("#editDivEars").hide();
+    fillBlack();
+    framesEars.length = 0;
+  }
+
+  var framesEars = [];
+  //function that get the type of animation and creates entire 'ears' object and returns it
+  function earsGen() {
+    var output = "";
+    if($("#typeEars").val() == "custom") {
+      output+="\"ears\":{\"type\":\"custom\",\"frames\":[";
+      for(var x = 0;x<framesEars.length;x++) {
+        output+=framesEars[x];
+        if(x!==framesEars.length-1) {
+          output+=",";
+        }
+      }
+      output+="]}"
+    } else {
+      output+="\"ears\":{\"type\":\"prefab\",\"prefab\":\""+$("#typeEars").val()+"\"}";
+    }
+    return output;
+  }
+
+  //function that gets data from timespan input and SVG pictures, creates frames formated in JSON
+  //end puts them in array, also can edit those frames by rewriting specific frame
+  function frameGenEars(editing) {
+    if($("#timespanEars").val().length == 00 && $("#timespanEars").val() > 0) {
+      alert("Timespan missing");
+    } else {
+      var temp = "{\"timespan\":"+$("#timespanEars").val()+",\"leds\":[";
+      for(var x = 1;x<38;x++) {
+        if(x > 1) {
+          temp+= ",";
+        }
+        temp += "\""+$("#svg1").find("#"+x).attr('fill').substring(1)+"\"";
+      }
+      for(var x = 1;x<38;x++) {
+        if(x < 38) {
+          temp+= ",";
+        }
+        temp += "\""+$("#svg2").find("#"+x).attr('fill').substring(1)+"\"";
+      }
+      temp+="]}";
+      if(editing < 0) {
+        framesEars.push(temp);
+        $("#earsFramesP").append("<a id=\""+(framesEars.length-1)+"\">"+(framesEars.length-1)+"</a>");
+      } else {
+        framesEars[editing] = temp;
+      }
+    }
+  }
+
+  //TBD
+  function visorGen() {
+    return "\"visor\":{\"type\":\"custom\",\"frames\":[{\"timespan\":1000,\"leds\":[\"ff000001010000ff\",\"0095000048001c00\"],\"ledsBlush\":[\"0\",\"FF0000\",\"0\",\"0\",\"0\",\"0\",\"0\",\"0\"]},{\"timespan\":400,\"leds\":[\"0095000048001c00\",\"ff000001010000ff\"],\"ledsBlush\":[\"FF0000\",\"0\",\"0\",\"0\",\"0\",\"0\",\"0\",\"0\"]}]}";
+  }
+</script>
+
+//dodělat matrix, load anims, test anim
