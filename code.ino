@@ -3,6 +3,12 @@
 //calibrate all
 //prefabs
 
+// 5,18,23 - MATRIX
+// 16,17(blush) - WS2812
+// 35 - mic
+// 33(z),32(y) - gyro
+// 27 - touch (future another with 26)
+
 #include <sstream>
 #define FASTLED_ESP8266_RAW_PIN_ORDER
 #include <FastLED.h>
@@ -38,8 +44,8 @@ void notFound(AsyncWebServerRequest *request) {
 
 // Ears LEDs
 #define NumOfEarsLEDS 74
-#define DATA_PIN 12
-#define DATA_PIN_BLUSH 13
+#define DATA_PIN 16
+#define DATA_PIN_BLUSH 17
 CRGB leds[NumOfEarsLEDS];
 CRGB blushLeds[8];
 
@@ -342,7 +348,7 @@ void setup() {
 String oldanim;
 bool booping = false, wasTilt = false;
 float zAx,yAx;
-int currentEarsFrame = 0, currentVisorFrame = 1, speech = 0, tRead, boops = 0, randomNum, randomTimespan = 0;
+int currentEarsFrame = 0, currentVisorFrame = 1, speech = 0, tRead, boops = 0, randomNum, randomTimespan = 0, fixVal;
 unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, lastMillsSpeech = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0;
 byte row = 0;
 
@@ -455,12 +461,17 @@ void loop() {
     randomNum = random(2);
     randomTimespan = random(200-600);
     for(int y = 2; y < 10; y++) {
+      if(y<5){ //dum fix
+        fixVal = y-2;
+      } else if (y>5) {
+        fixVal = y-3;
+      }
       if(y != 5) {
         for (int i = 0; i < 8; i++) {
           if(randomNum == 0) {
-            row = (talkingAnim.mouthOpen[y] >> i * 8) & 0xFF;
+            row = (talkingAnim.mouthOpen[fixVal] >> i * 8) & 0xFF;
           } else {
-            row = (talkingAnim.mouthClosed[y] >> i * 8) & 0xFF;
+            row = (talkingAnim.mouthClosed[fixVal] >> i * 8) & 0xFF;
           }
           for (int j = 0; j < 8; j++) {
             mx.setPoint(i, j+(y*8), bitRead(row, j));
@@ -471,7 +482,7 @@ void loop() {
   }
 
   if(millis() > 2000 && boopEna) { //BOOP - calibrate
-    tRead = touchRead(T7);
+    tRead = touchRead(27);
     if(tRead < 50 && booping == false) {
       boops++;
       if(booping == false && boops >= 3) {

@@ -1,29 +1,49 @@
-<h1>Anim load</h1>
-<p id="activeAnim">Active anim: </p>
-<form action="./change" method="get">
-  <select name="anim" id="avaibleanims"></select>
-  <br><br>
-  <input type="submit" value="Apply"/>
-</form>
-<button type="button" onclick="deleteFile()">Delete selected file</button>
-<h1>Anim POST load</h1>
-<form action="./change" method="post">
-  <input type="text" name="anim" style="overflow:scroll;">
-  <br><br>
-  <input type="submit" value="Apply"/>
-</form>
-<h1>Config save</h1>
-<form>
-  <input type="checkbox" id="boop">
-  <label for="boop"> Boop</label><br>
-  <input type="checkbox" id="speech">
-  <label for="speech"> Speech</label><br>
-  <input type="checkbox" id="tilt">
-  <label for="tilt"> Tilt</label><br>
-  <br><br>
-  <button type="button" onclick="saveConfig()">Apply</button>
-</form>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>FuroUI</title>
+  </head>
+  <body>
+    <main>
+      <div>
+        <h1>Animations</h1>
+        <h4 id="activeAnim">Active anim: </h4>
+        <form action="./change" method="get">
+          <select name="anim" id="avaibleanims"></select>
+          <br><br>
+          <input type="submit" value="Change animation"/>
+        </form>
+        <button type="button" onclick="deleteFile()">Delete selected file</button><br><br>
+        <a href="/animator">Animator</a>
+      </div>
+      <div>
+        <h1>Configuration</h1>
+        <form>
+          <input type="checkbox" id="boop">
+          <label for="boop"> Boop</label><br>
+          <input type="checkbox" id="speech">
+          <label for="speech"> Speech</label><br>
+          <input type="checkbox" id="tilt">
+          <label for="tilt"> Tilt</label><br>
+          <br>
+          <button type="button" onclick="saveConfig()">Save config</button>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>
 
+<style>
+  a,a:link,a:visited {
+    color:white;
+  }
+  body {
+    font-family:Verdana;
+    margin-left:1%;
+    background-color:#333743;
+    color:white;
+  }
+</style>
 
 <script>
 	function loadFiles() {
@@ -34,9 +54,7 @@
 			{
 				var partsArray = xmlhttp.responseText.split(';');
 				partsArray.pop();
-				
 				document.getElementById("activeAnim").innerHTML = "Active anim: "+partsArray[0];
-				
 				var arrayLength = partsArray.length;
 				for (var i = 1; i < arrayLength; i++) {
 					var x = document.getElementById("avaibleanims");
@@ -51,7 +69,7 @@
 		xmlhttp.send();
 	}
 	loadFiles();
-	
+
 	function loadConfig() {
 		xmlhttp=new XMLHttpRequest();
 		xmlhttp.onreadystatechange=function()
@@ -59,7 +77,6 @@
 			if (xmlhttp.readyState==4 && xmlhttp.status==200)
 			{
 				var obj = JSON.parse(xmlhttp.responseText);
-				
 				document.getElementById("boop").checked = obj.boopEna;
 				document.getElementById("speech").checked = obj.speechEna;
 				document.getElementById("tilt").checked = obj.tiltEna;
@@ -69,14 +86,14 @@
 		xmlhttp.send();
 	}
 	loadConfig();
-	
+
 	function saveConfig() {
 		var params = "boopEna="+document.getElementById("boop").checked+"&speechEna="+document.getElementById("speech").checked+"&tiltEna="+document.getElementById("tilt").checked;
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", "/saveconfig?"+params, true);
 		xhr.send(null);
 	}
-	
+
 	function deleteFile() {
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", "/deletefile?file="+document.getElementById("avaibleanims").value, true);
