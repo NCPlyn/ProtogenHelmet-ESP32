@@ -1,14 +1,19 @@
-//loadAnims for boop etc.. -test & finish
-//speak -test
-//calibrate all
+//loadAnims for boop etc.. -redo for config
+//speak -test - proper anim - first frame everytime open mouth
+//calibrate all - prefection them (speak detection still nope)
 //prefabs
+// /change post crashes esp? - maybe add buffer?
+//make config have brithness and setting for choosing animations for different things
+//holy shit is it buggy by SW & HW side
 
-// 5,18,23 - MATRIX
-// 16,17(blush) - WS2812
-// 35 - mic
-// 33(z),32(y) - gyro
-// 27 - touch (future another with 26)
+//DOIT ESP32 DEVKIT V1
+// L5,18,23 - MATRIX done
+// L16,17(blush) - WS2812  done
+// B35 - mic done
+// B33(z),32(y) - gyro done
+// B27 - touch (future another with 26)
 
+#include <StreamUtils.h>
 #include <sstream>
 #define FASTLED_ESP8266_RAW_PIN_ORDER
 #include <FastLED.h>
@@ -86,8 +91,7 @@ struct TalkingAnimStruct {
 TalkingAnimStruct talkingAnim;
 
 String currentAnim = "";
-
-bool speechEna = false, boopEna = false, tiltEna = false;
+bool speechEna = false, boopEna = false, tiltEna = false, instantReload = false;;
 
 bool loadAnim(String anim, String temp) {
   DynamicJsonDocument doc(32768); //will be probs not enough
@@ -109,7 +113,9 @@ bool loadAnim(String anim, String temp) {
     }
     Serial.println("File opened!");
 
-    DeserializationError error = deserializeJson(doc, file);
+    ReadBufferingStream bufferedFile{file, 64};
+
+    DeserializationError error = deserializeJson(doc, bufferedFile);
     if (error){
       Serial.println("Failed to deserialize file");
       return false;
@@ -157,7 +163,7 @@ bool loadAnim(String anim, String temp) {
   } else {
     Serial.println("Something is wrong with visor-type!");
   }
-  
+  instantReload = true;
   return true;
 }
 
@@ -337,7 +343,8 @@ void setup() {
   server.begin();
   
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NumOfEarsLEDS);
-  FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, GRB>(blushLeds, 8);
+  FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, 8);
+  FastLED.setBrightness(128);
 
   if(!loadConfig()) {
     Serial.println("There was a problem with loading config");
@@ -348,17 +355,16 @@ void setup() {
 String oldanim;
 bool booping = false, wasTilt = false;
 float zAx,yAx;
-int currentEarsFrame = 0, currentVisorFrame = 1, speech = 0, tRead, boops = 0, randomNum, randomTimespan = 0, fixVal;
+int currentEarsFrame = 0, currentVisorFrame = 1, speech = 0, tRead, boops = 0, randomNum, randomTimespan = 0, fixVal, matrixFix = 7, blushFix;
 unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, lastMillsSpeech = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0;
 byte row = 0;
+uint8_t thishue;
 
 void loop() {
   if(earsNow.isCustom) { //EARS
-    if(lastMillsEars+earsNow.frames[currentEarsFrame].timespan <= millis()) {
-      if(earsNow.numOfFrames == currentEarsFrame) {
+    if(lastMillsEars+earsNow.frames[currentEarsFrame-1].timespan <= millis() || instantReload) {
+      if(currentEarsFrame == earsNow.numOfFrames) {
         currentEarsFrame = 0;
-      } else {
-        currentEarsFrame++;
       }
       //Serial.println("setting leds with frame n."+String(currentEarsFrame)+" after "+String(millis()-lastMillsEars));
       for(int y = 0; y < NumOfEarsLEDS; y++) {
@@ -370,72 +376,92 @@ void loop() {
       }
       FastLED.show();
       lastMillsEars = millis();
+      currentEarsFrame++;
+      instantReload = false;
     }
+  } else if (earsNow.prefab == "rainbow") {
+    fill_rainbow(leds, NumOfEarsLEDS, (beatsin8(17, 0, 255)+beatsin8(13, 0, 255))/2, 8);
+    FastLED.show();
   } else {
     Serial.println(earsNow.prefab);
   }
 
   if(visorNow.isCustom) { //VISOR+BLUSH
-    if(lastMillsVisor+visorNow.frames[currentVisorFrame-1].timespan <= millis()) {
+    if(lastMillsVisor+visorNow.frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       if(currentVisorFrame == visorNow.numOfFrames) {
         currentVisorFrame = 0;
       }
+      //Serial.println("setting visor with frame n."+String(currentVisorFrame)+" after "+String(millis()-lastMillsVisor));
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
       for(int y = 0; y < 11; y++) {
+        matrixFix = 7; //fix for wrongly oriented matrixes
         if(y > 1 && y < 9 && y != 5 && speech < 2) { //if sets mouth and we are not talking
           for (int i = 0; i < 8; i++) {
-            row = (visorNow.frames[currentVisorFrame].leds[y] >> i * 8) & 0xFF;
+            row = (visorNow.frames[currentVisorFrame].leds[y] >> matrixFix * 8) & 0xFF;
             for (int j = 0; j < 8; j++) {
               mx.setPoint(i, j+(y*8), bitRead(row, j));
             }
+            matrixFix--;
           }
         } else {
           for (int i = 0; i < 8; i++) {
-            row = (visorNow.frames[currentVisorFrame].leds[y] >> i * 8) & 0xFF;
+            row = (visorNow.frames[currentVisorFrame].leds[y] >> matrixFix * 8) & 0xFF;
             for (int j = 0; j < 8; j++) {
               mx.setPoint(i, j+(y*8), bitRead(row, j));
             }
+            matrixFix--;
           }
         }
       }
       for(int x = 0; x<8; x++) {
-        if(visorNow.frames[currentVisorFrame].ledsBlush[x] == "0") {
-          blushLeds[x] = 0x000000;
+        if(x == 4) { //dum fix for wrongly oriented strip
+          blushFix = 5;
+        } else if (x == 5) {
+          blushFix = 4;
         } else {
-          blushLeds[x] = strtol(visorNow.frames[currentVisorFrame].ledsBlush[x].c_str(), NULL, 16);
+          blushFix = x;
+        }
+        if(visorNow.frames[currentVisorFrame].ledsBlush[x] == "0") {
+          blushLeds[blushFix] = 0x000000;
+        } else {
+          blushLeds[blushFix] = strtol(visorNow.frames[currentVisorFrame].ledsBlush[x].c_str(), NULL, 16);
         }
       }
       FastLED.show();
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
       lastMillsVisor = millis();
       currentVisorFrame++;
+      instantReload = false;
     }
   } else {
     Serial.println(visorNow.prefab);
   }
 
-  if(lastMillsTilt+500<=millis() && tiltEna) { //TILT  - calibrate
+  if(lastMillsTilt+1000<=millis() && tiltEna) { //TILT  - calibrate
     zAx = (((float)analogRead(33) - 340)/68*9.8);
     yAx = (((float)analogRead(32) - 329.5)/68.5*9.8);
-    if((zAx < 250 || zAx > 190) && yAx < 190 && yAx > 255 && !wasTilt) { // vpravo 255, vlevo 190
+    //Serial.println("----------");
+    //Serial.println(zAx);
+    //Serial.println(yAx);
+    if((zAx > 250 || zAx < 205) && yAx > 190 && yAx < 275 && !wasTilt) { // vpravo 255/222, vlevo 200/255
       //headtilt - confused
       Serial.println("tilt");
       wasTilt = true;
       /*oldanim = currentAnim;
       loadAnim("tilt.json","");*/
-    } else if (yAx > 250 && zAx > 190 && zAx < 250 && !wasTilt) { // dolu 255
+    } else if (yAx > 260 && zAx > 229 && zAx < 249 && !wasTilt) { // dolu 239/265
       //dolů - sad (shy led blue)
       Serial.println("dolu");
       wasTilt = true;
       /*oldanim = currentAnim;
       loadAnim("sad.json","");*/
-    } else if (yAx < 180 && zAx > 190 && zAx < 250 && !wasTilt) { // nahoru 175
+    } else if (yAx < 208 && zAx > 210 && zAx < 230 && !wasTilt) { // nahoru 220/202
       //nahoru -_-
       Serial.println("nahoru");
       wasTilt = true;
       /*oldanim = currentAnim;
       loadAnim("rly.json","");*/
-    } else if (zAx > 190 && zAx < 250 && yAx < 250 && yAx > 200 && wasTilt) { // center 220/220
+    } else if (zAx > 213 && zAx < 253 && yAx > 213 && yAx < 253 && wasTilt) { // center 233/233
       Serial.println("no tilt");
       wasTilt = false;
       //loadAnim(oldanim,"");
@@ -483,6 +509,7 @@ void loop() {
 
   if(millis() > 2000 && boopEna) { //BOOP - calibrate
     tRead = touchRead(27);
+    //Serial.println(tRead);
     if(tRead < 50 && booping == false) {
       boops++;
       if(booping == false && boops >= 3) {
@@ -495,9 +522,8 @@ void loop() {
     }
     if (lastMillsBoop+1000<=millis()) {
       boops = 0;
-      if(tRead > 60 && booping == true) {
+      if(tRead > 52 && booping == true) {
         booping = false;
-        boops = 0;
         Serial.println("unBOOP");
         //loadAnim(oldanim,"");
       }
