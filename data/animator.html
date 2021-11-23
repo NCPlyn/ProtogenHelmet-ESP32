@@ -337,7 +337,7 @@
 
   //get json code for ears and visor, generates final usable code and resets stuff
   function completeGen() {
-    if (framesVisor.length == 0 || framesEars.length == 0) {
+    if ((framesVisor.length == 0 && $("#typeVisor").val() == "custom") || (framesEars.length == 0 && $("#typeEars").val() == "custom" )) {
       alert("No frames in ears or visor!");
     } else {
       var output = "{" + earsGen() + "," + visorGen() + "}";
@@ -630,11 +630,8 @@
     if (loadFrom) {
       response = $.ajax({
         type: "GET",
-        url: "/loadfile",
-        async: false,
-        data: {
-          file: $("#avaibleanims").val().replace(".json", "")
-        }
+        url: "/anims/"+$("#avaibleanims").val(),
+        async: false
       }).responseText;
     } else {
       response = $("#output").val();

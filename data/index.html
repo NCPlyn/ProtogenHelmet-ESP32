@@ -14,7 +14,7 @@
           <input type="submit" value="Change animation"/>
         </form>
         <button type="button" onclick="deleteFile()">Delete selected file</button><br><br>
-        <a href="/animator">Animator</a>
+        <a href="/animator.html">Animator</a>
       </div>
       <div>
         <h1>Configuration</h1>
@@ -82,7 +82,7 @@
 				document.getElementById("tilt").checked = obj.tiltEna;
 			}
 		}
-		xmlhttp.open("GET", "/getconfig", false );
+		xmlhttp.open("GET", "/config.json", false );
 		xmlhttp.send();
 	}
 	loadConfig();
