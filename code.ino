@@ -1,9 +1,9 @@
 //loadAnims for boop etc.. -redo for config
-//speak -test - proper anim - first frame everytime open mouth
+//speak - proper anim, return to normal after some time not speaking (reset current anim frame)
 //calibrate all - prefection them (speak detection still nope)
 //prefabs
-// /change post crashes esp? - maybe add buffer?
-//make config have brithness and setting for choosing animations for different things
+//config: brightness matrix+leds, set anim for each thing, rainbow hue+delay, speak delay
+//log file
 //holy shit is it buggy by SW & HW side
 
 //DOIT ESP32 DEVKIT V1
@@ -21,7 +21,12 @@
 
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
-#include "SPIFFS.h"
+
+#define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
+#define CONFIG_LITTLEFS_CACHE_SIZE 512
+#define SPIFFS LITTLEFS
+#include <LITTLEFS.h> //powaaaa, shaved down 1s in webpage load time & basically everything
+//#include "SPIFFS.h"
 
 #include <driver/adc.h>
 
@@ -43,15 +48,12 @@ AsyncWebServer server(80);
 const char* ssid = "Furo";
 const char* password = "FuroProto";
 
-void notFound(AsyncWebServerRequest *request) {
-  request->send(404, "text/plain", "Not found");
-}
-
 // Ears LEDs
 #define NumOfEarsLEDS 74
 #define DATA_PIN 16
 #define DATA_PIN_BLUSH 17
 CRGB leds[NumOfEarsLEDS];
+CRGB rainbow_buffer[4];
 CRGB blushLeds[8];
 
 //Structs for anims in memory
@@ -64,7 +66,7 @@ struct AnimNowEars {
   bool isCustom;
   String prefab;
   int numOfFrames;
-  FramesEars frames[10];
+  FramesEars frames[16];
 };
 
 struct FramesVisor {
@@ -77,7 +79,7 @@ struct AnimNowVisor {
   bool isCustom;
   String prefab;
   int numOfFrames;
-  FramesVisor frames[10];
+  FramesVisor frames[16];
 };
 
 AnimNowEars earsNow;
@@ -91,7 +93,8 @@ struct TalkingAnimStruct {
 TalkingAnimStruct talkingAnim;
 
 String currentAnim = "";
-bool speechEna = false, boopEna = false, tiltEna = false, instantReload = false;;
+bool speechEna = false, boopEna = false, tiltEna = false, instantReload = false;
+int currentEarsFrame = 1, currentVisorFrame = 1;
 
 bool loadAnim(String anim, String temp) {
   DynamicJsonDocument doc(32768); //will be probs not enough
@@ -164,6 +167,8 @@ bool loadAnim(String anim, String temp) {
     Serial.println("Something is wrong with visor-type!");
   }
   instantReload = true;
+  currentVisorFrame = 1;
+  currentEarsFrame = 1;
   return true;
 }
 
@@ -234,21 +239,11 @@ void setup() {
   Serial.println(IP);
 
   if (!SPIFFS.begin(true)) {
-    Serial.println ("An Error has occurred while mounting SPIFFS");
+    Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
-  
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/index.html", String(), false);
-  });
 
-  server.on("/animator", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/animator.html", String(), false);
-  });
-
-  server.on("/jquerymin.js", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/jquerymin.js", String(), false);
-  });
+  server.serveStatic("/", LITTLEFS, "/").setDefaultFile("index.html");
 
   server.on("/getfiles", HTTP_GET, [](AsyncWebServerRequest *request){ //returns current anim + all avaible anims
     String files = currentAnim+";";
@@ -260,11 +255,7 @@ void setup() {
     }
     request->send(200, "text/plain", files);
   });
-
-  server.on("/getconfig", HTTP_GET, [](AsyncWebServerRequest *request){ //returns config file
-    request->send(SPIFFS, "/config.json", String(), false);
-  });
-
+  
   server.on("/saveconfig", HTTP_GET, [](AsyncWebServerRequest *request){ //saves config
     if(request->hasParam("boopEna") && request->hasParam("speechEna") && request->hasParam("tiltEna")) {
       std::istringstream(request->getParam("boopEna")->value().c_str()) >> std::boolalpha >> boopEna;
@@ -295,14 +286,6 @@ void setup() {
       }
     } else {
       request->send(200, "text/plain", "no params");
-    }
-  });
-
-  server.on("/loadfile", HTTP_GET, [](AsyncWebServerRequest *request){ //returns asked file
-    if(request->hasParam("file")) {
-      request->send(SPIFFS, "/anims/"+request->getParam("file")->value()+".json", String(), false);
-    } else {
-      request->send(200, "text/plain", "no param 'file'");
     }
   });
 
@@ -339,12 +322,13 @@ void setup() {
     }
   });
 
-  server.onNotFound(notFound);
+  server.onNotFound([](AsyncWebServerRequest *request){request->send(404, "text/plain", "Not found");});
   server.begin();
   
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NumOfEarsLEDS);
   FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, 8);
-  FastLED.setBrightness(128);
+  FastLED.setBrightness(64);
+  FastLED.setCorrection(TypicalPixelString);
 
   if(!loadConfig()) {
     Serial.println("There was a problem with loading config");
@@ -353,9 +337,9 @@ void setup() {
 }
 
 String oldanim;
-bool booping = false, wasTilt = false;
+bool booping = false, wasTilt = false, speechFirst = true;
 float zAx,yAx;
-int currentEarsFrame = 0, currentVisorFrame = 1, speech = 0, tRead, boops = 0, randomNum, randomTimespan = 0, fixVal, matrixFix = 7, blushFix;
+int speech = 0, tRead, boops = 0, randomNum, randomTimespan = 0, fixVal, matrixFix = 7, blushFix;
 unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, lastMillsSpeech = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0;
 byte row = 0;
 uint8_t thishue;
@@ -377,10 +361,24 @@ void loop() {
       FastLED.show();
       lastMillsEars = millis();
       currentEarsFrame++;
-      instantReload = false;
     }
   } else if (earsNow.prefab == "rainbow") {
-    fill_rainbow(leds, NumOfEarsLEDS, (beatsin8(17, 0, 255)+beatsin8(13, 0, 255))/2, 8);
+    fill_rainbow(rainbow_buffer, 4, millis()/15, 255/8);
+    for(int x = 0;x<NumOfEarsLEDS;x++) { //xD
+      if(x<16) {
+        leds[x] = rainbow_buffer[0];
+        leds[x+37] = rainbow_buffer[0];
+      } else if(x<28) {
+        leds[x] = rainbow_buffer[1];
+        leds[x+37] = rainbow_buffer[1];
+      } else if(x<36) {
+        leds[x] = rainbow_buffer[2];
+        leds[x+37] = rainbow_buffer[2];
+      } else if(x==36) {
+        leds[x] = rainbow_buffer[3];
+        leds[x+37] = rainbow_buffer[3];
+      }
+    }
     FastLED.show();
   } else {
     Serial.println(earsNow.prefab);
@@ -392,7 +390,6 @@ void loop() {
         currentVisorFrame = 0;
       }
       //Serial.println("setting visor with frame n."+String(currentVisorFrame)+" after "+String(millis()-lastMillsVisor));
-      mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
       for(int y = 0; y < 11; y++) {
         matrixFix = 7; //fix for wrongly oriented matrixes
         if(y > 1 && y < 9 && y != 5 && speech < 2) { //if sets mouth and we are not talking
@@ -428,7 +425,6 @@ void loop() {
         }
       }
       FastLED.show();
-      mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
       lastMillsVisor = millis();
       currentVisorFrame++;
       instantReload = false;
@@ -479,14 +475,20 @@ void loop() {
     }
     if(speech >= 2 && lastSpeak+500<millis()) {
       Serial.println("NOT speeking");
+      speechFirst = true;
       speech = 0;
     }
     lastMillsSpeech = millis();
   }
-  if(speech >=  2 && lastMillsSpeechAnim+randomTimespan<=millis()) { //speech animation
-    randomNum = random(2);
-    randomTimespan = random(200-600);
-    for(int y = 2; y < 10; y++) {
+  if(speech >= 2 && lastMillsSpeechAnim+randomTimespan<=millis()) { //speech animation
+    if(speechFirst == true){
+      randomNum == 0;
+      speechFirst = false;
+    } else {
+      randomNum = random(2);
+    }
+    randomTimespan = random(80,120);
+    for(int y = 2; y < 9; y++) {
       if(y<5){ //dum fix
         fixVal = y-2;
       } else if (y>5) {
@@ -505,18 +507,19 @@ void loop() {
         }
       }
     }
+    lastMillsSpeechAnim = millis();
   }
 
-  if(millis() > 2000 && boopEna) { //BOOP - calibrate
+  if(millis() > 2000 && boopEna) { //BOOP - calibrate - maybe redo to that pcb with secondary psu
     tRead = touchRead(27);
     //Serial.println(tRead);
-    if(tRead < 50 && booping == false) {
+    if(tRead < 15 && booping == false) {
       boops++;
-      if(booping == false && boops >= 3) {
+      if(booping == false && boops >= 8) {
         booping = true;
         Serial.println("BOOP");
-        /*oldanim = currentAnim;
-        loadAnim("boop.json","");*/
+        oldanim = currentAnim;
+        loadAnim("boop.json","");
       }
       lastMillsBoop = millis();
     }
@@ -525,7 +528,7 @@ void loop() {
       if(tRead > 52 && booping == true) {
         booping = false;
         Serial.println("unBOOP");
-        //loadAnim(oldanim,"");
+        loadAnim(oldanim,"");
       }
     }
   }
