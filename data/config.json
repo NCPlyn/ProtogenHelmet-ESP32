@@ -1,5 +1,11 @@
 {
 	"boopEna":false,
 	"speechEna":false,
-	"tiltEna":false
+	"tiltEna":false,
+	"bEar":64,
+	"bVisor":7,
+	"rbSpeed":15,
+	"rbWidth":8,
+	"spMin":90,
+	"spMax":130
 }

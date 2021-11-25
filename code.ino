@@ -1,10 +1,5 @@
-//loadAnims for boop etc.. -redo for config
-//speak - proper anim, return to normal after some time not speaking (reset current anim frame)
-//calibrate all - prefection them (speak detection still nope)
-//prefabs
-//config: brightness matrix+leds, set anim for each thing, rainbow hue+delay, speak delay
-//log file
-//holy shit is it buggy by SW & HW side
+//config - select anims
+//prefabs + all needed anims
 
 //DOIT ESP32 DEVKIT V1
 // L5,18,23 - MATRIX done
@@ -95,6 +90,7 @@ TalkingAnimStruct talkingAnim;
 String currentAnim = "";
 bool speechEna = false, boopEna = false, tiltEna = false, instantReload = false;
 int currentEarsFrame = 1, currentVisorFrame = 1;
+int bEar = 64, bVisor = 6, rbSpeed = 15, rbWidth = 8, spMin = 90, spMax = 130;
 
 bool loadAnim(String anim, String temp) {
   DynamicJsonDocument doc(32768); //will be probs not enough
@@ -180,7 +176,7 @@ void setMouthAnim() {
 }
 
 bool loadConfig() {
-  DynamicJsonDocument doc(128);
+  DynamicJsonDocument doc(256);
   
   File file = SPIFFS.open("/config.json", "r");
   if (!file) {
@@ -200,10 +196,18 @@ bool loadConfig() {
   boopEna = doc["boopEna"].as<bool>();
   speechEna = doc["speechEna"].as<bool>();
   tiltEna = doc["tiltEna"].as<bool>();
+  bEar = doc["bEar"].as<int>();
+  bVisor = doc["bVisor"].as<int>();
+  rbSpeed = doc["rbSpeed"].as<int>();
+  rbWidth = doc["rbWidth"].as<int>();
+  spMin = doc["spMin"].as<int>();
+  spMax = doc["spMax"].as<int>();
+
+  return true;
 }
 
 bool saveConfig() {
-  DynamicJsonDocument doc(128);
+  DynamicJsonDocument doc(256);
   
   File file = SPIFFS.open("/config.json", "w");
   if (!file) {
@@ -216,6 +220,12 @@ bool saveConfig() {
   doc["boopEna"] = boopEna;
   doc["speechEna"] = speechEna;
   doc["tiltEna"] = tiltEna;
+  doc["bEar"] = bEar;
+  doc["bVisor"] = bVisor;
+  doc["rbSpeed"] = rbSpeed;
+  doc["rbWidth"] = rbWidth;
+  doc["spMin"] = spMin;
+  doc["spMax"] = spMax;
 
   if (serializeJson(doc, file) == 0) {
     Serial.println("Failed to deserialize file");
@@ -223,16 +233,17 @@ bool saveConfig() {
   }
   
   file.close();
+
+  FastLED.setBrightness(bEar);
+  mx.control(MD_MAX72XX::INTENSITY, bVisor);
+
+  return true;
 }
 
 void setup() {
   Serial.begin(115200);
 
   pinMode(35, INPUT);
-
-  setMouthAnim();
-  
-  mx.begin();
 
   WiFi.softAP(ssid, password);
   IPAddress IP = WiFi.softAPIP();
@@ -257,17 +268,28 @@ void setup() {
   });
   
   server.on("/saveconfig", HTTP_GET, [](AsyncWebServerRequest *request){ //saves config
-    if(request->hasParam("boopEna") && request->hasParam("speechEna") && request->hasParam("tiltEna")) {
+    if(request->hasParam("boopEna"))
       std::istringstream(request->getParam("boopEna")->value().c_str()) >> std::boolalpha >> boopEna;
+    if(request->hasParam("speechEna"))
       std::istringstream(request->getParam("speechEna")->value().c_str()) >> std::boolalpha >> speechEna;
+    if(request->hasParam("tiltEna"))
       std::istringstream(request->getParam("tiltEna")->value().c_str()) >> std::boolalpha >> tiltEna;
-      if(saveConfig()) {
-        request->redirect("/");
-      } else {
-        request->send(200, "text/plain", "saveConfig failed");
-      }
+    if(request->hasParam("bEar"))
+      bEar = request->getParam("bEar")->value().toInt();
+    if(request->hasParam("bVisor"))
+      bVisor = request->getParam("bVisor")->value().toInt();
+    if(request->hasParam("rbSpeed"))
+      rbSpeed = request->getParam("rbSpeed")->value().toInt();
+    if(request->hasParam("rbWidth"))
+      rbWidth = request->getParam("rbWidth")->value().toInt();
+    if(request->hasParam("spMin"))
+      spMin = request->getParam("spMin")->value().toInt();
+    if(request->hasParam("spMax"))
+      spMax = request->getParam("spMax")->value().toInt();
+    if(saveConfig()) {
+      request->redirect("/");
     } else {
-      request->send(200, "text/plain", "Nothing/wrong data recieved");
+      request->send(200, "text/plain", "saveConfig failed");
     }
   });
 
@@ -325,24 +347,28 @@ void setup() {
   server.onNotFound([](AsyncWebServerRequest *request){request->send(404, "text/plain", "Not found");});
   server.begin();
   
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NumOfEarsLEDS);
-  FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, 8);
-  FastLED.setBrightness(64);
-  FastLED.setCorrection(TypicalPixelString);
-
   if(!loadConfig()) {
     Serial.println("There was a problem with loading config");
   }
+
+  setMouthAnim();
+  mx.begin();
+  mx.control(MD_MAX72XX::INTENSITY, bVisor);
+
+  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NumOfEarsLEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, 8);
+  FastLED.setCorrection(TypicalPixelString);
+  FastLED.setBrightness(bEar);
+  
   loadAnim("default.json","");
 }
 
 String oldanim;
-bool booping = false, wasTilt = false, speechFirst = true;
+bool booping = false, wasTilt = false, speechFirst = true, speechResetDone = false;
 float zAx,yAx;
 int speech = 0, tRead, boops = 0, randomNum, randomTimespan = 0, fixVal, matrixFix = 7, blushFix;
 unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, lastMillsSpeech = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0;
 byte row = 0;
-uint8_t thishue;
 
 void loop() {
   if(earsNow.isCustom) { //EARS
@@ -363,7 +389,7 @@ void loop() {
       currentEarsFrame++;
     }
   } else if (earsNow.prefab == "rainbow") {
-    fill_rainbow(rainbow_buffer, 4, millis()/15, 255/8);
+    fill_rainbow(rainbow_buffer, 4, millis()/rbSpeed, 255/rbWidth);
     for(int x = 0;x<NumOfEarsLEDS;x++) { //xD
       if(x<16) {
         leds[x] = rainbow_buffer[0];
@@ -390,16 +416,10 @@ void loop() {
         currentVisorFrame = 0;
       }
       //Serial.println("setting visor with frame n."+String(currentVisorFrame)+" after "+String(millis()-lastMillsVisor));
+      mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
       for(int y = 0; y < 11; y++) {
         matrixFix = 7; //fix for wrongly oriented matrixes
-        if(y > 1 && y < 9 && y != 5 && speech < 2) { //if sets mouth and we are not talking
-          for (int i = 0; i < 8; i++) {
-            row = (visorNow.frames[currentVisorFrame].leds[y] >> matrixFix * 8) & 0xFF;
-            for (int j = 0; j < 8; j++) {
-              mx.setPoint(i, j+(y*8), bitRead(row, j));
-            }
-            matrixFix--;
-          }
+        if(y > 1 && y < 9 && y != 5 && speech > 2) { //if sets mouth and we are talking, do nothing
         } else {
           for (int i = 0; i < 8; i++) {
             row = (visorNow.frames[currentVisorFrame].leds[y] >> matrixFix * 8) & 0xFF;
@@ -410,6 +430,7 @@ void loop() {
           }
         }
       }
+      mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
       for(int x = 0; x<8; x++) {
         if(x == 4) { //dum fix for wrongly oriented strip
           blushFix = 5;
@@ -470,6 +491,7 @@ void loop() {
       speech++;
       lastSpeak = millis();
       if(speech == 2) {
+        speechResetDone = false;
         Serial.println("speeking");
       }
     }
@@ -487,7 +509,8 @@ void loop() {
     } else {
       randomNum = random(2);
     }
-    randomTimespan = random(80,120);
+    randomTimespan = random(spMin,spMax);
+    mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
     for(int y = 2; y < 9; y++) {
       if(y<5){ //dum fix
         fixVal = y-2;
@@ -507,15 +530,31 @@ void loop() {
         }
       }
     }
+    mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
     lastMillsSpeechAnim = millis();
+  }
+  if(!speechResetDone && lastMillsSpeechAnim+800<millis()) {//reset frame after speech
+    for(int y = 0; y < 11; y++) {
+      matrixFix = 7; //fix for wrongly oriented matrixes
+      if(y > 1 && y < 9 && y != 5) { //if sets mouth reset frame
+        for (int i = 0; i < 8; i++) {
+          row = (visorNow.frames[currentVisorFrame-1].leds[y] >> matrixFix * 8) & 0xFF;
+          for (int j = 0; j < 8; j++) {
+            mx.setPoint(i, j+(y*8), bitRead(row, j));
+          }
+          matrixFix--;
+        }
+      }
+    }
+    speechResetDone = true;
   }
 
   if(millis() > 2000 && boopEna) { //BOOP - calibrate - maybe redo to that pcb with secondary psu
-    tRead = touchRead(27);
+    tRead = digitalRead(27);
     //Serial.println(tRead);
-    if(tRead < 15 && booping == false) {
+    if(tRead == HIGH && booping == false) {
       boops++;
-      if(booping == false && boops >= 8) {
+      if(booping == false && boops >= 2) {
         booping = true;
         Serial.println("BOOP");
         oldanim = currentAnim;
@@ -525,7 +564,7 @@ void loop() {
     }
     if (lastMillsBoop+1000<=millis()) {
       boops = 0;
-      if(tRead > 52 && booping == true) {
+      if(tRead == LOW && booping == true) {
         booping = false;
         Serial.println("unBOOP");
         loadAnim(oldanim,"");

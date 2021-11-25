@@ -18,6 +18,7 @@
       </div>
       <div>
         <h1>Configuration</h1>
+        <h2>Basic</h2>
         <form>
           <input type="checkbox" id="boop">
           <label for="boop"> Boop</label><br>
@@ -27,6 +28,23 @@
           <label for="tilt"> Tilt</label><br>
           <br>
           <button type="button" onclick="saveConfig()">Save config</button>
+        </form>
+        <h2>Advanced</h2>
+        <form action="./saveconfig" method="get">
+          <input type="number" name="bEar" min="0" max="255" value="64">
+          <label for="bEar"> Brightness ears (0-255 | default:64)</label><br>
+          <input type="number" name="bVisor" min="0" max="15" value="7">
+          <label for="bVisor"> Brightness visor (0-15 | default:7)</label><br>
+          <input type="number" name="rbSpeed" min="1" max="200" value="15">
+          <label for="rbSpeed"> Rainbow prefab speed (1-200ms | default:15)</label><br>
+          <input type="number" name="rbWidth" min="1" max="32" value="8">
+          <label for="rbWidth"> Rainbow hue width (1-32 | default:8)</label><br>
+          <input type="number" name="spMin" min="20" max="500" value="90">
+          <label for="spMin"> Speak min delay (20-500ms | default:90)</label><br>
+          <input type="number" name="spMax" min="30" max="600" value="130">
+          <label for="spMax"> Speak max delay (30-600ms | default:130)</label><br>
+          <br>
+          <input type="submit" value="Save config"/>
         </form>
       </div>
     </main>
@@ -42,6 +60,9 @@
     margin-left:1%;
     background-color:#333743;
     color:white;
+  }
+  input[type=number] {
+    margin-top:7px;
   }
 </style>
 
@@ -80,6 +101,12 @@
 				document.getElementById("boop").checked = obj.boopEna;
 				document.getElementById("speech").checked = obj.speechEna;
 				document.getElementById("tilt").checked = obj.tiltEna;
+				document.getElementsByName("bEar")[0].value = obj.bEar;
+				document.getElementsByName("bVisor")[0].value = obj.bVisor;
+				document.getElementsByName("rbSpeed")[0].value = obj.rbSpeed;
+				document.getElementsByName("rbWidth")[0].value = obj.rbWidth;
+				document.getElementsByName("spMin")[0].value = obj.spMin;
+				document.getElementsByName("spMax")[0].value = obj.spMax;
 			}
 		}
 		xmlhttp.open("GET", "/config.json", false );
