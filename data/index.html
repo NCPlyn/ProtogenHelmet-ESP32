@@ -43,6 +43,12 @@
           <label for="spMin"> Speak min delay (20-500ms | default:90)</label><br>
           <input type="number" name="spMax" min="30" max="600" value="130">
           <label for="spMax"> Speak max delay (30-600ms | default:130)</label><br>
+		  <select id="aTilt" name="aTilt"></select>
+		  <label for="aTilt">Animation for tilt (default:confused.json)</label><br>
+		  <select id="aDown" name="aDown"></select>
+		  <label for="aDown">Animation for down (default:sad.json)</label><br>
+		  <select id="aUp" name="aUp"></select>
+		  <label for="aUp">Animation for up (default:rlly.json)</label><br>
           <br>
           <input type="submit" value="Save config"/>
         </form>
@@ -61,12 +67,20 @@
     background-color:#333743;
     color:white;
   }
-  input[type=number] {
+  input[type=number],input[type=select] {
     margin-top:7px;
   }
 </style>
 
 <script>
+	function fillSelect(id,val) {
+		var select, option;
+		select = document.getElementById(id);
+		option = document.createElement('option');
+		option.value = option.text = val;
+		select.add(option);
+	}
+
 	function loadFiles() {
 		xmlhttp=new XMLHttpRequest();
 		xmlhttp.onreadystatechange=function()
@@ -78,11 +92,10 @@
 				document.getElementById("activeAnim").innerHTML = "Active anim: "+partsArray[0];
 				var arrayLength = partsArray.length;
 				for (var i = 1; i < arrayLength; i++) {
-					var x = document.getElementById("avaibleanims");
-					var option = document.createElement("option");
-					option.innerHTML = partsArray[i];
-					option.value = partsArray[i];
-					document.getElementById("avaibleanims").options.add(option);
+					fillSelect("avaibleanims",partsArray[i]);
+					fillSelect("aTilt",partsArray[i]);
+					fillSelect("aUp",partsArray[i]);
+					fillSelect("aDown",partsArray[i]);
 				}
 			}
 		}
@@ -107,6 +120,9 @@
 				document.getElementsByName("rbWidth")[0].value = obj.rbWidth;
 				document.getElementsByName("spMin")[0].value = obj.spMin;
 				document.getElementsByName("spMax")[0].value = obj.spMax;
+				document.getElementsByName("aTilt")[0].value = obj.aTilt;
+				document.getElementsByName("aUp")[0].value = obj.aUp;
+				document.getElementsByName("aDown")[0].value = obj.aDown;
 			}
 		}
 		xmlhttp.open("GET", "/config.json", false );

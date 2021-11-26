@@ -1,4 +1,3 @@
-//config - select anims
 //prefabs + all needed anims
 
 //DOIT ESP32 DEVKIT V1
@@ -88,9 +87,11 @@ struct TalkingAnimStruct {
 TalkingAnimStruct talkingAnim;
 
 String currentAnim = "";
-bool speechEna = false, boopEna = false, tiltEna = false, instantReload = false;
 int currentEarsFrame = 1, currentVisorFrame = 1;
+//config vars
+bool speechEna = false, boopEna = false, tiltEna = false, instantReload = false;
 int bEar = 64, bVisor = 6, rbSpeed = 15, rbWidth = 8, spMin = 90, spMax = 130;
+String aTilt = "confused.json", aDown = "sad.json", aUp = "rlly.json";
 
 bool loadAnim(String anim, String temp) {
   DynamicJsonDocument doc(32768); //will be probs not enough
@@ -176,7 +177,7 @@ void setMouthAnim() {
 }
 
 bool loadConfig() {
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(512);
   
   File file = SPIFFS.open("/config.json", "r");
   if (!file) {
@@ -202,12 +203,15 @@ bool loadConfig() {
   rbWidth = doc["rbWidth"].as<int>();
   spMin = doc["spMin"].as<int>();
   spMax = doc["spMax"].as<int>();
+  aTilt = doc["aTilt"].as<String>();
+  aDown = doc["aDown"].as<String>();
+  aUp = doc["aUp"].as<String>();
 
   return true;
 }
 
 bool saveConfig() {
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(512);
   
   File file = SPIFFS.open("/config.json", "w");
   if (!file) {
@@ -226,6 +230,9 @@ bool saveConfig() {
   doc["rbWidth"] = rbWidth;
   doc["spMin"] = spMin;
   doc["spMax"] = spMax;
+  doc["aTilt"] = aTilt;
+  doc["aDown"] = aDown;
+  doc["aUp"] = aUp;
 
   if (serializeJson(doc, file) == 0) {
     Serial.println("Failed to deserialize file");
@@ -367,7 +374,7 @@ String oldanim;
 bool booping = false, wasTilt = false, speechFirst = true, speechResetDone = false;
 float zAx,yAx;
 int speech = 0, tRead, boops = 0, randomNum, randomTimespan = 0, fixVal, matrixFix = 7, blushFix;
-unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, lastMillsSpeech = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0;
+unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, lastMillsSpeech = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastGoodTilt = 0;
 byte row = 0;
 
 void loop() {
@@ -461,27 +468,27 @@ void loop() {
     //Serial.println(zAx);
     //Serial.println(yAx);
     if((zAx > 250 || zAx < 205) && yAx > 190 && yAx < 275 && !wasTilt) { // vpravo 255/222, vlevo 200/255
-      //headtilt - confused
       Serial.println("tilt");
       wasTilt = true;
-      /*oldanim = currentAnim;
-      loadAnim("tilt.json","");*/
+      lastGoodTilt = millis();
+      oldanim = currentAnim;
+      loadAnim(aTilt,"");
     } else if (yAx > 260 && zAx > 229 && zAx < 249 && !wasTilt) { // dolu 239/265
-      //dolů - sad (shy led blue)
       Serial.println("dolu");
       wasTilt = true;
-      /*oldanim = currentAnim;
-      loadAnim("sad.json","");*/
+      lastGoodTilt = millis();
+      oldanim = currentAnim;
+      loadAnim(aDown,"");
     } else if (yAx < 208 && zAx > 210 && zAx < 230 && !wasTilt) { // nahoru 220/202
-      //nahoru -_-
       Serial.println("nahoru");
       wasTilt = true;
-      /*oldanim = currentAnim;
-      loadAnim("rly.json","");*/
-    } else if (zAx > 213 && zAx < 253 && yAx > 213 && yAx < 253 && wasTilt) { // center 233/233
+      lastGoodTilt = millis();
+      oldanim = currentAnim;
+      loadAnim(aUp,"");
+    } else if (zAx > 213 && zAx < 253 && yAx > 213 && yAx < 253 && wasTilt && lastGoodTilt+500<millis()) { // center 233/233
       Serial.println("no tilt");
       wasTilt = false;
-      //loadAnim(oldanim,"");
+      loadAnim(oldanim,"");
     }
     lastMillsTilt = millis();
   }
