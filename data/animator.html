@@ -135,7 +135,7 @@
   <footer>
     <button onclick="completeGen()">Generate final JSON</button><br><br>
     <form action="./savefile" method="post">
-      Name of file/animation: <input type="text" name="file" required><br>
+      Name of file/animation (without .json): <input type="text" name="file" required><br>
       File content:<br>
       <textarea rows="7" cols="100" name="content" id="output" required></textarea>
       <br><br>
@@ -143,6 +143,11 @@
     </form>
     <button type="button" onclick="postAnim()">Try animation</button>
     <hr>
+	Talking animation:
+	<button type="button" onclick="saveMouth(1)">Save closed mouth</button>
+	<button type="button" onclick="saveMouth(2)">Save opened mouth</button>
+	<button type="button" onclick="postMouth()">Save to SPIFFS</button>
+	<hr>
     Load anim:
     <select name="file" id="avaibleanims"></select>
     <button type="button" onclick="loadAnim(true)">Load selected anim</button>
@@ -242,7 +247,6 @@
   //cliked on used color and set it
   $("#usedColors").on('click', ".colorItem", function() {
     var temp = "#" + rgb2hex($(this).css("background-color"));
-    console.log(temp);
     curColor = temp;
     curColorBlush = temp;
     $("#color").val(temp);
@@ -635,7 +639,6 @@
       }).responseText;
     } else {
       response = $("#output").val();
-      console.log(response);
     }
     var obj = JSON.parse(response);
     if (obj.ears.type == "custom") {
@@ -646,7 +649,7 @@
         $("#earsFramesP").append("<a id=\"" + (framesEars.length - 1) + "\">" + (framesEars.length - 1) + "</a>");
       }
     } else {
-      alert("prefab");
+      alert("ears = "+obj.ears.type);
     }
     if (obj.visor.type == "custom") {
       framesVisor.length = 0;
@@ -657,5 +660,45 @@
       }
     }
     alert("Loaded animation");
+  }
+
+  var mClosed, mOpened;
+  function saveMouth(whichOne) {
+    if(whichOne == "1") {
+      mClosed = "{\"mouthClosed\":[";
+      for(var x = 2; x < 9; x++) {
+        if(x != 5) {
+          mClosed += "\"" + ledsToHex(x) + "\"";
+          if(x != 8) {
+            mClosed += ",";
+          }
+        }
+      }
+      mClosed += "],";
+    } else if(whichOne == "2") {
+      mOpened = "\"mouthOpened\":[";
+      for(var x = 2; x < 9; x++) {
+        if(x != 5) {
+          mOpened += "\"" + ledsToHex(x) + "\"";
+          if(x != 8) {
+            mOpened += ",";
+          }
+        }
+      }
+      mOpened += "]}";
+	}
+  }
+
+  function postMouth() {
+    $.ajax({
+      url: '/savefile',
+      type: 'post',
+      data: {
+        file: "_mouth",
+		content: mClosed+mOpened
+      }
+    }).done(function() {
+      alert("Mouth frames weren successfully set!");
+	});
   }
 </script>

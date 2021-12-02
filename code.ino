@@ -1,4 +1,4 @@
-//prefabs + all needed anims
+//I'M NEVER EVER FCKING TOUCHING THIS CODE AGAIN
 
 //DOIT ESP32 DEVKIT V1
 // L5,18,23 - MATRIX done
@@ -17,7 +17,7 @@
 #include "ESPAsyncWebServer.h"
 
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
-#define CONFIG_LITTLEFS_CACHE_SIZE 512
+#define CONFIG_LITTLEFS_CACHE_SIZE 256
 #define SPIFFS LITTLEFS
 #include <LITTLEFS.h> //powaaaa, shaved down 1s in webpage load time & basically everything
 //#include "SPIFFS.h"
@@ -101,23 +101,23 @@ bool loadAnim(String anim, String temp) {
 
     DeserializationError error = deserializeJson(doc, temp);
     if (error){
-      Serial.println("Failed to deserialize file");
+      Serial.println("Failed to deserialize POST of a animation!");
       return false;
     }
   } else {
     File file = SPIFFS.open("/anims/"+anim, "r");
     if (!file) {
-      Serial.println("There was an error opening the file");
+      Serial.println("There was an error opening the animation file!");
       file.close();
       return false;
     }
-    Serial.println("File opened!");
+    Serial.println("Animation file opened!");
 
     ReadBufferingStream bufferedFile{file, 64};
 
     DeserializationError error = deserializeJson(doc, bufferedFile);
     if (error){
-      Serial.println("Failed to deserialize file");
+      Serial.println("Failed to deserialize animation file!");
       return false;
     }
 
@@ -169,11 +169,29 @@ bool loadAnim(String anim, String temp) {
   return true;
 }
 
-void setMouthAnim() {
-  for(int i = 0;i<6;i++) {
-    talkingAnim.mouthClosed[i] = 1099494850560;
-    talkingAnim.mouthOpen[i] = 17102903382850560;
+bool loadMouthAnim() {
+  DynamicJsonDocument doc(1024);
+  
+  File file = SPIFFS.open("/anims/_mouth.json", "r");
+  if (!file) {
+    Serial.println("There was an error opening the mouth animation file!");
+    file.close();
+    return false;
   }
+  Serial.println("Mouth animation file opened!");
+
+  DeserializationError error = deserializeJson(doc, file);
+  if (error){
+    Serial.println("Failed to deserialize mouth animation file!");
+    return false;
+  }
+  file.close();
+  
+  for(int i = 0;i<6;i++) {
+    talkingAnim.mouthClosed[i] = strtoull(String(doc["mouthClosed"][i].as<String>()).c_str(), NULL, 16);
+    talkingAnim.mouthOpen[i] = strtoull(String(doc["mouthOpened"][i].as<String>()).c_str(), NULL, 16);
+  }
+  return true;
 }
 
 bool loadConfig() {
@@ -181,15 +199,15 @@ bool loadConfig() {
   
   File file = SPIFFS.open("/config.json", "r");
   if (!file) {
-    Serial.println("There was an error opening the file");
+    Serial.println("There was an error opening the config file!");
     file.close();
     return false;
   }
-  Serial.println("File opened!");
+  Serial.println("Config file opened!");
 
   DeserializationError error = deserializeJson(doc, file);
   if (error){
-    Serial.println("Failed to deserialize file");
+    Serial.println("Failed to deserialize the config file!");
     return false;
   }
   file.close();
@@ -215,11 +233,11 @@ bool saveConfig() {
   
   File file = SPIFFS.open("/config.json", "w");
   if (!file) {
-    Serial.println("There was an error opening the file");
+    Serial.println("There was an error opening the config file!");
     file.close();
     return false;
   }
-  Serial.println("File opened!");
+  Serial.println("Config file opened!");
 
   doc["boopEna"] = boopEna;
   doc["speechEna"] = speechEna;
@@ -235,7 +253,7 @@ bool saveConfig() {
   doc["aUp"] = aUp;
 
   if (serializeJson(doc, file) == 0) {
-    Serial.println("Failed to deserialize file");
+    Serial.println("Failed to deserialize the config file");
     return false;
   }
   
@@ -268,8 +286,8 @@ void setup() {
     File root = SPIFFS.open("/anims");
     File file = root.openNextFile();
     while(file){
-        files += String(file.name()).substring(7) + ";";
-        file = root.openNextFile();
+      files += String(file.name()).substring(7) + ";";
+      file = root.openNextFile();
     }
     request->send(200, "text/plain", files);
   });
@@ -296,7 +314,7 @@ void setup() {
     if(saveConfig()) {
       request->redirect("/");
     } else {
-      request->send(200, "text/plain", "saveConfig failed");
+      request->send(200, "text/plain", "Saving config failed!");
     }
   });
 
@@ -304,17 +322,22 @@ void setup() {
     if(request->hasParam("file", true) && request->hasParam("content", true)) {
       File file = SPIFFS.open("/anims/"+request->getParam("file", true)->value()+".json", "w");
       if (!file) {
-        Serial.println("There was an error opening the file");
+        Serial.println("There was an error opening the file for saving a animation!");
         file.close();
-        request->send(200, "text/plain", "error opening file");
+        request->send(200, "text/plain", "Error opening file for writing!");
       } else {
-        Serial.println("File opened!");
+        Serial.println("File saved!");
         file.print(request->getParam("content", true)->value());
         file.close();
-        request->redirect("/animator");
+        if(request->getParam("file",true)->value() == "_mouth") {
+          if(!loadMouthAnim()) {
+            request->send(200, "text/plain", "Failed to load mouth animation!");
+          }
+        }
+        request->redirect("/animator.html");
       }
     } else {
-      request->send(200, "text/plain", "no params");
+      request->send(200, "text/plain", "No valid parameters detected!");
     }
   });
 
@@ -323,7 +346,7 @@ void setup() {
       SPIFFS.remove("/anims/"+request->getParam("file")->value());
       request->redirect("/");
     } else {
-      request->send(200, "text/plain", "no param 'file'");
+      request->send(200, "text/plain", "Parameter 'file' not present!");
     }
   });
 
@@ -332,10 +355,10 @@ void setup() {
       if(loadAnim(request->getParam("anim")->value(),"")) {
         request->redirect("/");
       } else {
-        request->send(200, "text/plain", "loadAnim failed");
+        request->send(200, "text/plain", "Loading animation has failed!");
       }
     } else {
-      request->send(200, "text/plain", "Nothing/wrong data recieved");
+      request->send(200, "text/plain", "No valid parameters detected!");
     }
   });
 
@@ -344,10 +367,10 @@ void setup() {
       if(loadAnim("POSTAnimLoad",request->getParam("anim", true)->value())) {
         request->redirect("/");
       } else {
-        request->send(200, "text/plain", "loadAnim failed");
+        request->send(200, "text/plain", "Loading animation has failed!");
       }
     } else {
-      request->send(200, "text/plain", "Nothing/wrong data recieved");
+      request->send(200, "text/plain", "No valid parameters detected!");
     }
   });
 
@@ -355,10 +378,13 @@ void setup() {
   server.begin();
   
   if(!loadConfig()) {
-    Serial.println("There was a problem with loading config");
+    Serial.println("There was a problem with loading the config!");
   }
 
-  setMouthAnim();
+  if(!loadMouthAnim()) {
+    Serial.println("There was a problem with loading the mouth frames!");
+  }
+
   mx.begin();
   mx.control(MD_MAX72XX::INTENSITY, bVisor);
 
@@ -464,9 +490,7 @@ void loop() {
   if(lastMillsTilt+1000<=millis() && tiltEna) { //TILT  - calibrate
     zAx = (((float)analogRead(33) - 340)/68*9.8);
     yAx = (((float)analogRead(32) - 329.5)/68.5*9.8);
-    //Serial.println("----------");
-    //Serial.println(zAx);
-    //Serial.println(yAx);
+    //Serial.println("Y: " + yAx + " | Z: " + zAx);
     if((zAx > 250 || zAx < 205) && yAx > 190 && yAx < 275 && !wasTilt) { // vpravo 255/222, vlevo 200/255
       Serial.println("tilt");
       wasTilt = true;
@@ -525,15 +549,17 @@ void loop() {
         fixVal = y-3;
       }
       if(y != 5) {
+        matrixFix = 7;
         for (int i = 0; i < 8; i++) {
           if(randomNum == 0) {
-            row = (talkingAnim.mouthOpen[fixVal] >> i * 8) & 0xFF;
+            row = (talkingAnim.mouthOpen[fixVal] >> matrixFix * 8) & 0xFF;
           } else {
-            row = (talkingAnim.mouthClosed[fixVal] >> i * 8) & 0xFF;
+            row = (talkingAnim.mouthClosed[fixVal] >> matrixFix * 8) & 0xFF;
           }
           for (int j = 0; j < 8; j++) {
             mx.setPoint(i, j+(y*8), bitRead(row, j));
           }
+          matrixFix--;
         }
       }
     }
@@ -563,7 +589,7 @@ void loop() {
       boops++;
       if(booping == false && boops >= 2) {
         booping = true;
-        Serial.println("BOOP");
+        //Serial.println("BOOP");
         oldanim = currentAnim;
         loadAnim("boop.json","");
       }
@@ -573,7 +599,7 @@ void loop() {
       boops = 0;
       if(tRead == LOW && booping == true) {
         booping = false;
-        Serial.println("unBOOP");
+        //Serial.println("unBOOP");
         loadAnim(oldanim,"");
       }
     }
