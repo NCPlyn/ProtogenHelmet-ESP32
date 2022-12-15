@@ -1,5 +1,3 @@
-//I'M NEVER EVER FCKING TOUCHING THIS CODE AGAIN
-
 //DOIT ESP32 DEVKIT V1
 // L5,18,23 - MATRIX done
 // L16,17(blush) - WS2812  done
@@ -18,9 +16,8 @@
 
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
 #define CONFIG_LITTLEFS_CACHE_SIZE 256
-#define SPIFFS LITTLEFS
-#include <LITTLEFS.h> //powaaaa, shaved down 1s in webpage load time & basically everything
-//#include "SPIFFS.h"
+#define SPIFFS LittleFS
+#include <LittleFS.h> //powaaaa, shaved down 1s in webpage load time & basically everything
 
 #include <driver/adc.h>
 
@@ -39,8 +36,8 @@ MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES
 //web / wifi
 AsyncWebServer server(80);
 
-const char* ssid = "Furo";
-const char* password = "FuroProto";
+const char* ssid = "Proto";
+const char* password = "Proto123";
 
 // Ears LEDs
 #define NumOfEarsLEDS 74
@@ -54,7 +51,7 @@ CRGB blushLeds[8];
 struct FramesEars {
   int timespan;
   String leds[NumOfEarsLEDS];
-};  
+};
 
 struct AnimNowEars {
   bool isCustom;
@@ -67,7 +64,7 @@ struct FramesVisor {
   int timespan;
   uint64_t leds[11];
   String ledsBlush[8];
-};  
+};
 
 struct AnimNowVisor {
   bool isCustom;
@@ -95,7 +92,7 @@ String aTilt = "confused.json", aDown = "sad.json", aUp = "rlly.json";
 
 bool loadAnim(String anim, String temp) {
   DynamicJsonDocument doc(32768); //will be probs not enough
-  
+
   if(anim == "POSTAnimLoad") {
     Serial.println("POST");
 
@@ -123,9 +120,9 @@ bool loadAnim(String anim, String temp) {
 
     file.close();
   }
-  
+
   currentAnim = anim;
-      
+
   if(doc["ears"]["type"].as<String>() == "custom") {
     earsNow.isCustom = true;
     earsNow.numOfFrames = doc["ears"]["frames"].size();
@@ -142,9 +139,9 @@ bool loadAnim(String anim, String temp) {
   } else {
     Serial.println("Something is wrong with ears-type!");
   }
-      
+
   if(doc["visor"]["type"].as<String>() == "custom") {
-    visorNow.isCustom = true; 
+    visorNow.isCustom = true;
     visorNow.numOfFrames = doc["visor"]["frames"].size();
     for(int x = 0; x < visorNow.numOfFrames; x++) {
       visorNow.frames[x].timespan = doc["visor"]["frames"][x]["timespan"].as<int>();
@@ -171,7 +168,7 @@ bool loadAnim(String anim, String temp) {
 
 bool loadMouthAnim() {
   DynamicJsonDocument doc(1024);
-  
+
   File file = SPIFFS.open("/anims/_mouth.json", "r");
   if (!file) {
     Serial.println("There was an error opening the mouth animation file!");
@@ -186,7 +183,7 @@ bool loadMouthAnim() {
     return false;
   }
   file.close();
-  
+
   for(int i = 0;i<6;i++) {
     talkingAnim.mouthClosed[i] = strtoull(String(doc["mouthClosed"][i].as<String>()).c_str(), NULL, 16);
     talkingAnim.mouthOpen[i] = strtoull(String(doc["mouthOpened"][i].as<String>()).c_str(), NULL, 16);
@@ -196,7 +193,7 @@ bool loadMouthAnim() {
 
 bool loadConfig() {
   DynamicJsonDocument doc(512);
-  
+
   File file = SPIFFS.open("/config.json", "r");
   if (!file) {
     Serial.println("There was an error opening the config file!");
@@ -230,7 +227,7 @@ bool loadConfig() {
 
 bool saveConfig() {
   DynamicJsonDocument doc(512);
-  
+
   File file = SPIFFS.open("/config.json", "w");
   if (!file) {
     Serial.println("There was an error opening the config file!");
@@ -256,7 +253,7 @@ bool saveConfig() {
     Serial.println("Failed to deserialize the config file");
     return false;
   }
-  
+
   file.close();
 
   FastLED.setBrightness(bEar);
@@ -291,7 +288,7 @@ void setup() {
     }
     request->send(200, "text/plain", files);
   });
-  
+
   server.on("/saveconfig", HTTP_GET, [](AsyncWebServerRequest *request){ //saves config
     if(request->hasParam("boopEna"))
       std::istringstream(request->getParam("boopEna")->value().c_str()) >> std::boolalpha >> boopEna;
@@ -311,6 +308,12 @@ void setup() {
       spMin = request->getParam("spMin")->value().toInt();
     if(request->hasParam("spMax"))
       spMax = request->getParam("spMax")->value().toInt();
+    if(request->hasParam("aTilt"))
+      aTilt = String(request->getParam("aTilt")->value());
+    if(request->hasParam("aDown"))
+      aDown = String(request->getParam("aDown")->value());
+    if(request->hasParam("aUp"))
+      aUp = String(request->getParam("aUp")->value());
     if(saveConfig()) {
       request->redirect("/");
     } else {
@@ -376,7 +379,7 @@ void setup() {
 
   server.onNotFound([](AsyncWebServerRequest *request){request->send(404, "text/plain", "Not found");});
   server.begin();
-  
+
   if(!loadConfig()) {
     Serial.println("There was a problem with loading the config!");
   }
@@ -392,7 +395,7 @@ void setup() {
   FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, 8);
   FastLED.setCorrection(TypicalPixelString);
   FastLED.setBrightness(bEar);
-  
+
   loadAnim("default.json","");
 }
 

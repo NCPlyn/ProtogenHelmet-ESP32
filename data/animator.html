@@ -1,7 +1,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>FuroUI Animator</title>
+  <title>Proto Animator</title>
 </head>
 <body>
   <main>
@@ -143,11 +143,11 @@
     </form>
     <button type="button" onclick="postAnim()">Try animation</button>
     <hr>
-	Talking animation:
-	<button type="button" onclick="saveMouth(1)">Save closed mouth</button>
-	<button type="button" onclick="saveMouth(2)">Save opened mouth</button>
-	<button type="button" onclick="postMouth()">Save to SPIFFS</button>
-	<hr>
+	  Talking animation:
+	  <button type="button" onclick="saveMouth(1)">Save closed mouth</button>
+	  <button type="button" onclick="saveMouth(2)">Save opened mouth</button>
+	  <button type="button" onclick="postMouth()">Save to SPIFFS</button>
+  	<hr>
     Load anim:
     <select name="file" id="avaibleanims"></select>
     <button type="button" onclick="loadAnim(true)">Load selected anim</button>
@@ -260,10 +260,25 @@
     $("#usedColors").append("<div class=\"colorItem\" style=\"background-color:" + curColor + "\"></div>");
   });
 
+  //Hold down to color
+  isMouseDown = false;
+  $('body').mousedown(function() {
+    isMouseDown = true;
+  })
+  .mouseup(function() {
+    isMouseDown = false;
+  });
+
   //colors SVG dots with selected color
   $("path").on('click', function() {
     $(this).attr('fill', curColor);
     $(this).attr('stroke', "gray");
+  });
+  $("path").mouseenter(function() {
+    if(isMouseDown) {
+      $(this).attr('fill', curColor);
+      $(this).attr('stroke', "gray");
+    }
   });
 
   //fills all black, what more to say
@@ -347,14 +362,14 @@
       var output = "{" + earsGen() + "," + visorGen() + "}";
       output = output.replace(/"000000"/g, "\"0\"");
       $("#output").text(output);
-      $("#earsFramesP").empty();
+      /*$("#earsFramesP").empty();
       $("#editDivEars").hide();
       $("#visorFramesP").empty();
       $("#editDivVisor").hide();
       fillBlack();
       fillBlackVisor();
       framesEars.length = 0;
-      framesVisor.length = 0;
+      framesVisor.length = 0;*/
     }
   }
 
@@ -504,6 +519,10 @@
   //if matrix led clicked, add class
   $('.leds-matrix').find('.item').mousedown(function() {
     $(this).toggleClass('active');
+  });
+  $('.leds-matrix').find('.item').mouseenter(function() {
+    if(isMouseDown)
+      $(this).toggleClass('active');
   });
 
   //return hex of segment
