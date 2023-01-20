@@ -1,0 +1,145 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>FuroUI</title>
+  </head>
+  <body>
+    <main>
+      <div>
+        <h1>Animations</h1>
+        <h4 id="activeAnim">Active anim: </h4>
+        <form action="./change" method="get">
+          <select name="anim" id="avaibleanims"></select>
+          <br><br>
+          <input type="submit" value="Change animation"/>
+        </form>
+        <button type="button" onclick="deleteFile()">Delete selected file</button><br><br>
+        <a href="/animator.html">Animator</a>
+      </div>
+      <div>
+        <h1>Configuration</h1>
+        <h2>Basic</h2>
+        <form>
+          <input type="checkbox" id="boop">
+          <label for="boop"> Boop</label><br>
+          <input type="checkbox" id="speech">
+          <label for="speech"> Speech</label><br>
+          <input type="checkbox" id="tilt">
+          <label for="tilt"> Tilt</label><br>
+          <br>
+          <button type="button" onclick="saveConfig()">Save config</button>
+        </form>
+        <h2>Advanced</h2>
+        <form action="./saveconfig" method="get">
+          <input type="number" name="bEar" min="0" max="255" value="64">
+          <label for="bEar"> Brightness ears (0-255 | default:64)</label><br>
+          <input type="number" name="bVisor" min="0" max="15" value="7">
+          <label for="bVisor"> Brightness visor (0-15 | default:7)</label><br>
+          <input type="number" name="rbSpeed" min="1" max="200" value="15">
+          <label for="rbSpeed"> Rainbow prefab speed (1-200ms | default:15)</label><br>
+          <input type="number" name="rbWidth" min="1" max="32" value="8">
+          <label for="rbWidth"> Rainbow hue width (1-32 | default:8)</label><br>
+          <input type="number" name="spMin" min="20" max="500" value="90">
+          <label for="spMin"> Speak min delay (20-500ms | default:90)</label><br>
+          <input type="number" name="spMax" min="30" max="600" value="130">
+          <label for="spMax"> Speak max delay (30-600ms | default:130)</label><br>
+          <select id="aTilt" name="aTilt"></select>
+          <label for="aTilt">Animation for tilt (default:confused.json)</label><br>
+          <select id="aDown" name="aDown"></select>
+          <label for="aDown">Animation for down (default:sad.json)</label><br>
+          <select id="aUp" name="aUp"></select>
+          <label for="aUp">Animation for up (default:rlly.json)</label><br>
+          <br>
+          <input type="submit" value="Save config"/>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>
+
+<style>
+  a,a:link,a:visited {
+    color:white;
+  }
+  body {
+    font-family:Verdana;
+    margin-left:1%;
+    background-color:#333743;
+    color:white;
+  }
+  input[type=number],input[type=select] {
+    margin-top:7px;
+  }
+</style>
+
+<script>
+	function fillSelect(id,val) {
+		var select, option;
+		select = document.getElementById(id);
+		option = document.createElement('option');
+		option.value = option.text = val;
+		select.add(option);
+	}
+
+	function loadFiles() {
+		xmlhttp=new XMLHttpRequest();
+		xmlhttp.onreadystatechange=function()
+		{
+			if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+				var partsArray = xmlhttp.responseText.split(';');
+				partsArray.pop();
+				document.getElementById("activeAnim").innerHTML = "Active anim: "+partsArray[0];
+				var arrayLength = partsArray.length;
+				for (var i = 1; i < arrayLength; i++) {
+					fillSelect("avaibleanims",partsArray[i]);
+					fillSelect("aTilt",partsArray[i]);
+					fillSelect("aUp",partsArray[i]);
+					fillSelect("aDown",partsArray[i]);
+				}
+			}
+		}
+		xmlhttp.open("GET", "/getfiles", false );
+		xmlhttp.send();
+	}
+	loadFiles();
+
+	function loadConfig() {
+		xmlhttp=new XMLHttpRequest();
+		xmlhttp.onreadystatechange=function()
+		{
+			if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+				var obj = JSON.parse(xmlhttp.responseText);
+				document.getElementById("boop").checked = obj.boopEna;
+				document.getElementById("speech").checked = obj.speechEna;
+				document.getElementById("tilt").checked = obj.tiltEna;
+				document.getElementsByName("bEar")[0].value = obj.bEar;
+				document.getElementsByName("bVisor")[0].value = obj.bVisor;
+				document.getElementsByName("rbSpeed")[0].value = obj.rbSpeed;
+				document.getElementsByName("rbWidth")[0].value = obj.rbWidth;
+				document.getElementsByName("spMin")[0].value = obj.spMin;
+				document.getElementsByName("spMax")[0].value = obj.spMax;
+				document.getElementsByName("aTilt")[0].value = obj.aTilt;
+				document.getElementsByName("aUp")[0].value = obj.aUp;
+				document.getElementsByName("aDown")[0].value = obj.aDown;
+			}
+		}
+		xmlhttp.open("GET", "/config.json", false );
+		xmlhttp.send();
+	}
+	loadConfig();
+
+	function saveConfig() {
+		var params = "boopEna="+document.getElementById("boop").checked+"&speechEna="+document.getElementById("speech").checked+"&tiltEna="+document.getElementById("tilt").checked;
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", "/saveconfig?"+params, true);
+		xhr.send(null);
+	}
+
+	function deleteFile() {
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", "/deletefile?file="+document.getElementById("avaibleanims").value, true);
+		xhr.send(null);
+	}
+</script>
