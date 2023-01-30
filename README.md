@@ -1,10 +1,15 @@
 # A controller for your protogen!
 ### Please read:
-- I think it works pretty well right now, if I find any problems/mistakes, I will fix them. Also, if you wanna add something/suggest something, create a issue or pull request!
-- I have added remote control via BLE (native on the ESP32 and the remote is any arduino with HM-10 bluetooth module). If you're planning to use the remote, look into the code, there are comments of what you have to do before hand! (Short press switches animation, long press cycles trough animations for that button.)
-- I have already seen couple of protos using my code (even on MFF) and I'm happy about it! If you are going use this code for your protogen, I wanna see it! PM me on IG:@NCPlyn
-- The code is missing prefab animations (only one so far for the ears), and other couple animations. I will add them once I finish my proto, but if you can, create pull request with your own!
+- The code is pretty much **finished**, if you experience any bug or want add/suggest something, create an issue or pull request.
+- If you are going to use this code for your protogen:
+  - I'm not denying you of using my animations, but **try to make your protogen unique** and change them up a little bit in the Animator (either on the ESP32 web or open the html file in "Animator" folder) (Do not exceed the hardcoded amount of 16 frames!)
+  - I needed to apply some code to fix my HW problems (wrongly oriented led/matrixes), so if you don't do such mistakes, you can remove that part of the code.
+  - **Look through the code**, so you know how you should connect things (most of its is written as comments on the first few lines) and you know what does the code do!
+- There's **remote control via BLE** (native on the ESP32 and the remote is Arduino Micro with HM-10 bluetooth module)!
+  - If you're planning to use the remote, **look into the code, there are comments of what you have to do before hand!** (Short press switches animation. Long press cycles trough animations for that button. While not connected, press button on pin 3,4,7 at the same time to reset to default (has to be done on every Arduino flash). Settings are saved every 20s after long press of any button.)
+- I have already seen couple of protos using my code (even on MFF) and I'm happy about it! If you are going use this code for your protogen, **I would be happy see it! IG:@NCPlyn**
 - If you want to see progress on my protogen: [Imgur](https://imgur.com/a/jYpSbuZ)  
 
 ![index](indexpreview.png)
 ![animator](animatorpreview.png)
+![bleremote](bleremote.png)

@@ -9,6 +9,5 @@
 	"spMin":90,
 	"spMax":130,
 	"aTilt":"confused.json",
-	"aUp":"rlly.json",
-	"aDown":"sad.json"
+	"aUp":"upset.json"
 }

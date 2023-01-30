@@ -1,56 +1,58 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>FuroUI</title>
+    <title>ProtoESP</title>
   </head>
   <body>
     <main>
       <div>
-        <h1>Animations</h1>
+        <h1>ProtoESP</h1>
         <h4 id="activeAnim">Active anim: </h4>
         <form action="./change" method="get">
           <select name="anim" id="avaibleanims"></select>
           <br><br>
-          <input type="submit" value="Change animation"/>
+          <button type="submit">Change animation</button>
         </form>
-        <button type="button" onclick="deleteFile()">Delete selected file</button><br><br>
-        <a href="/animator.html">Animator</a>
+        <button type="button" onclick="deleteFile()" class="small-btn">Delete selected file</button><br><br>
+        <a href="/animator.html">Animator</a><br><br>
       </div>
-      <div>
+      <div class="config">
+        <hr>
         <h1>Configuration</h1>
+        <hr>
         <h2>Basic</h2>
         <form>
+          <label for="boop"> Boop</label>
           <input type="checkbox" id="boop">
-          <label for="boop"> Boop</label><br>
+          <label for="speech"> Speech</label>
           <input type="checkbox" id="speech">
-          <label for="speech"> Speech</label><br>
+          <label for="tilt"> Tilt</label>
           <input type="checkbox" id="tilt">
-          <label for="tilt"> Tilt</label><br>
           <br>
           <button type="button" onclick="saveConfig()">Save config</button>
         </form>
+        <hr>
         <h2>Advanced</h2>
         <form action="./saveconfig" method="get">
+          <i><label for="bEar">Name (limits|default)</label></i>
+          <i><span>value</span></i>
+          <label for="bEar">Brightness ears (0-255|64)</label>
           <input type="number" name="bEar" min="0" max="255" value="64">
-          <label for="bEar"> Brightness ears (0-255 | default:64)</label><br>
+          <label for="bVisor">Brightness visor (0-15|:7)</label>
           <input type="number" name="bVisor" min="0" max="15" value="7">
-          <label for="bVisor"> Brightness visor (0-15 | default:7)</label><br>
+          <label for="rbSpeed">Rainbow prefab speed (1-200ms|15)</label>
           <input type="number" name="rbSpeed" min="1" max="200" value="15">
-          <label for="rbSpeed"> Rainbow prefab speed (1-200ms | default:15)</label><br>
+          <label for="rbWidth">Rainbow hue width (1-32|8)</label>
           <input type="number" name="rbWidth" min="1" max="32" value="8">
-          <label for="rbWidth"> Rainbow hue width (1-32 | default:8)</label><br>
+          <label for="spMin">Speak min delay (20-500ms|90)</label>
           <input type="number" name="spMin" min="20" max="500" value="90">
-          <label for="spMin"> Speak min delay (20-500ms | default:90)</label><br>
+          <label for="spMax">Speak max delay (30-600ms|130)</label>
           <input type="number" name="spMax" min="30" max="600" value="130">
-          <label for="spMax"> Speak max delay (30-600ms | default:130)</label><br>
+          <label for="aTilt">Animation for tilt (confused.json)</label>
           <select id="aTilt" name="aTilt"></select>
-          <label for="aTilt">Animation for tilt (default:confused.json)</label><br>
-          <select id="aDown" name="aDown"></select>
-          <label for="aDown">Animation for down (default:sad.json)</label><br>
-          <select id="aUp" name="aUp"></select>
-          <label for="aUp">Animation for up (default:rlly.json)</label><br>
-          <br>
-          <input type="submit" value="Save config"/>
+          <label for="aUp">Animation for up (upset.json)</label>
+          <select id="aUp" name="aUp"></select><br>
+          <button type="submit">Save config</button>
         </form>
       </div>
     </main>
@@ -61,14 +63,60 @@
   a,a:link,a:visited {
     color:white;
   }
+  .config form {
+    display:grid;
+    grid-template-columns: max-content max-content;
+    grid-gap:5px;
+    justify-content: center;
+  }
+  .config form label       { text-align:right; }
+  .config form label:after { content: ":"; }
+  h1,h2 {
+    margin-block-start: 0.4em;
+    margin-block-end: 0.4em;
+  }
   body {
     font-family:Verdana;
-    margin-left:1%;
+    margin:0;
     background-color:#333743;
     color:white;
+    text-align:center;
   }
-  input[type=number],input[type=select] {
+  main {
+    width:30em;
+    margin: auto;
+  }
+  input {
+    background-color:#21252B;
+    color:white;
+    border:3px solid #3f444d;
+    border-radius:4px;
+    padding: 5px 8px;
+    margin-top:3px;
+  }
+  label,span {
     margin-top:7px;
+  }
+  button {
+    background-color:#24282b;
+    border:2px solid #3B4048;
+    border-radius:12px;
+    color:#f5f5f5;
+    line-height: 1.5;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  }
+  button:hover {
+    background-color:#474a4d;
+  }
+  button:active {
+    position:relative;
+    top:1px;
+  }
+  .small-btn {
+    line-height: 1;
+    font-size: 0.7rem;
   }
 </style>
 
@@ -95,7 +143,6 @@
 					fillSelect("avaibleanims",partsArray[i]);
 					fillSelect("aTilt",partsArray[i]);
 					fillSelect("aUp",partsArray[i]);
-					fillSelect("aDown",partsArray[i]);
 				}
 			}
 		}
@@ -122,7 +169,6 @@
 				document.getElementsByName("spMax")[0].value = obj.spMax;
 				document.getElementsByName("aTilt")[0].value = obj.aTilt;
 				document.getElementsByName("aUp")[0].value = obj.aUp;
-				document.getElementsByName("aDown")[0].value = obj.aDown;
 			}
 		}
 		xmlhttp.open("GET", "/config.json", false );
@@ -138,8 +184,10 @@
 	}
 
 	function deleteFile() {
-		var xhr = new XMLHttpRequest();
-		xhr.open("GET", "/deletefile?file="+document.getElementById("avaibleanims").value, true);
-		xhr.send(null);
+    if(confirm("Delete selected animation?")) {
+      var xhr = new XMLHttpRequest();
+  		xhr.open("GET", "/deletefile?file="+document.getElementById("avaibleanims").value, true);
+  		xhr.send(null);
+    }
 	}
 </script>
