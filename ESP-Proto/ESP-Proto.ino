@@ -258,8 +258,8 @@ bool loadAnim(String anim, String temp) {
     Serial.println("Something is wrong with visor-type!");
   }
   instantReload = true;
-  currentVisorFrame = 1;
-  currentEarsFrame = 1;
+  currentVisorFrame = 0;
+  currentEarsFrame = 0;
   return true;
 }
 
@@ -516,6 +516,7 @@ void loop() {
   //--------------------------------//EAR Leds render
   if(earsNow.isCustom) {
     if(lastMillsEars+earsNow.frames[currentEarsFrame-1].timespan <= millis() || instantReload) {
+      lastMillsEars = millis();
       if(currentEarsFrame == earsNow.numOfFrames) {
         currentEarsFrame = 0;
       }
@@ -527,9 +528,8 @@ void loop() {
           leds[y] = strtol(earsNow.frames[currentEarsFrame].leds[y].c_str(), NULL, 16);
         }
       }
-      FastLED.show();
-      lastMillsEars = millis();
       currentEarsFrame++;
+      FastLED.show();
     }
   } else if (earsNow.prefab == "rainbow") {
     fill_rainbow(pixelBuffer, 4, millis()/rbSpeed, 255/rbWidth);
@@ -590,6 +590,7 @@ void loop() {
   //--------------------------------//VISOR+BLUSH Leds render
   if(visorNow.isCustom) {
     if(lastMillsVisor+visorNow.frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
+      lastMillsVisor = millis();
       if(currentVisorFrame == visorNow.numOfFrames) {
         currentVisorFrame = 0;
       }
@@ -610,21 +611,13 @@ void loop() {
       }
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
       for(int x = 0; x<8; x++) {
-        if(x == 4) { //dum fix for wrongly oriented strip
-          blushFix = 5;
-        } else if (x == 5) {
-          blushFix = 4;
-        } else {
-          blushFix = x;
-        }
         if(visorNow.frames[currentVisorFrame].ledsBlush[x] == "0") {
-          blushLeds[blushFix] = 0x000000;
+          blushLeds[x] = 0x000000;
         } else {
-          blushLeds[blushFix] = strtol(visorNow.frames[currentVisorFrame].ledsBlush[x].c_str(), NULL, 16);
+          blushLeds[x] = strtol(visorNow.frames[currentVisorFrame].ledsBlush[x].c_str(), NULL, 16);
         }
       }
       FastLED.show();
-      lastMillsVisor = millis();
       currentVisorFrame++;
       instantReload = false;
     }
