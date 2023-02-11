@@ -1,6 +1,7 @@
 # A controller for your protogen!
 ### Please read:
 - The code is pretty much **finished**, if you experience any bug or want add/suggest something, create an issue or pull request.
+- List of parts used: [Pastebin](https://pastebin.com/7z4fnVfQ)
 - If you are going to use this code for your protogen:
   - I'm not denying you of using my animations, but **try to make your protogen unique** and change them up a little bit in the Animator (either on the ESP32 web or open the html file in "Animator" folder) (Do not exceed the hardcoded amount of 16 frames!)
   - I needed to apply some code to fix my HW problems (wrongly oriented led/matrixes), so if you don't do such mistakes, you can remove that part of the code.
