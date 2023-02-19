@@ -48,6 +48,8 @@
           <input type="number" name="spMin" min="20" max="500" value="90">
           <label for="spMax">Speak max delay (30-600ms|130)</label>
           <input type="number" name="spMax" min="30" max="600" value="130">
+		  <label for="spTrig">Speak trigger point (500-2500|1500)</label>
+          <input type="number" name="spTrig" min="500" max="2500" value="1500">
           <label for="aTilt">Animation for tilt (confused.json)</label>
           <select id="aTilt" name="aTilt"></select>
           <label for="aUp">Animation for up (upset.json)</label>
@@ -167,6 +169,7 @@
 				document.getElementsByName("rbWidth")[0].value = obj.rbWidth;
 				document.getElementsByName("spMin")[0].value = obj.spMin;
 				document.getElementsByName("spMax")[0].value = obj.spMax;
+				document.getElementsByName("spTrig")[0].value = obj.spTrig;
 				document.getElementsByName("aTilt")[0].value = obj.aTilt;
 				document.getElementsByName("aUp")[0].value = obj.aUp;
 			}

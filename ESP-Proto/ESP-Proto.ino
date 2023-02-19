@@ -1,9 +1,9 @@
 //DOIT ESP32 DEVKIT V1
-// L5,18,23 - MATRIX done
-// L16,17(blush) - WS2812  done
-// B35 - mic done
-// B33(z),32(y) - gyro done
-// B27 - touch (future another with 26)
+// MATRIX: 5 - CS, 18 - CLK, 23 - MOSI (right cheek nearest to ear first)
+// WS2812: 16 - Ears (from outer to inner, right cheek first), 17 - Blush (from top to bottom, right cheek nearest to ear first) 
+// Microphone: 35
+// Touch sensor: 27
+// Gyro: 33 - SCL, 32 - SDA
 
 #include <StreamUtils.h>
 #include <sstream>
@@ -177,7 +177,7 @@ AnimNowVisor visorNow;
 
 //--------------------------------//Config vars
 bool speechEna = false, boopEna = false, tiltEna = false, instantReload = false;
-int bEar = 64, bVisor = 6, rbSpeed = 15, rbWidth = 8, spMin = 90, spMax = 130, currentEarsFrame = 1, currentVisorFrame = 1;
+int bEar = 64, bVisor = 6, rbSpeed = 15, rbWidth = 8, spMin = 90, spMax = 130, spTrig = 1500, currentEarsFrame = 0, currentVisorFrame = 0;
 String aTilt = "confused.json", aUp = "upset.json", currentAnim = "";
 
 //--------------------------------//Load functions
@@ -290,6 +290,7 @@ bool loadConfig() {
   rbWidth = doc["rbWidth"].as<int>();
   spMin = doc["spMin"].as<int>();
   spMax = doc["spMax"].as<int>();
+  spTrig = doc["spTrig"].as<int>();
   aTilt = doc["aTilt"].as<String>();
   aUp = doc["aUp"].as<String>();
 
@@ -316,6 +317,7 @@ bool saveConfig() {
   doc["rbWidth"] = rbWidth;
   doc["spMin"] = spMin;
   doc["spMax"] = spMax;
+  doc["spTrig"] = spTrig;
   doc["aTilt"] = aTilt;
   doc["aUp"] = aUp;
 
@@ -374,8 +376,6 @@ void setup() {
   pinMode(27, INPUT);
 
   WiFi.softAP(ssid, password);
-  IPAddress IP = WiFi.softAPIP();
-  Serial.println(IP);
 
   if (!SPIFFS.begin(true)) {
     Serial.println("An Error has occurred while mounting SPIFFS");
@@ -414,6 +414,8 @@ void setup() {
       spMin = request->getParam("spMin")->value().toInt();
     if(request->hasParam("spMax"))
       spMax = request->getParam("spMax")->value().toInt();
+    if(request->hasParam("spTrig"))
+      spTrig = request->getParam("spTrig")->value().toInt();
     if(request->hasParam("aTilt"))
       aTilt = String(request->getParam("aTilt")->value());
     if(request->hasParam("aUp"))
@@ -506,10 +508,10 @@ void setup() {
 
 //--------------------------------//Loop vars
 String oldanim;
-bool booping = false, wasTilt = false, speechFirst = true, speechResetDone = false;
-float zAx,yAx;
-int speech = 0, tRead, boops = 0, randomNum, randomTimespan = 0, fixVal, matrixFix = 7, blushFix, startIndex = 1;
-unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, lastMillsSpeech = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastGoodTilt = 0, lastFLED = 0;
+bool booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false;
+float zAx,yAx,finalMicAvg,nvol,micline,avgMicArr[10];
+int randomNum, randomTimespan = 0, matrixFix = 7, startIndex = 1, speaking = 0, currentMicAvg = 0;
+unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastGoodTilt = 0, lastFLED = 0;
 byte row = 0;
 
 void loop() {
@@ -598,7 +600,7 @@ void loop() {
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
       for(int y = 0; y < 11; y++) {
         matrixFix = 7; //fix for wrongly oriented matrixes
-        if(y > 1 && y < 9 && y != 5 && speech > 2) { //if sets mouth and we are talking, do nothing
+        if(y > 1 && y < 9 && y != 5 && speak) { //if sets mouth and we are talking, do nothing
         } else {
           for (int i = 0; i < 8; i++) {
             row = (visorNow.frames[currentVisorFrame].leds[y] >> matrixFix * 8) & 0xFF;
@@ -651,24 +653,46 @@ void loop() {
   }
 
   //--------------------------------//SPEECH Detection
-  if(lastMillsSpeech+20<=millis() && speechEna) {
-    if(digitalRead(35) == HIGH) {
-      speech++;
+  if(speechEna)
+    finalMicAvg = 0;
+    nvol = 0;
+    for (int i = 0; i<128; i++){
+      micline = abs(analogRead(35) - 512);
+      nvol = max(micline, nvol);
+    }
+    avgMicArr[currentMicAvg] = (nvol + 1.0*avgMicArr[(currentMicAvg == 0) ? 9 : currentMicAvg-1])/2.0;
+    if(currentMicAvg == 9) {
+      currentMicAvg = 0;
+    } else {
+      currentMicAvg++;
+    }
+    for (int i = 0; i<10; i++){
+      finalMicAvg+=avgMicArr[i];
+    }
+    //Serial.println(finalMicAvg/10);
+  }
+  if(speechEna && laskSpeakCheck+10<=millis()) {
+    if(finalMicAvg/10 > spTrig) {
+      speaking++;
       lastSpeak = millis();
-      if(speech == 2) {
-        speechResetDone = false;
-        Serial.println("speeking");
+    }
+    if(speaking > 4 && !speak) {
+      speak = true;
+      speechResetDone = false;
+      //Serial.println("speaking");
+    }
+    if(lastSpeak+500<millis()) {
+      if(speak) {
+        speak = false;
+        speechFirst = true;
+        //Serial.println("NOT speaking");
       }
+      speaking = 0;
     }
-    if(speech >= 2 && lastSpeak+500<millis()) {
-      Serial.println("NOT speeking");
-      speechFirst = true;
-      speech = 0;
-    }
-    lastMillsSpeech = millis();
+    laskSpeakCheck = millis();
   }
   //--------------------------------//SPEECH Animation
-  if(speech >= 2 && lastMillsSpeechAnim+randomTimespan<=millis()) {
+  if(speechEna && speak && lastMillsSpeechAnim+randomTimespan<=millis()) {
     randomTimespan = random(spMin,spMax);
     if(speechFirst == true){
       randomNum = 0;
@@ -699,7 +723,7 @@ void loop() {
     lastMillsSpeechAnim = millis();
   }
   //--------------------------------//SPEECH Reset frames
-  if(!speechResetDone && lastMillsSpeechAnim+800<millis()) {
+  if(!speechResetDone && !speak && lastMillsSpeechAnim+800<millis()) {
     for(int y = 0; y < 11; y++) {
       matrixFix = 7; //fix for wrongly oriented matrixes
       if(y > 1 && y < 9 && y != 5) { //if sets mouth reset frame
@@ -717,14 +741,14 @@ void loop() {
 
   //--------------------------------//BOOP Detection
   if(millis() > 2000 && boopEna) {
-    tRead = digitalRead(27);
-    if(tRead == HIGH && booping == false) {
+    boopRead = digitalRead(27);
+    if(boopRead == HIGH && booping == false) {
       booping = true;
       //Serial.println("BOOP");
       oldanim = currentAnim;
       loadAnim("boop.json","");
       lastMillsBoop = millis();
-    } else if(tRead == LOW && booping == true && lastMillsBoop+1000<millis()) {
+    } else if(boopRead == LOW && booping == true && lastMillsBoop+1000<millis()) {
       booping = false;
       //Serial.println("unBOOP");
       loadAnim(oldanim,"");

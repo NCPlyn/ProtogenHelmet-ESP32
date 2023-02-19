@@ -8,6 +8,7 @@
 	"rbWidth":8,
 	"spMin":90,
 	"spMax":130,
+	"spTrig":1500,
 	"aTilt":"confused.json",
 	"aUp":"upset.json"
 }
