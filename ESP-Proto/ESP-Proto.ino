@@ -14,9 +14,11 @@
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
 #define CONFIG_LITTLEFS_CACHE_SIZE 256
 #define SPIFFS LittleFS
-#include <LittleFS.h> //powaaaa, shaved down 1s in webpage load time & basically everything
+#include <LittleFS.h>
 
-#include <driver/adc.h>
+#include "SparkFunLSM6DS3.h" //Use mine edited to be able to specify I2C pins: https://github.com/NCPlyn/SparkFun_LSM6DS3_Arduino_Library
+#include "Wire.h"
+LSM6DS3 myIMU;
 
 bool loadAnim(String anim, String temp);
 
@@ -40,9 +42,6 @@ BLEServer *pServer = NULL;
 BLECharacteristic * pCharacteristic;
 
 class MyCallbacks: public BLECharacteristicCallbacks {
-    void onRead(BLECharacteristic* pCharacteristic) {
-      Serial.println("OnRead");
-    };
     void onWrite(BLECharacteristic* pCharacteristic) {
       String temp = String(pCharacteristic->getValue().c_str());
       if(temp.charAt(0) == 'g') {
@@ -176,9 +175,10 @@ AnimNowEars earsNow;
 AnimNowVisor visorNow;
 
 //--------------------------------//Config vars
-bool speechEna = false, boopEna = false, tiltEna = false, instantReload = false;
+bool speechEna = false, boopEna = false, tiltEna = false, bleEna = false, instantReload = false, caliAccy = false;
 int bEar = 64, bVisor = 6, rbSpeed = 15, rbWidth = 8, spMin = 90, spMax = 130, spTrig = 1500, currentEarsFrame = 0, currentVisorFrame = 0;
 String aTilt = "confused.json", aUp = "upset.json", currentAnim = "";
+float tiltAccy = 0.8, upAccy = -0.8, neutralX = 0, neutralZ = 0;
 
 //--------------------------------//Load functions
 bool loadAnim(String anim, String temp) {
@@ -186,9 +186,7 @@ bool loadAnim(String anim, String temp) {
 
   if(anim == "POSTAnimLoad") {
     Serial.println("POST");
-
-    DeserializationError error = deserializeJson(doc, temp);
-    if (error){
+    if(deserializeJson(doc, temp)){
       Serial.println("Failed to deserialize POST of a animation!");
       return false;
     }
@@ -203,8 +201,7 @@ bool loadAnim(String anim, String temp) {
 
     ReadBufferingStream bufferedFile{file, 64};
 
-    DeserializationError error = deserializeJson(doc, bufferedFile);
-    if (error){
+    if(deserializeJson(doc, bufferedFile)){
       Serial.println("Failed to deserialize animation file!");
       return false;
     }
@@ -274,8 +271,7 @@ bool loadConfig() {
   }
   Serial.println("Config file opened!");
 
-  DeserializationError error = deserializeJson(doc, file);
-  if (error){
+  if(deserializeJson(doc, file)){
     Serial.println("Failed to deserialize the config file!");
     return false;
   }
@@ -284,6 +280,7 @@ bool loadConfig() {
   boopEna = doc["boopEna"].as<bool>();
   speechEna = doc["speechEna"].as<bool>();
   tiltEna = doc["tiltEna"].as<bool>();
+  bleEna = doc["bleEna"].as<bool>();
   bEar = doc["bEar"].as<int>();
   bVisor = doc["bVisor"].as<int>();
   rbSpeed = doc["rbSpeed"].as<int>();
@@ -293,6 +290,10 @@ bool loadConfig() {
   spTrig = doc["spTrig"].as<int>();
   aTilt = doc["aTilt"].as<String>();
   aUp = doc["aUp"].as<String>();
+  tiltAccy = doc["tiltAccy"].as<float>();
+  upAccy = doc["upAccy"].as<float>();
+  neutralX = doc["neutralX"].as<float>();
+  neutralZ = doc["neutralZ"].as<float>();
 
   return true;
 }
@@ -311,6 +312,7 @@ bool saveConfig() {
   doc["boopEna"] = boopEna;
   doc["speechEna"] = speechEna;
   doc["tiltEna"] = tiltEna;
+  doc["bleEna"] = bleEna;
   doc["bEar"] = bEar;
   doc["bVisor"] = bVisor;
   doc["rbSpeed"] = rbSpeed;
@@ -320,8 +322,12 @@ bool saveConfig() {
   doc["spTrig"] = spTrig;
   doc["aTilt"] = aTilt;
   doc["aUp"] = aUp;
+  doc["tiltAccy"] = tiltAccy;
+  doc["upAccy"] = upAccy;
+  doc["neutralX"] = neutralX;
+  doc["neutralZ"] = neutralZ;
 
-  if (serializeJson(doc, file) == 0) {
+  if(serializeJson(doc, file) == 0) {
     Serial.println("Failed to deserialize the config file");
     return false;
   }
@@ -368,19 +374,18 @@ uint64_t speakMatrix(uint64_t input) {
   return out;
 }
 
-//--------------------------------//Setup
-void setup() {
-  Serial.begin(115200);
-
-  pinMode(35, INPUT);
-  pinMode(27, INPUT);
-
-  WiFi.softAP(ssid, password);
-
-  if (!SPIFFS.begin(true)) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
+//--------------------------------//Accel check if neutral
+bool isNeutral() {
+  if(myIMU.readFloatAccelX() < neutralX+0.2 && myIMU.readFloatAccelX() > neutralX-0.2 && myIMU.readFloatAccelZ() < neutralZ+0.2 && myIMU.readFloatAccelZ() > neutralZ-0.2) {
+    return true;
+  } else {
+    return false;
   }
+}
+
+//--------------------------------//WiFi server setup
+void startWiFiWeb() {
+  WiFi.softAP(ssid, password);
 
   server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
 
@@ -402,6 +407,8 @@ void setup() {
       std::istringstream(request->getParam("speechEna")->value().c_str()) >> std::boolalpha >> speechEna;
     if(request->hasParam("tiltEna"))
       std::istringstream(request->getParam("tiltEna")->value().c_str()) >> std::boolalpha >> tiltEna;
+    if(request->hasParam("bleEna"))
+      std::istringstream(request->getParam("bleEna")->value().c_str()) >> std::boolalpha >> bleEna;
     if(request->hasParam("bEar"))
       bEar = request->getParam("bEar")->value().toInt();
     if(request->hasParam("bVisor"))
@@ -482,17 +489,46 @@ void setup() {
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
 
+  server.on("/calibrate", HTTP_GET, [](AsyncWebServerRequest *request){
+    caliAccy = true;
+    request->send(200);
+  });
+
   server.onNotFound([](AsyncWebServerRequest *request){request->send(404, "text/plain", "Not found");});
   server.begin();
+}
+
+//--------------------------------//Setup
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(35, INPUT);
+  pinMode(27, INPUT);
+  pinMode(13, INPUT_PULLUP);
+
+  if(!SPIFFS.begin(true)) {
+    Serial.println("An Error has occurred while mounting SPIFFS!");
+  }
 
   if(!loadConfig()) {
-    Serial.println("There was a problem with loading the config!");
+    Serial.println("An Error has occurred while loading config file!");
   }
 
-  if(!startBLE()) {
-    Serial.println("There was a problem with starting BLE!");
+  if(myIMU.begin(NULL,33,32)) {
+    Serial.println("An Error has occurred while connecting to LSM!");
+    tiltEna = false;
   }
 
+  if(digitalRead(13) == HIGH) { //Pulling pin 13 LOW disables WiFi
+    startWiFiWeb();
+  }
+
+  if(bleEna) { //you can disable BLE in config
+    if(!startBLE()) {
+      Serial.println("An Error has occurred while starting BLE!");
+    }
+  }
+  
   mx.begin();
   mx.control(MD_MAX72XX::INTENSITY, bVisor);
 
@@ -510,8 +546,8 @@ void setup() {
 String oldanim;
 bool booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false;
 float zAx,yAx,finalMicAvg,nvol,micline,avgMicArr[10];
-int randomNum, randomTimespan = 0, matrixFix = 7, startIndex = 1, speaking = 0, currentMicAvg = 0;
-unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastGoodTilt = 0, lastFLED = 0;
+int randomNum,boopRead, randomTimespan = 0, matrixFix = 7, startIndex = 1, speaking = 0, currentMicAvg = 0;
+unsigned int lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0;
 byte row = 0;
 
 void loop() {
@@ -559,7 +595,7 @@ void loop() {
     }
     FastLED.show();
   } else if (earsNow.prefab == "corner_sabers") {
-    if(lastFLED+20 < millis()) {
+    if(lastFLED+rbSpeed < millis()) {
       lastFLED = millis();
       startIndex++;
       int tempIndex = startIndex;
@@ -627,25 +663,41 @@ void loop() {
     //....
   }
 
-  //--------------------------------//TILT (has to be calibrated)
-  if(lastMillsTilt+1000<=millis() && tiltEna) {
-    zAx = (((float)analogRead(33) - 340)/68*9.8);
-    yAx = (((float)analogRead(32) - 329.5)/68.5*9.8);
-    //Serial.println("Y: " + yAx + " | Z: " + zAx);
-    if((zAx > 250 || zAx < 205) && yAx > 190 && yAx < 275 && !wasTilt) { // vpravo 255/222, vlevo 200/255
-      Serial.println("tilt");
+  //--------------------------------//TILT Calibration
+  if(caliAccy) {
+    bool upSet = false, tiltSet = false;
+    neutralX = floor(myIMU.readFloatAccelX() * 100) / 100;
+    neutralZ = floor(myIMU.readFloatAccelZ() * 100) / 100;
+    upAccy = 0;
+    tiltAccy = 0;
+    do {
+      if(upAccy > 0.3 && isNeutral())
+        upSet = true;
+      if(tiltAccy > 0.3 && isNeutral())
+        tiltSet = true;
+      upAccy = max(upAccy, floor(abs(myIMU.readFloatAccelX()-neutralX) * 100) / 100);
+      tiltAccy = max(tiltAccy, floor(abs(myIMU.readFloatAccelZ()-neutralZ) * 100) / 100);
+    } while (!upSet || !tiltSet);
+    caliAccy = false;
+    saveConfig();
+  }
+
+  //--------------------------------//TILT
+  if(lastMillsTilt+500<=millis() && tiltEna) {
+    //Serial.println(myIMU.readFloatAccelX());
+    //Serial.println(myIMU.readFloatAccelZ());
+    if(abs(myIMU.readFloatAccelX()-neutralX) > upAccy && !wasTilt) {
+      Serial.println("up");
       wasTilt = true;
-      lastGoodTilt = millis();
-      oldanim = currentAnim;
-      loadAnim(aTilt,"");
-    } else if (yAx < 208 && zAx > 210 && zAx < 230 && !wasTilt) { // nahoru 220/202
-      Serial.println("nahoru");
-      wasTilt = true;
-      lastGoodTilt = millis();
       oldanim = currentAnim;
       loadAnim(aUp,"");
-    } else if (zAx > 213 && zAx < 253 && yAx > 213 && yAx < 253 && wasTilt && lastGoodTilt+500<millis()) { // center 233/233
-      Serial.println("no tilt");
+    } else if (abs(myIMU.readFloatAccelZ()-neutralX) > tiltAccy && !wasTilt) {
+      Serial.println("tilt");
+      wasTilt = true;
+      oldanim = currentAnim;
+      loadAnim(aTilt,"");
+    } else if (isNeutral() && wasTilt) {
+      Serial.println("neutral");
       wasTilt = false;
       loadAnim(oldanim,"");
     }
@@ -653,14 +705,14 @@ void loop() {
   }
 
   //--------------------------------//SPEECH Detection
-  if(speechEna)
+  if(speechEna) {
     finalMicAvg = 0;
     nvol = 0;
     for (int i = 0; i<128; i++){
       micline = abs(analogRead(35) - 512);
       nvol = max(micline, nvol);
     }
-    avgMicArr[currentMicAvg] = (nvol + 1.0*avgMicArr[(currentMicAvg == 0) ? 9 : currentMicAvg-1])/2.0;
+    avgMicArr[currentMicAvg] = nvol;
     if(currentMicAvg == 9) {
       currentMicAvg = 0;
     } else {
@@ -679,13 +731,13 @@ void loop() {
     if(speaking > 4 && !speak) {
       speak = true;
       speechResetDone = false;
-      //Serial.println("speaking");
+      Serial.println("Speak");
     }
     if(lastSpeak+500<millis()) {
       if(speak) {
         speak = false;
         speechFirst = true;
-        //Serial.println("NOT speaking");
+        Serial.println("unSpeak");
       }
       speaking = 0;
     }
@@ -744,13 +796,13 @@ void loop() {
     boopRead = digitalRead(27);
     if(boopRead == HIGH && booping == false) {
       booping = true;
-      //Serial.println("BOOP");
+      Serial.println("BOOP");
       oldanim = currentAnim;
       loadAnim("boop.json","");
       lastMillsBoop = millis();
     } else if(boopRead == LOW && booping == true && lastMillsBoop+1000<millis()) {
       booping = false;
-      //Serial.println("unBOOP");
+      Serial.println("unBOOP");
       loadAnim(oldanim,"");
     }
   }

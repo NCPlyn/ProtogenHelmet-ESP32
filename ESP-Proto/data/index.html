@@ -14,6 +14,7 @@
           <button type="submit">Change animation</button>
         </form>
         <button type="button" onclick="deleteFile()" class="small-btn">Delete selected file</button><br><br>
+		<button type="button" onclick="calibrate()" class="small-btn">Calibrate tilt</button><br><br>
         <a href="/animator.html">Animator</a><br><br>
       </div>
       <div class="config">
@@ -28,6 +29,8 @@
           <input type="checkbox" id="speech">
           <label for="tilt"> Tilt</label>
           <input type="checkbox" id="tilt">
+		  <label for="ble"> BLE</label>
+          <input type="checkbox" id="ble">
           <br>
           <button type="button" onclick="saveConfig()">Save config</button>
         </form>
@@ -163,6 +166,7 @@
 				document.getElementById("boop").checked = obj.boopEna;
 				document.getElementById("speech").checked = obj.speechEna;
 				document.getElementById("tilt").checked = obj.tiltEna;
+				document.getElementById("ble").checked = obj.bleEna;
 				document.getElementsByName("bEar")[0].value = obj.bEar;
 				document.getElementsByName("bVisor")[0].value = obj.bVisor;
 				document.getElementsByName("rbSpeed")[0].value = obj.rbSpeed;
@@ -187,10 +191,16 @@
 	}
 
 	function deleteFile() {
-    if(confirm("Delete selected animation?")) {
-      var xhr = new XMLHttpRequest();
+      if(confirm("Delete selected animation?")) {
+        var xhr = new XMLHttpRequest();
   		xhr.open("GET", "/deletefile?file="+document.getElementById("avaibleanims").value, true);
   		xhr.send(null);
-    }
+	  }
+	}
+	
+	function calibrate() {
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", "/calibrate", true);
+		xhr.send(null);
 	}
 </script>
