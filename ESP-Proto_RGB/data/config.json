@@ -1,0 +1,20 @@
+{
+	"boopEna":true,
+	"speechEna":true,
+	"tiltEna":true,
+	"bleEna":true,
+	"bEar":15,
+	"bVisor":15,
+	"rbSpeed":15,
+	"rbWidth":8,
+	"spMin":90,
+	"spMax":130,
+	"spTrig":1500,
+	"aTilt":"confused.json",
+	"aUp":"upset.json",
+	"tiltAccy":0.4,
+	"upAccy":0.4,
+	"neutralX":0.27,
+	"neutralZ":0.36,
+  "visColor":"#ff0000"
+}
