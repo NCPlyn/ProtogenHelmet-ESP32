@@ -1,8 +1,9 @@
 {
 	"boopEna":true,
 	"speechEna":true,
-	"tiltEna":true,
+	"tiltEna":false,
 	"bleEna":true,
+  "oledEna":true,
 	"bEar":15,
 	"bVisor":15,
 	"rbSpeed":15,

@@ -1,9 +1,8 @@
-//DOIT ESP32 DEVKIT V1
-// MATRIX: 5 - CS, 18 - CLK, 23 - MOSI (right cheek nearest to ear first)
+// MATRIX: 5 - CS, 18 - CLK, 23 - MOSI (1st: left segment of right eye, 2st: right segment, 3th: left segment of right cheek...... 6th nose, 7th left segment of left cheek,.... 10st left segment of left eye....)
 // WS2812: 16 - Ears (from outer to inner, right cheek first), 17 - Blush (from top to bottom, right cheek nearest to ear first) 
 // Microphone: 35
 // Touch sensor: 27
-// Gyro: 33 - SCL, 32 - SDA
+// Gyro: 22 - SCL, 21 - SDA
 
 #include <StreamUtils.h>
 #include <sstream>
@@ -16,7 +15,7 @@
 #define SPIFFS LittleFS
 #include <LittleFS.h>
 
-#include "SparkFunLSM6DS3.h" //Use mine edited to be able to specify I2C pins: https://github.com/NCPlyn/SparkFun_LSM6DS3_Arduino_Library
+#include "SparkFunLSM6DS3.h" 
 #include "Wire.h"
 LSM6DS3 myIMU;
 
@@ -152,8 +151,7 @@ struct FramesEars { //max cca 520bytes per frame
 };
 
 struct AnimNowEars { //max cca 8330bytes with 16 frames
-  bool isCustom;
-  String prefab;
+  String type;
   int numOfFrames;
   FramesEars frames[16]; //max amount of ear frames -> 16
 };
@@ -165,8 +163,7 @@ struct FramesVisor { //max cca 150bytes per frame
 };
 
 struct AnimNowVisor { //max cca 2420bytes with 16 frames
-  bool isCustom;
-  String prefab;
+  String type;
   int numOfFrames;
   FramesVisor frames[16]; //max amount of visor frames -> 16
 };
@@ -211,52 +208,30 @@ bool loadAnim(String anim, String temp) {
 
   currentAnim = anim;
 
-  String eType = doc["ears"]["type"].as<String>();
-  if(eType == "custom" || eType == "custom_glow") {
-    if(eType == "custom") {
-      earsNow.isCustom = true;
-    } else if (eType == "custom_glow") {
-      earsNow.isCustom = false;
-      earsNow.prefab = eType;
+  earsNow.type = doc["ears"]["type"].as<String>();
+  earsNow.numOfFrames = doc["ears"]["frames"].size();
+  for(int x = 0; x < earsNow.numOfFrames; x++) {
+    earsNow.frames[x].timespan = doc["ears"]["frames"][x]["timespan"].as<int>();
+    for(int y = 0; y < doc["ears"]["frames"][x]["leds"].size(); y++) {
+      earsNow.frames[x].leds[y] = doc["ears"]["frames"][x]["leds"][y].as<String>();
     }
-    earsNow.numOfFrames = doc["ears"]["frames"].size();
-    for(int x = 0; x < earsNow.numOfFrames; x++) {
-      earsNow.frames[x].timespan = doc["ears"]["frames"][x]["timespan"].as<int>();
-      int ledsCount = doc["ears"]["frames"][x]["leds"].size();
-      for(int y = 0; y < ledsCount; y++) {
-        earsNow.frames[x].leds[y] = doc["ears"]["frames"][x]["leds"][y].as<String>();
-      }
-    }
-  } else if (eType == "prefab") {
-    earsNow.isCustom = false;
-    earsNow.prefab = doc["ears"]["prefab"].as<String>();
-  } else {
-    Serial.println("Something is wrong with ears-type!");
   }
 
-  if(doc["visor"]["type"].as<String>() == "custom") {
-    visorNow.isCustom = true;
-    visorNow.numOfFrames = doc["visor"]["frames"].size();
-    for(int x = 0; x < visorNow.numOfFrames; x++) {
-      visorNow.frames[x].timespan = doc["visor"]["frames"][x]["timespan"].as<int>();
-      int ledsCount = doc["visor"]["frames"][x]["leds"].size();
-      for(int y = 0; y < ledsCount; y++) {
-        visorNow.frames[x].leds[y] = strtoull(String(doc["visor"]["frames"][x]["leds"][y].as<String>()).c_str(), NULL, 16); //string to uint64
-      }
-      int ledsBlushCount = doc["visor"]["frames"][x]["ledsBlush"].size();
-      for(int y = 0; y < ledsBlushCount; y++) {
-        visorNow.frames[x].ledsBlush[y] = doc["visor"]["frames"][x]["ledsBlush"][y].as<String>();
-      }
+  visorNow.type = doc["visor"]["type"].as<String>();
+  visorNow.numOfFrames = doc["visor"]["frames"].size();
+  for(int x = 0; x < visorNow.numOfFrames; x++) {
+    visorNow.frames[x].timespan = doc["visor"]["frames"][x]["timespan"].as<int>();
+    for(int y = 0; y < doc["visor"]["frames"][x]["leds"].size(); y++) {
+      visorNow.frames[x].leds[y] = strtoull(String(doc["visor"]["frames"][x]["leds"][y].as<String>()).c_str(), NULL, 16); //string to uint64
     }
-  } else if (doc["visor"]["type"] == "prefab") {
-    visorNow.isCustom = false;
-    visorNow.prefab = doc["visor"]["prefab"].as<String>();
-  } else {
-    Serial.println("Something is wrong with visor-type!");
+    for(int y = 0; y < doc["visor"]["frames"][x]["ledsBlush"].size(); y++) {
+      visorNow.frames[x].ledsBlush[y] = doc["visor"]["frames"][x]["ledsBlush"][y].as<String>();
+    }
   }
   instantReload = true;
   currentVisorFrame = 0;
   currentEarsFrame = 0;
+  
   return true;
 }
 
@@ -514,7 +489,7 @@ void setup() {
     Serial.println("An Error has occurred while loading config file!");
   }
 
-  if(myIMU.begin(NULL,33,32)) {
+  if(myIMU.begin()) {
     Serial.println("An Error has occurred while connecting to LSM!");
     tiltEna = false;
   }
@@ -552,7 +527,7 @@ byte row = 0;
 
 void loop() {
   //--------------------------------//EAR Leds render
-  if(earsNow.isCustom) {
+  if(earsNow.type == "custom") {
     if(lastMillsEars+earsNow.frames[currentEarsFrame-1].timespan <= millis() || instantReload) {
       lastMillsEars = millis();
       if(currentEarsFrame == earsNow.numOfFrames) {
@@ -569,7 +544,7 @@ void loop() {
       currentEarsFrame++;
       FastLED.show();
     }
-  } else if (earsNow.prefab == "rainbow") {
+  } else if (earsNow.type == "rainbow") {
     fill_rainbow(pixelBuffer, 4, millis()/rbSpeed, 255/rbWidth);
     for(int x = 0;x<NumOfEarsLEDS;x++) {
       if(x<16) {
@@ -587,14 +562,14 @@ void loop() {
       }
     }
     FastLED.show();
-  } else if (earsNow.prefab == "white_noise") {
+  } else if (earsNow.type == "white_noise") {
 	  memset(noiseData, 0, NumOfEarsLEDS);
 	  fill_raw_noise8(noiseData, NumOfEarsLEDS, 2, 0, 50, millis()/4);
     for(int x = 0;x<NumOfEarsLEDS;x++) {
       leds[x] = ColorFromPalette(blackWhite, noiseData[x]);
     }
     FastLED.show();
-  } else if (earsNow.prefab == "corner_sabers") {
+  } else if (earsNow.type == "corner_sabers") {
     if(lastFLED+rbSpeed < millis()) {
       lastFLED = millis();
       startIndex++;
@@ -611,7 +586,7 @@ void loop() {
       }
       FastLED.show();
     }
-  } else if (earsNow.prefab == "custom_glow") {
+  } else if (earsNow.type == "custom_glow") {
     fill_rainbow(pixelBuffer, 4, millis()/rbSpeed, 255/rbWidth);
     for(int y = 0; y < NumOfEarsLEDS; y++) {
       if(earsNow.frames[0].leds[y] == "0") {
@@ -626,7 +601,7 @@ void loop() {
   }
 
   //--------------------------------//VISOR+BLUSH Leds render
-  if(visorNow.isCustom) {
+  if(visorNow.type == "custom") {
     if(lastMillsVisor+visorNow.frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow.numOfFrames) {

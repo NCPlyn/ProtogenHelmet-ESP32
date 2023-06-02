@@ -13,7 +13,7 @@
         <option value="rainbow">rainbow</option>
         <option value="white_noise">white_noise</option>
         <option value="corner_sabers">corner_sabers</option>
-		<option value="custom_glow">custom_glow</option>
+        <option value="custom_glow">custom_glow</option>
       </select>
       <label for="typeEars"> Select type of animation for ears</label>
       <div id="earsDiv">
@@ -88,6 +88,7 @@
       <hr>
       <select id="typeVisor">
         <option value="custom">custom</option>
+        <option value="all_rainbow">all_rainbow</option>
       </select>
       <label for="typeVisor"> Select type of animation for visor</label>
       <div id="visorDiv">
@@ -317,13 +318,13 @@
       $("#earsDiv").hide();
     }
   });
-  $("#typeVisor").change(function() {
+  /*$("#typeVisor").change(function() {
     if ($("#typeVisor").val() == "custom") {
       $("#visorDiv").show();
     } else {
       $("#visorDiv").hide();
     }
-  });
+  });*/
 
   function playAnim() {
 
@@ -379,7 +380,7 @@
 
   //get json code for ears and visor, generates final usable code and resets stuff
   function completeGen() {
-    if ((framesVisor.length == 0 && $("#typeVisor").val() == "custom") || (framesEars.length == 0 && $("#typeEars").val() == "custom" )) {
+    if (framesVisor.length == 0 || (framesEars.length == 0 && ( $("#typeEars").val() == "custom"  || $("#typeEars").val() == "custom_glow" ))) {
       alert("No frames in ears or visor!");
     } else {
       var output = "{" + earsGen() + "," + visorGen() + "}";
@@ -410,7 +411,7 @@
       }
       output += "]}"
     } else {
-      output += "\"ears\":{\"type\":\"prefab\",\"prefab\":\"" + $("#typeEars").val() + "\"}";
+      output += "\"ears\":{\"type\":\"" + $("#typeEars").val() + "\"}";
     }
     return output;
   }
@@ -591,18 +592,14 @@
 
   function visorGen() {
     var output = "";
-    if ($("#typeVisor").val() == "custom") {
-      output += "\"visor\":{\"type\":\"custom\",\"frames\":[";
-      for (var x = 0; x < framesVisor.length; x++) {
-        output += framesVisor[x];
-        if (x !== framesVisor.length - 1) {
-          output += ",";
-        }
+    output += "\"visor\":{\"type\":\"" + $("#typeVisor").val() + "\",\"frames\":[";
+    for (var x = 0; x < framesVisor.length; x++) {
+      output += framesVisor[x];
+      if (x !== framesVisor.length - 1) {
+        output += ",";
       }
-      output += "]}"
-    } else {
-      output += "\"ears\":{\"type\":\"prefab\",\"prefab\":\"" + $("#typeVisor").val() + "\"}";
     }
+    output += "]}"
     $('#tempP').text(output);
     return output;
   }
@@ -720,27 +717,22 @@
     if (obj.ears.type == "custom" || obj.ears.type == "custom_glow") {
       framesEars.length = 0;
       $("#visorEarsP").html("");
+      $("#earsDiv").show();
+      $('#typeEars option[value="'+obj.ears.type+'"]').prop('selected', true);
       for (var x = 0; x < obj.ears.frames.length; x++) {
         framesEars.push(JSON.stringify(obj.ears.frames[x]));
         $("#earsFramesP").append("<a id=\"" + (framesEars.length - 1) + "\">" + (framesEars.length - 1) + "</a>");
       }
-	  if (obj.ears.type == "custom") {
-	    $('#typeEars option[value="custom"]').prop('selected', true);
-	  } else if (obj.ears.type == "custom_glow"){
-	    $('#typeEars option[value="custom_glow"]').prop('selected', true);
-	  }
-      $("#earsDiv").show();
     } else {
-      $('#typeEars option[value="'+obj.ears.prefab+'"]').prop('selected', true);
+      $('#typeEars option[value="'+obj.ears.type+'"]').prop('selected', true);
       $("#earsDiv").hide();
     }
-    if (obj.visor.type == "custom") {
-      framesVisor.length = 0;
-      $("#visorFramesP").html("");
-      for (var x = 0; x < obj.visor.frames.length; x++) {
-        framesVisor.push(JSON.stringify(obj.visor.frames[x]));
-        $("#visorFramesP").append("<a id=\"" + (framesVisor.length - 1) + "\">" + (framesVisor.length - 1) + "</a>");
-      }
+    framesVisor.length = 0;
+    $("#visorFramesP").html("");
+    $('#typeVisor option[value="'+obj.visor.type+'"]').prop('selected', true);
+    for (var x = 0; x < obj.visor.frames.length; x++) {
+      framesVisor.push(JSON.stringify(obj.visor.frames[x]));
+      $("#visorFramesP").append("<a id=\"" + (framesVisor.length - 1) + "\">" + (framesVisor.length - 1) + "</a>");
     }
     alert("Loaded animation");
   }
