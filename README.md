@@ -16,4 +16,4 @@
 ![index](indexpreview.png)
 ![animator](animatorpreview.png)
 ![bleremote](bleremote.png)
-![schema](ESP-Proto\schema.jpg)
+![schema](ESP-Proto/schema.jpg)
