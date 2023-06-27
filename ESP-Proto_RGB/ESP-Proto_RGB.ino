@@ -1,10 +1,10 @@
 // WS2812: 5 - Face (right cheek, left segment of eye first), 16 - Ears (from outer to inner, right cheek first), 17 - Blush (from top to bottom, right cheek nearest to ear first) 
 // Microphone: 35
 // Touch sensor: 27
-// Gyro,OLED,DAC: 22 - SCL, 21 - SDA (DAC needs bi-directional level shifter)
+// Gyro,OLED,PowerMonitor: 22 - SCL, 21 - SDA
 
 //ESP32(Vin), all LEDs, DAC and fan is wired with 5V
-//Gyro,OLED,Microphone and touch is wired with 3.3V (gyro and mic needs RC filter)
+//Gyro,OLED,Microphone,PM and touch is wired with 3.3V (gyro and mic needs RC filter)
 
 #include <StreamUtils.h>
 #include <sstream>
@@ -24,8 +24,8 @@ LSM6DS3 myIMU;
 #include <U8g2lib.h>
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0,/* reset=*/ U8X8_PIN_NONE);
 
-#include <Adafruit_ADS1X15.h>
-Adafruit_ADS1115 ads;
+#include <Adafruit_INA219.h> //edited library in this sketch (replace 0.1R with 0.03R resistor on the board)
+Adafruit_INA219 ina219;
 
 bool loadAnim(String anim, String temp);
 
@@ -542,10 +542,12 @@ void setup() {
       u8g2.begin();
       u8g2.setFlipMode(2);
       u8g2.setFont(u8g2_font_t0_22b_tf);
-      if(!ads.begin()) {
-        Serial.println("An Error has occurred while initializing ADS.");
-      }
       u8g2.drawFrame(14, 36, 100, 9);
+      if (!ina219.begin()) {
+        Serial.println("An Error has occurred while finding INA219 chip!");
+      } else {
+        ina219.setCalibration_16V_8A();
+      }
     } else {
       Serial.println("An Error has occurred while initializing SSD1306.");
       oledEna = false;
@@ -845,8 +847,8 @@ void loop() {
 
   //--------------------------------//OLED routine
   if(oledEna && vaStatLast+500<millis()) {
-    float ain0 = ads.computeVolts(ads.readADC_SingleEnded(0));
-    int barStatus = mapfloat(ain0,2.65,4.22,0,100);
+    float BusV = ina219.getBusVoltage_V();
+    int barStatus = mapfloat(BusV,5.5,8.42,0,100);
     if(barStatus > 100) {
       barStatus = 100;
     } else if (barStatus < 0) {
@@ -855,7 +857,7 @@ void loop() {
     u8g2.setDrawColor(0);
     u8g2.drawBox(0, 14, 128, 17);
     u8g2.setDrawColor(1);
-    displayCenter(String(ain0*2)+"V x.xxA",31);
+    displayCenter(String(BusV)+"V "+String(ina219.getCurrent_mA()/1000)+"A",31);
     u8g2.updateDisplayArea(0,2,16,2);
     u8g2.setDrawColor(0);
     u8g2.drawBox(15, 37, 98, 7);
