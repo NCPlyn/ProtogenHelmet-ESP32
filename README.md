@@ -2,7 +2,7 @@
 ### Please read:
 - The code is pretty much **finished**, if you experience any bug or want add/suggest something, create an issue or pull request.
   - 'ESP-Proto' is for **MAX7219** visor displays and might not be up to date with newer features (OLED status display) but should work perfectly.
-  - 'ESP-Proto_RGB' is for **WS2812B** visor displays (there's noone selling 8x8 32x32mm matrixes, but I will provide PCB files in future and sell them).
+  - 'ESP-Proto_RGB' is for **WS2812B** visor displays (there's noone selling 8x8 32x32mm matrixes, BUT you can buy/make them yourself with files in "RGB-Matrix").
 - List of parts used: [Pastebin](https://pastebin.com/7z4fnVfQ)
 - If you are going to use this code for your protogen:
   - I'm not denying you of using my animations, but **try to make your protogen unique** and change them up a little bit in the Animator (either on the ESP32 web or open the html file in "Animator" folder) (Do not exceed the hardcoded amount of 16 frames!)
