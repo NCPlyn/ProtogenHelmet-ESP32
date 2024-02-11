@@ -1,6 +1,6 @@
 # A controller for your protogen!
 - There's planned a big update (custom amount of displays, supported both MAX and WS28xx displays in the same codebase, using PSRAM & more!)... But I'm limited in my free time that I can give here so it will take a while!
-- If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: ![PayPal.me](https://paypal.me/NCPlyn)
+- If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)
 ### Please read:
 - If you experience any bug or want to add/suggest something, create an issue or pull request.
 - There are two versions:
