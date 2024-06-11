@@ -1,0 +1,216 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ProtoESP</title>
+  </head>
+  <body>
+    <main>
+      <div>
+        <h1>ProtoESP</h1>
+        <h4 id="activeAnim">Active anim: </h4>
+        <form action="./change" method="get">
+          <select name="anim" id="avaibleanims"></select>
+          <br><br>
+          <button type="submit">Change animation</button>
+        </form>
+        <button type="button" onclick="deleteFile()" class="small-btn">Delete selected file</button><br><br>
+		<button type="button" onclick="calibrate()" class="small-btn">Calibrate tilt</button><br><br>
+        <a href="/animator.html">Animator</a><br><br>
+      </div>
+      <div class="config">
+        <hr>
+        <h1>Configuration</h1>
+        <hr>
+        <h2>Basic</h2>
+        <form>
+          <label for="boop"> Boop</label>
+          <input type="checkbox" id="boop">
+          <label for="speech"> Speech</label>
+          <input type="checkbox" id="speech">
+          <label for="tilt"> Tilt</label>
+          <input type="checkbox" id="tilt">
+		      <label for="ble"> BLE</label>
+          <input type="checkbox" id="ble">
+          <label for="oled"> OLED</label>
+          <input type="checkbox" id="oled">
+          <br>
+          <button type="button" onclick="saveConfig()">Save config</button>
+        </form>
+        <hr>
+        <h2>Advanced</h2>
+        <form action="./saveconfig" method="get">
+          <i><label for="bEar">Name (limits|default)</label></i>
+          <i><span>value</span></i>
+          <label for="visColor">Visor color</label>
+          <input type="color" name="visColor" value="#ff0000">
+          <label for="bEar">Brightness ears (0-255|64)</label>
+          <input type="number" name="bEar" min="0" max="255" value="64">
+          <label for="bVisor">Brightness visor (0-255|:128)</label>
+          <input type="number" name="bVisor" min="0" max="255" value="128">
+          <label for="rbSpeed">Rainbow prefab speed (1-200ms|15)</label>
+          <input type="number" name="rbSpeed" min="1" max="200" value="15">
+          <label for="rbWidth">Rainbow hue width (1-32|8)</label>
+          <input type="number" name="rbWidth" min="1" max="32" value="8">
+          <label for="spMin">Speak min delay (20-500ms|90)</label>
+          <input type="number" name="spMin" min="20" max="500" value="90">
+          <label for="spMax">Speak max delay (30-600ms|130)</label>
+          <input type="number" name="spMax" min="30" max="600" value="130">
+		      <label for="spTrig">Speak trigger point (500-2500|1800)</label>
+          <input type="number" name="spTrig" min="500" max="2500" value="1800">
+          <label for="aTilt">Animation for tilt (confused.json)</label>
+          <select id="aTilt" name="aTilt"></select>
+          <label for="aUp">Animation for up (upset.json)</label>
+          <select id="aUp" name="aUp"></select><br>
+          <button type="submit">Save config</button>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>
+
+<style>
+  a,a:link,a:visited {
+    color:white;
+  }
+  .config form {
+    display:grid;
+    grid-template-columns: max-content max-content;
+    grid-gap:5px;
+    justify-content: center;
+  }
+  .config form label       { text-align:right; }
+  .config form label:after { content: ":"; }
+  h1,h2 {
+    margin-block-start: 0.4em;
+    margin-block-end: 0.4em;
+  }
+  body {
+    font-family:Verdana;
+    margin:0;
+    background-color:#333743;
+    color:white;
+    text-align:center;
+  }
+  main {
+    width:30em;
+    margin: auto;
+  }
+  input {
+    background-color:#21252B;
+    color:white;
+    border:3px solid #3f444d;
+    border-radius:4px;
+    padding: 5px 8px;
+    margin-top:3px;
+  }
+  label,span {
+    margin-top:7px;
+  }
+  button {
+    background-color:#24282b;
+    border:2px solid #3B4048;
+    border-radius:12px;
+    color:#f5f5f5;
+    line-height: 1.5;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  }
+  button:hover {
+    background-color:#474a4d;
+  }
+  button:active {
+    position:relative;
+    top:1px;
+  }
+  .small-btn {
+    line-height: 1;
+    font-size: 0.7rem;
+  }
+  input[type="color"] {
+    padding: 1px 5px !important;
+    width: auto !important;
+  }
+</style>
+
+<script>
+	function fillSelect(id,val) {
+		var select, option;
+		select = document.getElementById(id);
+		option = document.createElement('option');
+		option.value = option.text = val;
+		select.add(option);
+	}
+
+	function loadFiles() {
+		xmlhttp=new XMLHttpRequest();
+		xmlhttp.onreadystatechange=function()
+		{
+			if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+				var partsArray = xmlhttp.responseText.split(';');
+				partsArray.pop();
+				document.getElementById("activeAnim").innerHTML = "Active anim: "+partsArray[0];
+				var arrayLength = partsArray.length;
+				for (var i = 1; i < arrayLength; i++) {
+					fillSelect("avaibleanims",partsArray[i]);
+					fillSelect("aTilt",partsArray[i]);
+					fillSelect("aUp",partsArray[i]);
+				}
+			}
+		}
+		xmlhttp.open("GET", "/getfiles", false );
+		xmlhttp.send();
+	}
+	loadFiles();
+
+	function loadConfig() {
+		xmlhttp=new XMLHttpRequest();
+		xmlhttp.onreadystatechange=function()
+		{
+			if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+				var obj = JSON.parse(xmlhttp.responseText);
+				document.getElementById("boop").checked = obj.boopEna;
+				document.getElementById("speech").checked = obj.speechEna;
+				document.getElementById("tilt").checked = obj.tiltEna;
+				document.getElementById("ble").checked = obj.bleEna;
+        document.getElementById("oled").checked = obj.oledEna;
+				document.getElementsByName("bEar")[0].value = obj.bEar;
+				document.getElementsByName("bVisor")[0].value = obj.bVisor;
+				document.getElementsByName("rbSpeed")[0].value = obj.rbSpeed;
+				document.getElementsByName("rbWidth")[0].value = obj.rbWidth;
+				document.getElementsByName("spMin")[0].value = obj.spMin;
+				document.getElementsByName("spMax")[0].value = obj.spMax;
+				document.getElementsByName("spTrig")[0].value = obj.spTrig;
+				document.getElementsByName("aTilt")[0].value = obj.aTilt;
+				document.getElementsByName("aUp")[0].value = obj.aUp;
+        document.getElementsByName("visColor")[0].value = obj.visColor;
+			}
+		}
+		xmlhttp.open("GET", "/config.json", false );
+		xmlhttp.send();
+	}
+	loadConfig();
+
+	function saveConfig() {
+		var params = "boopEna="+document.getElementById("boop").checked+"&speechEna="+document.getElementById("speech").checked+"&tiltEna="+document.getElementById("tilt").checked+"&bleEna="+document.getElementById("ble").checked+"&oledEna="+document.getElementById("oled").checked;
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", "/saveconfig?"+params, true);
+		xhr.send(null);
+	}
+
+	function deleteFile() {
+      if(confirm("Delete selected animation?")) {
+        var xhr = new XMLHttpRequest();
+  		xhr.open("GET", "/deletefile?file="+document.getElementById("avaibleanims").value, true);
+  		xhr.send(null);
+	  }
+	}
+	
+	function calibrate() {
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", "/calibrate", true);
+		xhr.send(null);
+	}
+</script>
