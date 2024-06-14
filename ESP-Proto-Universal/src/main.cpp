@@ -1,18 +1,29 @@
-// WS2812: 4 - Face (right cheek, left segment of eye first), 5 - Ears (from outer to inner, right cheek first), 6 - Blush (from top to bottom, right cheek nearest to ear first) 
-// Microphone: 7
-// Touch sensor: 16 - IN, 17 - EN
-// Gyro,OLED,PowerMonitor: 10 - SCL, 11 - SDA
-
 //Pulling pin 13 LOW disables WiFi
 //ESP32(Vin), all LEDs and fan is wired with 5V
 //Gyro,OLED,Microphone,INA219 and touch is wired with 3.3V (gyro and mic needs RC filter)
 
-#define MICpin 7
-#define T_in 16
-#define T_en 17
-#define DATA_PIN_EARS 5
-#define DATA_PIN_BLUSH 6
-#define DATA_PIN_VISOR 4
+#ifdef ESP32S3 //ESP32-S3
+  #define MICpin 7 //Microphone
+  #define T_in 16 //Output from Touch Sensor
+  #define T_en 17 //Enable pin to Touch Sensor
+  #define DATA_PIN_EARS 5  //Ears (from outer to inner, right cheek first)
+  #define DATA_PIN_BLUSH 6 //Blush (from top to bottom, right cheek nearest to ear first) 
+  #define DATA_PIN_VISOR 4 //Face (right cheek, left segment of eye first)
+  #define I2C_SDA 11
+  #define I2C_SCL 10
+#endif
+
+#ifdef ESP32 //Normal ESP32 pins
+  #define MICpin 35 //Microphone
+  #define T_in 27 //Output from Touch Sensor
+  #define T_en 23 //Enable pin to Touch Sensor
+  #define DATA_PIN_EARS 5  //Ears (from outer to inner, right cheek first)
+  #define DATA_PIN_BLUSH 18 //Blush (from top to bottom, right cheek nearest to ear first) 
+  #define DATA_PIN_VISOR 19 //Face (right cheek, left segment of eye first)
+  #define I2C_SDA 21
+  #define I2C_SCL 22
+#endif
+
 
 #include <StreamUtils.h>
 #include <sstream>
@@ -52,6 +63,7 @@ const char* password = "Proto123";
 #include "NimBLEDevice.h"
 
 //add to config
+String animToLoad = "";
 String BLEfiles[20];
 uint8_t BLEnum;
 
@@ -65,7 +77,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         pCharacteristic->setValue("i"+String(BLEnum));
         pCharacteristic->notify(true);
       } else if (temp.toInt() > 0 && temp.toInt() <= BLEnum){
-        loadAnim(BLEfiles[temp.toInt()-1],"");
+        animToLoad = BLEfiles[temp.toInt()-1];
       }
       Serial.println(temp);
     };
@@ -218,9 +230,11 @@ bool loadAnim(String anim, String temp) {
     Serial.println("Animation file opened!");
 
     ReadBufferingStream bufferedFile{file, 64};
+    DeserializationError error = deserializeJson(doc, bufferedFile);
 
-    if(deserializeJson(doc, bufferedFile)){
+    if(error){
       Serial.println("Failed to deserialize animation file!");
+      Serial.println(error.c_str());
       return false;
     }
 
@@ -533,8 +547,10 @@ void startWiFiWeb() {
 
 //--------------------------------//OLED Init
 void initOled() {
-  Wire.beginTransmission(0x3c); //check for oled on address 0x3c
-  if (Wire.endTransmission() == 0){
+  Wire.begin();
+  Wire.beginTransmission(60); //check for oled on address 0x3c
+  byte error = Wire.endTransmission();
+  if(error == 0) {
     u8g2.setBusClock(1500000);
     u8g2.begin();
     u8g2.setFlipMode(2);
@@ -562,7 +578,8 @@ void setup() {
   pinMode(13, INPUT_PULLUP);
 
   if(!LittleFS.begin(true)) {
-    Serial.println("An Error has occurred while mounting SPIFFS!");
+    Serial.println("An Error has occurred while mounting LittleFS! Halting");
+    while(1){};
   }
 
   if(psramInit() && ESP.getFreePsram() != 0) {
@@ -570,14 +587,14 @@ void setup() {
     visorNow = (AnimNowVisor *)ps_malloc(sizeof(AnimNowVisor));
   } else {
     Serial.println("Could not init PSRAM, either this ESP doesn't have one or is malfunctioning, halting...");
-    while(true){};
+    while(1){};
   }
 
   if(!loadConfig()) {
     Serial.println("An Error has occurred while loading config file!");
   }
 
-  Wire.setPins(11, 10);
+  Wire.setPins(I2C_SDA, I2C_SCL);
 
   if(tiltEna) {
     if(myIMU.begin()) {
@@ -902,5 +919,10 @@ void loop() {
   if(displayLeds) {
     displayLeds = false;
     FastLED.show();
+  }
+
+  if(animToLoad != "") {
+    loadAnim(animToLoad,"");
+    animToLoad = "";
   }
 }

@@ -2,20 +2,20 @@
   <head>
     <meta charset="utf-8">
     <title>ProtoESP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=0.95" />
   </head>
   <body>
     <main>
       <div>
         <h1>ProtoESP</h1>
-        <h4 id="activeAnim">Active anim: </h4>
-        <form action="./change" method="get">
-          <select name="anim" id="avaibleanims"></select>
-          <br><br>
-          <button type="submit">Change animation</button>
-        </form>
-        <button type="button" onclick="deleteFile()" class="small-btn">Delete selected file</button><br><br>
-		<button type="button" onclick="calibrate()" class="small-btn">Calibrate tilt</button><br><br>
-        <a href="/animator.html">Animator</a><br><br>
+        <p>Active anim:</p>
+        <h4 id="activeAnim"></h4>
+        <br><hr>
+        <div class="anim_buttons1"></div>
+        <div class="anim_buttons2"></div>
+        <hr><br>
+		    <button type="button" onclick="calibrate()" class="small-btn">Calibrate tilt</button>
+        <a href="/animator.html" class="small-btn">Animator</a><br><br>
       </div>
       <div class="config">
         <hr>
@@ -69,8 +69,15 @@
 </html>
 
 <style>
-  a,a:link,a:visited {
-    color:white;
+  p,h4 {
+    margin:0.3em;
+  }
+  .anim_buttons1 {
+    display: inline-block;
+  }
+  .anim_buttons2 {
+    display: inline-block;
+    vertical-align:top;
   }
   .config form {
     display:grid;
@@ -92,7 +99,7 @@
     text-align:center;
   }
   main {
-    width:30em;
+    width: fit-content;
     margin: auto;
   }
   input {
@@ -106,20 +113,21 @@
   label,span {
     margin-top:7px;
   }
-  button {
+  button, a {
+    text-decoration: none;
     background-color:#24282b;
     border:2px solid #3B4048;
     border-radius:12px;
     color:#f5f5f5;
-    line-height: 1.5;
-    padding: 0.375rem 0.75rem;
+    line-height: 2.5;
+    padding: 0.45rem 0.75rem;
     font-size: 1rem;
     transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
   }
-  button:hover {
+  button:hover, a:hover {
     background-color:#474a4d;
   }
-  button:active {
+  button:active, a:active {
     position:relative;
     top:1px;
   }
@@ -133,6 +141,7 @@
   }
 </style>
 
+<script src="jquerymin.js"></script>
 <script>
 	function fillSelect(id,val) {
 		var select, option;
@@ -150,10 +159,14 @@
 			{
 				var partsArray = xmlhttp.responseText.split(';');
 				partsArray.pop();
-				document.getElementById("activeAnim").innerHTML = "Active anim: "+partsArray[0];
+				document.getElementById("activeAnim").innerHTML = partsArray[0];
 				var arrayLength = partsArray.length;
 				for (var i = 1; i < arrayLength; i++) {
-					fillSelect("avaibleanims",partsArray[i]);
+          if(i % 2 === 0) {
+            $('.anim_buttons1').append('<a href="/change?anim=' + partsArray[i] + '"">' + partsArray[i].replace('.json','') + '</a><br>');
+          } else {
+            $('.anim_buttons2').append('<a href="/change?anim=' + partsArray[i] + '"">' + partsArray[i].replace('.json','') + '</a><br>');
+          }
 					fillSelect("aTilt",partsArray[i]);
 					fillSelect("aUp",partsArray[i]);
 				}
@@ -198,14 +211,6 @@
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", "/saveconfig?"+params, true);
 		xhr.send(null);
-	}
-
-	function deleteFile() {
-      if(confirm("Delete selected animation?")) {
-        var xhr = new XMLHttpRequest();
-  		xhr.open("GET", "/deletefile?file="+document.getElementById("avaibleanims").value, true);
-  		xhr.send(null);
-	  }
 	}
 	
 	function calibrate() {

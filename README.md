@@ -2,11 +2,12 @@
 - Beta version
 - [x] PlatformIO based for ease of use (no longer Arduino IDE)
 - [x] Use of ESP32-S3 with PSRAM
-- [ ] Using PSRAM (**needs testing**)
-- [ ] OLED init bug fix (**needs testing**)
+- [x] Dynamic anim selector instead of dropdown
+- [x] Using PSRAM (so far only current anim)
+- [x] OLED init bug fix (**needs testing**)
+- [ ] Support for ESP32 with PSRAM soldered on / without (**priority**)
 - [ ] Better custom WS28xx display (**designed but not manufactured yet**)
-- [ ] Fix and make how to proper boop sensor (**priority**)
-- [ ] Dynamic anim selector instead of dropdown (**priority**)
+- [ ] Make how to proper boop sensor
 - [ ] Custom amount of displays and their placement
 - [ ] Supported both MAX and WS28xx displays in the same codebase
 - [ ] Support different sized OLED
@@ -16,7 +17,6 @@
 - [ ] More anims (Rainbow from boop,...)
 - [ ] Proper wiring and flashing tutorial
 - [ ] More user-friendly UI on mobile for controls
-- [ ] Support for ESP32 with PSRAM soldered on / without
 - [ ] Redo tilt calibration code (more universial on mounting/not so sensitive)
   
 - But I'm limited in my free time that I can give here so it will take a while!
