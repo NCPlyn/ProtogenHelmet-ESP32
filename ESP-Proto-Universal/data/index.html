@@ -14,55 +14,93 @@
         <div class="anim_buttons1"></div>
         <div class="anim_buttons2"></div>
         <hr><br>
-		    <button type="button" onclick="calibrate()" class="small-btn">Calibrate tilt</button>
         <a href="/animator.html" class="small-btn">Animator</a><br><br>
       </div>
-      <div class="config">
+      <div>
         <hr>
         <h1>Configuration</h1>
         <hr>
-        <h2>Basic</h2>
-        <form>
-          <label for="boop"> Boop</label>
-          <input type="checkbox" id="boop">
-          <label for="speech"> Speech</label>
-          <input type="checkbox" id="speech">
-          <label for="tilt"> Tilt</label>
-          <input type="checkbox" id="tilt">
-		      <label for="ble"> BLE</label>
-          <input type="checkbox" id="ble">
-          <label for="oled"> OLED</label>
-          <input type="checkbox" id="oled">
-          <br>
-          <button type="button" onclick="saveConfig()">Save config</button>
-        </form>
+        <div class="config">
+          <h2>Basic</h2>
+          <form>
+            <label for="boop"> Boop</label>
+            <input type="checkbox" id="boop">
+            <label for="speech"> Speech</label>
+            <input type="checkbox" id="speech">
+            <label for="tilt"> Tilt</label>
+            <input type="checkbox" id="tilt">
+            <label for="ble"> BLE</label>
+            <input type="checkbox" id="ble">
+            <label for="oled"> OLED</label>
+            <input type="checkbox" id="oled">
+            <br>
+            <button type="button" onclick="saveConfig()">Save config</button>
+          </form>
+        </div>
         <hr>
-        <h2>Advanced</h2>
-        <form action="./saveconfig" method="get">
-          <i><label for="bEar">Name (limits|default)</label></i>
-          <i><span>value</span></i>
-          <label for="visColor">Visor color</label>
-          <input type="color" name="visColor" value="#ff0000">
-          <label for="bEar">Brightness ears (0-255|64)</label>
-          <input type="number" name="bEar" min="0" max="255" value="64">
-          <label for="bVisor">Brightness visor (0-255|:128)</label>
-          <input type="number" name="bVisor" min="0" max="255" value="128">
-          <label for="rbSpeed">Rainbow prefab speed (1-200ms|15)</label>
-          <input type="number" name="rbSpeed" min="1" max="200" value="15">
-          <label for="rbWidth">Rainbow hue width (1-32|8)</label>
-          <input type="number" name="rbWidth" min="1" max="32" value="8">
-          <label for="spMin">Speak min delay (20-500ms|90)</label>
-          <input type="number" name="spMin" min="20" max="500" value="90">
-          <label for="spMax">Speak max delay (30-600ms|130)</label>
-          <input type="number" name="spMax" min="30" max="600" value="130">
-		      <label for="spTrig">Speak trigger point (500-2500|1800)</label>
-          <input type="number" name="spTrig" min="500" max="2500" value="1800">
-          <label for="aTilt">Animation for tilt (confused.json)</label>
-          <select id="aTilt" name="aTilt"></select>
-          <label for="aUp">Animation for up (upset.json)</label>
-          <select id="aUp" name="aUp"></select><br>
-          <button type="submit">Save config</button>
-        </form>
+        <div class="config">
+          <h2>Advanced</h2>
+          <form action="./saveconfig" method="get">
+            <i><label for="bEar">Name (limits|default)</label></i>
+            <i><span>value</span></i>
+            <label for="visColor">Visor color</label>
+            <input type="color" name="visColor" value="#ff0000">
+            <label for="bEar">Brightness ears (0-255|64)</label>
+            <input type="number" name="bEar" min="0" max="255" value="64">
+            <label for="bVisor">Brightness visor (0-255|:128)</label>
+            <input type="number" name="bVisor" min="0" max="255" value="128">
+            <label for="rbSpeed">Rainbow prefab speed (1-200ms|15)</label>
+            <input type="number" name="rbSpeed" min="1" max="200" value="15">
+            <label for="rbWidth">Rainbow hue width (1-32|8)</label>
+            <input type="number" name="rbWidth" min="1" max="32" value="8">
+            <label for="spMin">Speak min delay (20-500ms|90)</label>
+            <input type="number" name="spMin" min="20" max="500" value="90">
+            <label for="spMax">Speak max delay (30-600ms|130)</label>
+            <input type="number" name="spMax" min="30" max="600" value="130">
+            <label for="spTrig">Speak trigger point (500-2500|1800)</label>
+            <input type="number" name="spTrig" min="500" max="2500" value="1800">
+            <label for="aTilt">Animation for tilt (confused.json)</label>
+            <select id="aTilt" name="aTilt"></select>
+            <label for="aUp">Animation for up (upset.json)</label>
+            <select id="aUp" name="aUp"></select>
+            <label for="wifiName">WiFi AP SSID (Proto)</label>
+            <input type="text" name="wifiName">
+            <label for="wifiPass">WiFi Password (Proto123)</label>
+            <input type="text" name="wifiPass">
+            <label for="ledType">Type of visor LEDs</label>
+            <select id="ledType" name="ledType">
+              <option value="WS2812">WS2812</option>
+              <option value="MAX72XX">MAX72XX</option>
+            </select><br>
+            <button type="submit">Save config</button>
+          </form>
+        </div>
+        <hr>
+        <div>
+          <h2>Tilt Calibration</h2>
+          <form action="./saveconfig" method="get">
+            <i><p>X Y Z</p></i>
+            Idle: 
+            <input type="number" name="neutralX" min="0" max="255" value="64">
+            <input type="number" name="neutralY" min="0" max="255" value="64">
+            <input type="number" name="neutralZ" min="0" max="255" value="64">
+            <button onclick="pullFor('Neutral')">Pull data</button>
+            <br>
+            Tilt: 
+            <input type="number" name="tiltX" min="0" max="255" value="64">
+            <input type="number" name="tiltY" min="0" max="255" value="64">
+            <input type="number" name="tiltZ" min="0" max="255" value="64">
+            <button onclick="pullFor('Tilt')">Pull data</button>
+            <br>
+            Up: 
+            <input type="number" name="upX" min="0" max="255" value="64">
+            <input type="number" name="upY" min="0" max="255" value="64">
+            <input type="number" name="upZ" min="0" max="255" value="64">
+            <button onclick="pullFor('Up')">Pull data</button>
+            <br>
+            <button type="submit">Save tilt</button>
+          </form>
+        </div>
       </div>
     </main>
   </body>
@@ -102,7 +140,7 @@
     width: fit-content;
     margin: auto;
   }
-  input {
+  input, select {
     background-color:#21252B;
     color:white;
     border:3px solid #3f444d;
@@ -119,7 +157,6 @@
     border:2px solid #3B4048;
     border-radius:12px;
     color:#f5f5f5;
-    line-height: 2.5;
     padding: 0.45rem 0.75rem;
     font-size: 1rem;
     transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
@@ -138,6 +175,9 @@
   input[type="color"] {
     padding: 1px 5px !important;
     width: auto !important;
+  }
+  .animbtn {
+    line-height: 2.5;
   }
 </style>
 
@@ -163,16 +203,44 @@
 				var arrayLength = partsArray.length;
 				for (var i = 1; i < arrayLength; i++) {
           if(i % 2 === 0) {
-            $('.anim_buttons1').append('<a href="/change?anim=' + partsArray[i] + '"">' + partsArray[i].replace('.json','') + '</a><br>');
+            $('.anim_buttons1').append('<a class="animbtn" href="/change?anim=' + partsArray[i] + '">' + partsArray[i].replace('.json','') + '</a><br>');
           } else {
-            $('.anim_buttons2').append('<a href="/change?anim=' + partsArray[i] + '"">' + partsArray[i].replace('.json','') + '</a><br>');
+            $('.anim_buttons2').append('<a class="animbtn" href="/change?anim=' + partsArray[i] + '">' + partsArray[i].replace('.json','') + '</a><br>');
           }
 					fillSelect("aTilt",partsArray[i]);
 					fillSelect("aUp",partsArray[i]);
 				}
 			}
 		}
-		xmlhttp.open("GET", "/getfiles", false );
+		xmlhttp.open("GET", "/getfiles", false);
+		xmlhttp.send();
+	}
+	loadFiles();
+  
+  function pullFor(what) {
+		xmlhttp=new XMLHttpRequest();
+		xmlhttp.onreadystatechange=function()
+		{
+			if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+				var partsArray = xmlhttp.responseText.split(';');
+				partsArray.pop();
+        if (what == "Neutral") {
+          document.getElementsByName("neutralX")[0].value = partsArray[0];
+          document.getElementsByName("neutralY")[0].value = partsArray[1];
+          document.getElementsByName("neutralZ")[0].value = partsArray[2];
+        } else if (what == "Tilt") {
+          document.getElementsByName("tiltX")[0].value = partsArray[0];
+          document.getElementsByName("tiltY")[0].value = partsArray[1];
+          document.getElementsByName("tiltZ")[0].value = partsArray[2];
+        } else if (what == "Up") {
+          document.getElementsByName("upX")[0].value = partsArray[0];
+          document.getElementsByName("upY")[0].value = partsArray[1];
+          document.getElementsByName("upZ")[0].value = partsArray[2];
+        } 
+			}
+		}
+		xmlhttp.open("GET", "/gyro", false);
 		xmlhttp.send();
 	}
 	loadFiles();
@@ -199,6 +267,18 @@
 				document.getElementsByName("aTilt")[0].value = obj.aTilt;
 				document.getElementsByName("aUp")[0].value = obj.aUp;
         document.getElementsByName("visColor")[0].value = obj.visColor;
+        document.getElementsByName("neutralX")[0].value = obj.neutralX;
+        document.getElementsByName("neutralY")[0].value = obj.neutralY;
+        document.getElementsByName("neutralZ")[0].value = obj.neutralZ;
+        document.getElementsByName("tiltX")[0].value = obj.tiltX;
+        document.getElementsByName("tiltY")[0].value = obj.tiltY;
+        document.getElementsByName("tiltZ")[0].value = obj.tiltZ;
+        document.getElementsByName("upX")[0].value = obj.upX;
+        document.getElementsByName("upY")[0].value = obj.upY;
+        document.getElementsByName("upZ")[0].value = obj.upZ;
+        document.getElementsByName("wifiName")[0].value = obj.wifiName;
+        document.getElementsByName("wifiPass")[0].value = obj.wifiPass;
+        document.getElementsByName("ledType")[0].value = obj.ledType;
 			}
 		}
 		xmlhttp.open("GET", "/config.json", false );
@@ -210,12 +290,6 @@
 		var params = "boopEna="+document.getElementById("boop").checked+"&speechEna="+document.getElementById("speech").checked+"&tiltEna="+document.getElementById("tilt").checked+"&bleEna="+document.getElementById("ble").checked+"&oledEna="+document.getElementById("oled").checked;
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", "/saveconfig?"+params, true);
-		xhr.send(null);
-	}
-	
-	function calibrate() {
-		var xhr = new XMLHttpRequest();
-		xhr.open("GET", "/calibrate", true);
 		xhr.send(null);
 	}
 </script>
