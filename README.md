@@ -1,28 +1,30 @@
 # An *universal* controller for your protogen!
-- Beta version (doesn't work atm)
+- Beta version (no idea if it works now)
 - [x] PlatformIO based for ease of use (no longer Arduino IDE)
 - [x] Use of ESP32-S3 with PSRAM
 - [x] Dynamic anim selector instead of dropdown
 - [x] Using PSRAM (so far only current anim)
 - [x] More user-friendly UI on mobile for controls (could be better, but will do)
 - [x] Factory settings when error read and CRC checking
+- [x] Online web version of animator ([HERE](https://foxxo.cz/proto/animator.html))
+- [ ] Support different sized OLED (**priority**)
+- [ ] Add option to change anims with button (**needs testing**)
 - [ ] OLED init bug fix (**needs testing**)
-- [ ] Redo tilt calibration code (**needs testing or fixing**)
-- [ ] Supported both MAX and WS28xx displays in the same codebase (**needs testing or fixing**)
-- [ ] Custom amount of displays and their placement (**animator needs update for loading config files**)
+- [ ] Redo tilt calibration code (**needs testing**)
+- [ ] Supported both MAX and WS28xx displays in the same codebase (**needs testing**)
+- [ ] Custom amount of displays and their placement (**needs testing**)
 - [ ] Support for ESP32 with PSRAM soldered on / without (**soldered on should work, without not done yet**)
 - [ ] Better custom WS28xx display (**designed but not manufactured yet**)
-- [ ] Auto gen CRC before filesystem upload (platformio sucks at running scripts at events)
+- [ ] Auto gen CRC before filesystem upload (platformio sucks at running scripts at events, manual for now)
 - [ ] Proper enable/disable of features (code wise or reset)
-- [ ] Online web version of animator
-- [ ] Support different sized OLED
 - [ ] Replace the HM10 in the remote with something else to make it fail less (ESP??)
 - [ ] Custom PCB remote
 - [ ] More anims (Rainbow from boop,...)
 - [ ] Proper wiring and flashing tutorial
 - [ ] Make how to proper boop sensor
-- [ ] Make sure ifdef for definitons work, add definition for pin 13 (wifi ena)
-- [ ] Add option to change anims with button
+- [ ] Make sure ifdef for definitons work, add definition for wifiena etc
+- [ ] Proper partition tables for microcontrollers
+- [ ] Fix current animations
   
 - But I'm limited in my free time that I can give here so it will take a while!
 - If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)

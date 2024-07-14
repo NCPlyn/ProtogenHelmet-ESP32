@@ -1,4 +1,3 @@
-//Pulling pin 13 LOW disables WiFi
 //ESP32(Vin), all LEDs and fan is wired with 5V
 //Gyro,OLED,Microphone,INA219 and touch is wired with 3.3V (gyro and mic needs RC filter)
 
@@ -9,20 +8,40 @@
   #define DATA_PIN_EARS 5  //Ears (from outer to inner, right cheek first)
   #define DATA_PIN_BLUSH 6 //Blush (from top to bottom, right cheek nearest to ear first) 
   #define DATA_PIN_VISOR 7 //Face (right cheek, left segment of eye first)
-  #define I2C_SDA 8
-  #define I2C_SCL 9
+  #define I2C_SDA 8 //SDA for Gyro, OLED, INA219
+  #define I2C_SCL 9 //SCL for Gyro, OLED, INA219
+  #define MAX_CLK 12 //Clock for MAX72xx matrixes if used
+  #define MAX_MOSI 11 //Data for MAX72xx matrixes if used
+  #define MAX_CS 10 //ChipSelect for MAX72xx matrixes if used
 #endif
 
-/*#ifdef ESP32 //Normal ESP32 pins
+#ifdef ESP32 //Normal ESP32 pins
   #define MICpin 35 //Microphone
   #define T_in 27 //Output from Touch Sensor
   #define T_en 23 //Enable pin to Touch Sensor
-  #define DATA_PIN_EARS 16  //Ears (from outer to inner, right cheek first)
-  #define DATA_PIN_BLUSH 17 //Blush (from top to bottom, right cheek nearest to ear first) 
-  #define DATA_PIN_VISOR 5 //Face (right cheek, left segment of eye first)
-  #define I2C_SDA 21
-  #define I2C_SCL 22
-#endif*/
+  #define DATA_PIN_EARS 5  //Ears (from outer to inner, right cheek first)
+  #define DATA_PIN_BLUSH 18 //Blush (from top to bottom, right cheek nearest to ear first) 
+  #define DATA_PIN_VISOR 19 //Face (right cheek, left segment of eye first)
+  #define I2C_SDA 21 //SDA for Gyro, OLED, INA219
+  #define I2C_SCL 22 //SCL for Gyro, OLED, INA219
+  #define MAX_CLK 18 //Clock for MAX72xx matrixes if used
+  #define MAX_MOSI 23 //Data for MAX72xx matrixes if used
+  #define MAX_CS 5 //ChipSelect for MAX72xx matrixes if used
+#endif
+
+#define wifi_en 13 //Pulling this pin LOW disables WiFi
+#define animBtn 4 //Pulling this pin LOW cycles trough animations
+
+//LEDs amount
+#define MAX72xx_DEVICES 11
+#define EarLedsNum 74
+#define VisorLedsNum 704
+#define BlushLedsNum 8
+
+//--------------------------------//No touching after this
+
+#include <ezButton.h>
+ezButton hwBtn(animBtn);
 
 #include <StreamUtils.h>
 #include <sstream>
@@ -154,16 +173,10 @@ bool startBLE() {
 #include <SPI.h>
 
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
-#define MAX_DEVICES 11 //TBD
-#define CLK_PIN 12
-#define DATA_PIN 11 //MOSI
-#define CS_PIN 10
 
-MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
+MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, MAX_MOSI, MAX_CLK, MAX_CS, MAX72xx_DEVICES);
 
 //--------------------------------//WS2812 LEDs
-#define EarLedsNum 74
-#define VisorLedsNum 704
 CRGB earLeds[EarLedsNum];
 CRGB blushLeds[8];
 CRGB visorLeds[VisorLedsNum];
@@ -239,7 +252,7 @@ void displayCenter(String text, uint16_t h) {
 
 //--------------------------------//Config vars
 bool speechEna = false, boopEna = false, tiltEna = false, bleEna = false, oledEna = false, instantReload = false, oledInitDone = false;
-int rbSpeed, rbWidth, spMin, spMax, spTrig, currentEarsFrame = 0, currentVisorFrame = 0, bEar, bVisor, numOfSegm;
+int rbSpeed, rbWidth, spMin, spMax, spTrig, currentEarsFrame = 0, currentVisorFrame = 0, bEar, bVisor, numOfSegm, numAnimBlush;
 String aTilt = "confused.json", aUp = "upset.json", currentAnim = "", visColorStr = "", ledType = "";
 float neutralX, neutralY, neutralZ, tiltX, tiltY, tiltZ, upX, upY, upZ;
 unsigned long visColor = 0xFF0000;
@@ -314,6 +327,7 @@ bool loadAnim(String anim, String temp) {
       for(int y = 0; y < doc["visor"]["frames"][x]["leds"].size(); y++) {
         visorNow->frames[x].leds[y] = strtoull(String(doc["visor"]["frames"][x]["leds"][y].as<String>()).c_str(), NULL, 16); //string to uint64
       }
+      numAnimBlush = doc["visor"]["frames"][x]["ledsBlush"].size();
       for(int y = 0; y < doc["visor"]["frames"][x]["ledsBlush"].size(); y++) {
         visorNow->frames[x].ledsBlush[y] = strtol(doc["visor"]["frames"][x]["ledsBlush"][y].as<String>().c_str(), NULL, 16);
       }
@@ -735,7 +749,10 @@ void setup() {
   pinMode(MICpin, INPUT);
   pinMode(T_in, INPUT);
   pinMode(T_en, OUTPUT);
-  pinMode(13, INPUT_PULLUP);
+  pinMode(wifi_en, INPUT_PULLUP);
+  pinMode(animBtn, INPUT_PULLUP);
+
+  hwBtn.setDebounceTime(50);
 
   if(!LittleFS.begin(true)) {
     Serial.println("[E] An Error has occurred while mounting LittleFS! Halting");
@@ -750,19 +767,19 @@ void setup() {
     while(1){};
   }
 
-  if(ledType == "WS2812") {
-    ledController[0] = &FastLED.addLeds<WS2812B, DATA_PIN_EARS, GRB>(earLeds, EarLedsNum);
-    ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, 8);
+  if(!loadConfig()) {
+    Serial.println("[E] An Error has occurred while loading config file! Loading defaults");
+    setDefault();
+  }
+
+  ledController[0] = &FastLED.addLeds<WS2812B, DATA_PIN_EARS, GRB>(earLeds, EarLedsNum);
+  ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, BlushLedsNum);
+  if(ledType == "WS2812") { //atm doing only visor, blush & ears stays on
     ledController[2] = &FastLED.addLeds<WS2812B, DATA_PIN_VISOR, GRB>(visorLeds, VisorLedsNum);
     FastLED.setCorrection(TypicalPixelString);
     FastLED.setDither(0);
   } else if (ledType == "MAX72XX") {
     mx.begin();
-  }
-
-  if(!loadConfig()) {
-    Serial.println("[E] An Error has occurred while loading config file! Loading defaults");
-    setDefault();
   }
 
   Wire.setPins(I2C_SDA, I2C_SCL);
@@ -774,7 +791,7 @@ void setup() {
     }
   }
 
-  if(digitalRead(13) == HIGH) { //Pulling pin 13 LOW disables WiFi  wbu s3?
+  if(digitalRead(wifi_en) == HIGH) { //Pulling pin 13 LOW disables WiFi
     startWiFiWeb();
   }
 
@@ -798,8 +815,8 @@ void setup() {
 String oldanim, boopoldanim;
 bool booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false, displayLeds = false;
 float zAx,yAx,finalMicAvg,nvol,micline,avgMicArr[10];
-int randomNum, boopRead, randomTimespan = 0, startIndex = 1, speaking = 0, currentMicAvg = 0;
-unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0;
+int randomNum, boopRead, randomTimespan = 0, startIndex = 1, speaking = 0, currentMicAvg = 0, btnNum = 0;
+unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime =0;
 byte row = 0;
 
 //--------------------------------//Visor bufferer
@@ -812,12 +829,9 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
     }
     for (int i = 0; i < 8; i++) {
       row = (tempSegment >> i * 8) & 0xFF;
-      //int matrixFix = 7;
       for (int j = 0; j < 8; j++) {
         if(ledType == "WS2812") {
-          ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?ledColor:CRGB::Black;
-          //ledArray[(y*64)+(i*8)+((i%2!=0)?j:matrixFix)] = (bitRead(row,j))?ledColor:CRGB::Black;
-          //matrixFix--;
+          ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?ledColor:CRGB::Black; //includes fix for bad rgbmatrix, to be fixed with new matrixes
         } else if (ledType == "MAX72XX") {
           mx.setPoint(i, j+(y*8), bitRead(row, j)); //MAXstuff
         }
@@ -922,7 +936,7 @@ void loop() {
     }
     fill_rainbow(visorPixelBuffer, 1, millis()/rbSpeed, 128/rbWidth);
     setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame);
-    for(int x = 0; x<8; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
+    for(int x = 0; x<numAnimBlush; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
       fadeToBlackBy(blushLeds, 8, 128-bVisor);
       if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
         currentVisorFrame++;
@@ -1026,20 +1040,38 @@ void loop() {
     speechResetDone = true;
   }
 
-  //--------------------------------//BOOP Detection
-  if(millis() > 2000 && boopEna) {
+  //--------------------------------//Single button anim change
+  hwBtn.loop();
+  if(hwBtn.isPressed()) { //detect press
+    btnPressTime = millis();
+  }
+  if(hwBtn.isReleased()) {
+    if(millis()-btnPressTime < 1500) { //short press
+      btnNum++;
+      if(btnNum >= BLEnum) {
+        btnNum = 0;
+      } else {
+        animToLoad = BLEfiles[btnNum];
+      }
+      Serial.println("Changing to "+BLEfiles[btnNum]+", amount of anims: "+String(BLEnum));
+    }
+  }
+
+  //--------------------------------//BOOP Detection, avg then check
+  if(millis() > 200 && boopEna) {
     digitalWrite(T_en, HIGH);
     delayMicroseconds(210);
+    Serial.println(analogRead(T_in));
     if(booping == false && !digitalRead(T_in)) {
       delayMicroseconds(395);
       if(!digitalRead(T_in)) {
         Serial.println("BOOP");
-        digitalWrite(T_en, LOW);
         booping = true;
         boopoldanim = currentAnim;
         loadAnim("boop.json","");
         lastMillsBoop = millis();
       }
+      digitalWrite(T_en, LOW);
     } else if(booping == true && lastMillsBoop+1000<millis() && digitalRead(T_in)) {
       digitalWrite(T_en, LOW);
       Serial.println("unBOOP");
@@ -1050,7 +1082,7 @@ void loop() {
     }
   }
 
-  //--------------------------------//OLED routine
+  //--------------------------------//OLED routine, make for multiple sizes
   if(oledEna && vaStatLast+500<millis() && oledInitDone) {
     float BusV = ina219.getBusVoltage_V();
     int barStatus = mapfloat(BusV,5.5,8.42,0,100);
@@ -1076,8 +1108,9 @@ void loop() {
 
   if(displayLeds) {
     displayLeds = false;
+    FastLED.show();
     if(ledType == "WS2812") {
-      FastLED.show();
+      //FastLED.show(); //doing it before because ears and blush
     } else if (ledType == "MAX72XX") {
       mx.control(MD_MAX72XX::INTENSITY, bVisor);
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);

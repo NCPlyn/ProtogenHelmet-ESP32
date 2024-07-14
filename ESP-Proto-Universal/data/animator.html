@@ -5,9 +5,11 @@
 </head>
 <body>
   <main>
+    <h1>ProtoESP - Animator</h1>
     <div> <!-- START OF EARS PART -->
-      <h1>Ears</h1>
+      <h2>Ears</h2>
       <hr>
+      <label for="typeEars">Animation: </label> <sup onclick="alert('Select custom or prefab ears animation')">&#9432;</sup>
       <select id="typeEars">
         <option value="custom">custom</option>
         <option value="rainbow">rainbow</option>
@@ -15,10 +17,10 @@
         <option value="corner_sabers">corner_sabers</option>
         <option value="custom_glow">custom_glow</option>
       </select>
-      <label for="typeEars"> Select type of animation for ears</label>
       <div id="earsDiv">
         <div id="divForSvg">
-          <svg id="svg1" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg"><g fill="black">
+          <svg id="svg1" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg">
+            <g fill="black">
               <path id="37" d="m350 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="36" d="m286.36 256.36a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="35" d="m260 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
@@ -56,7 +58,8 @@
               <path id="3" d="m540.92 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="2" d="m455.5 71.464a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="1" d="m350 50a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-            </g></svg>
+            </g>
+          </svg>
         </div>
         <br>
         <button onclick="fillBlack()">Fill black</button>
@@ -86,18 +89,37 @@
     </div>
     <hr><hr>
     <div> <!-- START OF VISOR PART -->
-      <h1>Visor</h1>
+      <h2>Visor</h2>
       <hr>
+      <label for="visorConfig">Config: </label> <sup onclick="alert('Select config/wiring of your visor')">&#9432;</sup>
+      <select id="visorConfig">
+        <option value="none">None</option>
+        <option value="M16mk2">M16 mk2</option>
+        <option value="BFoxCZ">BFoxCZ</option>
+        <option value="custom">custom</option>
+      </select> | 
+      <label for="typeVisor">Animation: </label> <sup onclick="alert('Select custom or modifier for visor animation')">&#9432;</sup>
       <select id="typeVisor">
         <option value="custom">custom</option>
         <option value="all_rainbow">all_rainbow</option>
-      </select>
-      <label for="typeVisor"> Select type of animation for visor</label>
+      </select><br>
+      <div id="customConfig" style="display: none;">
+        <label for="visorCfg">Visor cfg: </label>
+        <sup onclick="alert('\'t0\'.. means first matrix etc with numbering\n\'b0\'.. means first blush segment etc with numbering\n\'-\' means nothing in place\n\'_\' means new line\nExample:\nt0;t1;-;-;-;-;t12;t13;_;-;-;-;t6;t7;-;-;-;_;t2;t3;t4;t5;t8;t9;t10;t11')">&#9432;</sup>
+        <input type="text" name="visorCfg" id="visorCfg" size=100><br>
+        <label for="mouthCfg">Mouth cfg: </label>
+        <sup onclick="alert('Array of bools telling if the segment in order is mouth or not\n(For dynamic speaking effect)\nExample:\n[false,false,true,true,true,true,false,false,true,true,true,true,false,false]')">&#9432;</sup>
+        <input type="text" name="mouthCfg" id="mouthCfg" size=100><br>
+        <button type="button" onclick="loadCustom();">Load config</button>
+      </div>
+      <br>
       <div id="visorDiv">
         <div id="matrixes"></div>
         <br><br>
+        <p>Matrix control:</p>
+        <button type="button" onclick='setAction("copy");'>Copy</button> <button type="button" onclick='setAction("paste");'>Paste</button> <sup onclick="alert('Click on Copy or Paste and then click on matrix which you want to affect')">&#9432;</sup><br>
         <button type="button" onclick="fillBlackVisor()">Empty visor</button>
-        <button type="button" onclick="mirrorVisor()">Copy left to right</button><br>
+        <button type="button" onclick="mirrorVisor()">Copy left to right</button> <sup onclick="alert('Might not work due to wierd config/wiring')">&#9432;</sup><br>
         <label for="timespanVisor">Timespan: </label>
         <input type="number" id="timespanVisor" value="500" min="1"> |
         <button onclick="frameGenVisor(-1)">Add visor frame</button><br>
@@ -114,19 +136,23 @@
   </main>
   <footer>
     1. <button onclick="completeGen()">Generate final JSON</button><br>
-    <form action="./savefile" method="post">
+    <form action="./savefile" method="post" id="footerForm">
       <label for="output">File content / paste here to load:</label><br>
       <textarea rows="7" cols="100" name="content" id="output" required></textarea><br>
-      <p>2. <button type="button" onclick="postAnim()">Try animation</button></p>
-      3. Name of animation (without .json): <input type="text" name="file" required><br>
-      4. <input type="submit" value="Save to SPIFFS"/>
+      2. Name of animation (without .json): <input type="text" name="file" required id="fileName"><br>
     </form>
   	<hr>
     Load anim:
-    <select name="file" id="avaibleanims"></select>
-    <button type="button" onclick="loadAnim(true)">Load selected anim</button>
-    <button type="button" onclick="loadAnim(false)">Load anim from textarea</button>
-    <button type="button" onclick="deleteFile()">Delete selected file</button>
+    <div id="espLoad">
+      <select name="file" id="avaibleanims"></select>
+      <button type="button" onclick="loadAnim(true)">Load selected anim</button>
+      <button type="button" onclick="deleteFile()">Delete selected file</button>
+    </div>
+    <button type="button" onclick="loadAnim(false)">Load from textarea</button>
+    |
+    <input type="file" id="localFile">
+    <button onclick="loadLocalFile()">Load from local file</button>
+    <p style="text-align:center">Coded by <a target=”_blank” href="https://github.com/ncplyn" class="rainbow-text">@NCPlyn</a></p>
   </footer>
 </body>
 </html>
@@ -152,14 +178,15 @@
   #earsFramesP a,#visorFramesP a {
     padding-right: 10px;
   }
-  h1 {
+  h1,h2 {
+    margin-block-start: 0.4em;
+    margin-block-end: 0.4em;
     text-align:center;
   }
   body {
     background-color: #333743;
     color: white;
     font-family:Verdana;
-    font-size: 17px;
   }
   .colorItem {
     width: 40px;
@@ -227,15 +254,63 @@
     box-shadow: inset 0 0 1px #666666;
     background: #000000;
   }
+  sup {
+    cursor: pointer;
+    vertical-align: middle !important;
+  }
+  .rainbow-text {
+    font-weight: bold;
+    background-image: repeating-linear-gradient(45deg, violet, indigo, blue, green, yellow, orange, red, violet);
+    background-size: 800% 800%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rainbow 8s ease infinite;
+  }
+  @keyframes rainbow {
+    0% {background-position: 0% 50%}
+    50% {background-position: 100% 25%}
+    100% {background-position: 0% 50%}
+  }
 </style>
 
 <script src="jquerymin.js"></script>
 <script>
 
-  let typeM16 = "t0;t1;-;-;-;t9;t10;_;blush0;blush1;-;t5;-;blush2;blush3;_;t2;t3;t4;-;t6;t7;t8";
-  let typeM16mouth = '[false,false,false,false,false,true,false,false,false,false,false]';
+  let visType;
+  let visTypeMouth;
   let numOfSegm = 0;
   let numOfBlush = 0;
+  
+  $("#visorConfig").change(function() {
+    numOfSegm = 0;
+    numOfBlush = 0;
+    visType = "";
+    visTypeMouth = "";
+    $('#matrixes').empty();
+    $("#customConfig").hide();
+    if ($("#visorConfig").val() == "BFoxCZ") {
+      visType = "t0;t1;-;-;;-;-;t12;t13;_;-;-;-;t6;t7;-;-;-;_;t2;t3;t4;t5;t8;t9;t10;t11";
+      visTypeMouth = "[false,false,true,true,true,true,false,false,true,true,true,true,false,false]";
+      createHTML(visType);
+    } else if ($("#visorConfig").val() == "M16mk2") {
+      visType = "t0;t1;-;-;-;t9;t10;_;blush0;blush1;-;t5;-;blush2;blush3;_;t2;t3;t4;-;t6;t7;t8";
+      visTypeMouth = "[false,false,true,true,true,false,true,true,true,false,false]";
+      createHTML(visType);
+    } else if ($("#visorConfig").val() == "custom") {
+      $("#customConfig").show();
+    }
+  });
+  
+  function loadCustom() {
+    numOfSegm = 0;
+    numOfBlush = 0;
+    visType = "";
+    visTypeMouth = "";
+    $('#matrixes').empty();
+    visType = $('#visorCfg').val();
+    visTypeMouth = $('#mouthCfg').val();
+    createHTML(visType);
+  }
   
   //create HTML table by the specified config
   function createHTML(visorType) {
@@ -256,9 +331,19 @@
     }
     output+= "</tr></table>";
     $("#matrixes").append(output);
+    
+    for (var x = 0; x < numOfSegm; x++) {
+      $("#t" + x).append($(generator()));
+    }
+    //generates tables for blush
+    for (var x = 0; x < numOfBlush; x++) {
+      if (x < (numOfBlush/2)) { //left blush tilt
+        $("#blush" + x).append("<table class=\"blush\"><tr><td class=\"item\" id=\"b" + x*2 + "\"></td><td></td><td></td></tr><tr><td></td></tr><tr><td></td><td></td><td class=\"item\" id=\"b" + ((x*2) + 1) + "\"></td></tr></table>");
+      } else { //right blush tilt
+        $("#blush" + x).append("<table class=\"blush\"><tr><td></td><td></td><td class=\"item\" id=\"b" + ((x*2) + 1) + "\"></td></tr><tr><td></td></tr><tr><td class=\"item\" id=\"b" + x*2 + "\"></td><td></td><td></td></tr></table>");
+      }
+    }
   }
-  
-  createHTML(typeM16);
   
   //table leds generator
   function generator() {
@@ -273,19 +358,6 @@
     out.push('</table>');
     return out.join('');
   }
-  for (var x = 0; x < numOfSegm; x++) {
-    $("#t" + x).append($(generator()));
-  }
-  
-  //generates tables for blush
-  for (var x = 0; x < numOfBlush; x++) {
-    if (x < (numOfBlush/2)) { //left blush tilt
-      $("#blush" + x).append("<table class=\"blush\"><tr><td class=\"item\" id=\"b" + x*2 + "\"></td><td></td><td></td></tr><tr><td></td></tr><tr><td></td><td></td><td class=\"item\" id=\"b" + ((x*2) + 1) + "\"></td></tr></table>");
-    } else { //right blush tilt
-      $("#blush" + x).append("<table class=\"blush\"><tr><td></td><td></td><td class=\"item\" id=\"b" + ((x*2) + 1) + "\"></td></tr><tr><td></td></tr><tr><td class=\"item\" id=\"b" + x*2 + "\"></td><td></td><td></td></tr></table>");
-    }
-  }
-  
 
   const rgb2hex = (rgb) => `${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice(1).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('')}`
   //clone svg to save on file size
@@ -328,7 +400,7 @@
   });
   
   //colors blush dots with selected color
-  $(".blush .item").on('click', function() {
+  $("#matrixes").on('click', '.blush .item', function() {
     $(this).css("background-color", curColor);
   });
 
@@ -414,7 +486,7 @@
 
   //get json code for ears and visor, generates final usable code and resets stuff
   function completeGen() {
-    if (framesVisor.length == 0 || (framesEars.length == 0 && ( $("#typeEars").val() == "custom"  || $("#typeEars").val() == "custom_glow" ))) {
+    if ($("#visorConfig").val() == "none" || framesVisor.length == 0 || (framesEars.length == 0 && ( $("#typeEars").val() == "custom"  || $("#typeEars").val() == "custom_glow" ))) {
       alert("No frames in ears or visor!");
     } else {
       var output = "{" + earsGen() + "," + visorGen() + "}";
@@ -564,11 +636,12 @@
   fillBlackVisor();
 
   //if matrix led clicked, add class
-  $('.leds-matrix').find('.item').mousedown(function() {
-    $(this).toggleClass('active');
+  $("#matrixes").on('click', '.item', function() {
+    if(matrixAction == "")
+      $(this).toggleClass('active');
   });
-  $('.leds-matrix').find('.item').mouseenter(function() {
-    if(isMouseDown)
+  $("#matrixes").on('mouseenter', '.item', function() {
+    if(matrixAction == "" && isMouseDown)
       $(this).toggleClass('active');
   });
 
@@ -590,26 +663,49 @@
     return out.join('');
   }
 
-  //mirrors left half to right one -------WILL NOT WORk with dynamic load, unless- do not do for mouth bool, somehow define whats R/L (will help blush too)
+  //mirrors left half to right one --will work if both sides are wired the same
   function mirrorVisor() {
-    for (var i = 1; i < 9; i++) {
-      for (var j = 1; j < 9; j++) {
-        for (var l = 0; l < 5; l++) {
-          $('#t' + (10-l)).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $('#t' + l).find('.item[data-row=' + i + '][data-col=' + (9-j) + '] ').attr("class"));
+    for (let i = 1; i < 9; i++) {
+      for (let j = 1; j < 9; j++) {
+        let numFix = numOfSegm-1;
+        for (let l = 0; l < numFix/2; l++) {
+          if(numOfSegm % 2 == 1 && numFix == (numOfSegm/2)+1) {l++;}
+          $('#t' + (numFix-l)).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $('#t' + l).find('.item[data-row=' + i + '][data-col=' + (9-j) + '] ').attr("class"));
         }
       }
     }
-    $("#matrixes").find("#b6").css("background-color", $("#matrixes").find("#b0").css("background-color")); //make dyn with /2
-    $("#matrixes").find("#b4").css("background-color", $("#matrixes").find("#b2").css("background-color"));
-    $("#matrixes").find("#b7").css("background-color", $("#matrixes").find("#b1").css("background-color"));
-    $("#matrixes").find("#b5").css("background-color", $("#matrixes").find("#b3").css("background-color"));
+    let numFix = numOfBlush*2;
+    for(let i = 0; i < numFix; i++) {
+      $("#matrixes").find("#b"+(numFix-i-1)).css("background-color", $("#matrixes").find("#b"+i).css("background-color"));
+    }
   }
+  
+  function setAction(val) {
+    matrixAction = val;
+  }
+  
+  let matrixAction = "";
+  $("#matrixes").on('click', 'table', function(e) {
+    let tID = $(this).closest('td[id]').attr('id');
+    if(tID !== undefined && tID.includes("t")) {
+      if(matrixAction == "paste") {
+        for (var i = 1; i < 9; i++) {
+          for (var j = 1; j < 9; j++) {
+            $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $("#"+selMatrix).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class"));
+          }
+        }
+      } else if (matrixAction == "copy") {
+        selMatrix = tID;
+      }
+      matrixAction = "";
+    }
+  });
 
   var framesVisor = [];
 
   function visorGen() {
     var output = "";
-    output += '"visor":{"type":"' + $("#typeVisor").val() + '","isMouth":'+typeM16mouth+',"frames":['; // change from static to dynamic after loading configs is done
+    output += '"visor":{"type":"' + $("#typeVisor").val() + '","isMouth":'+visTypeMouth+',"frames":[';
     for (var x = 0; x < framesVisor.length; x++) {
       output += framesVisor[x];
       if (x !== framesVisor.length - 1) {
@@ -628,14 +724,14 @@
       var temp = "{\"timespan\":" + $("#timespanVisor").val() + ",\"leds\":[";
       for (var x = 0; x < numOfSegm; x++) {
         temp += "\"" + ledsToHex(x) + "\"";
-        if (x != 10) {
+        if (x != numOfSegm-1) {
           temp += ",";
         }
       }
       temp += "],\"ledsBlush\":["; //TBD
-      for (var x = 0; x < 8; x++) {
+      for (var x = 0; x < numOfBlush*2; x++) {
         temp += "\"" + rgb2hex($("#b" + x).css("background-color")) + "\"";
-        if (x != 7) {
+        if (x != (numOfBlush*2)-1) {
           temp += ",";
         }
       }
@@ -704,25 +800,53 @@
     });
   }
 
-  //loads all avaible animations
+  //loads all available animations
   function loadFiles() {
-    var response = $.ajax({
+    $.ajax({
       type: "GET",
       url: "/getfiles",
-      async: false
-    }).responseText;
-    var partsArray = response.split(';');
-    partsArray.pop();
-    var arrayLength = partsArray.length;
-    for (var i = 1; i < arrayLength; i++) {
-      var x = document.getElementById("avaibleanims");
-      var option = document.createElement("option");
-      option.innerHTML = partsArray[i];
-      option.value = partsArray[i];
-      document.getElementById("avaibleanims").options.add(option);
+      async: false,
+      success: function(response){
+        var partsArray = response.split(';');
+        partsArray.pop();
+        var arrayLength = partsArray.length;
+        for (var i = 1; i < arrayLength; i++) {
+          var x = document.getElementById("avaibleanims");
+          var option = document.createElement("option");
+          option.innerHTML = partsArray[i];
+          option.value = partsArray[i];
+          document.getElementById("avaibleanims").options.add(option);
+        }
+        $("#footerForm").append('<p>3. <button type="button" onclick="postAnim()">Try animation</button></p>4. <input type="submit" value="Save to SPIFFS"/>');
+      },
+      error: function(XMLHttpRequest, textStatus, errorThrown) {
+        $("#footerForm").append('3. <button type="button" onclick="saveToFile();">Save to PC</button>');
+        $("#espLoad").hide();
+      }
+    });
+  }
+  loadFiles();
+  
+  function loadLocalFile() {
+    let fileToLoad = document.getElementById("localFile").files[0];
+    if(fileToLoad === undefined || fileToLoad.name.includes(".json") == false) {
+      alert("No selected file or not a .json file!");
+    } else {
+      let fileReader = new FileReader();
+      fileReader.onload = function (fileLoadedEvent) {
+          $("#output").val(fileLoadedEvent.target.result);
+          loadAnim();
+      };
+      fileReader.readAsText(fileToLoad, "UTF-8");
     }
   }
-  //loadFiles(); //test if we are on esp, then load
+  
+  function saveToFile() {
+    var link = document.createElement('a');
+    link.href = 'data:text/plain;charset=UTF-8,' + escape($("#output").val());
+    link.download = $("#fileName").val()+".json";
+    link.click();
+  }
   
   function deleteFile() {
     if(confirm("Delete selected animation?")) {

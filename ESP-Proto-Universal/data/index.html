@@ -102,6 +102,7 @@
           </form>
         </div>
       </div>
+      <p style="text-align:center">Coded by <a target=”_blank” href="https://github.com/ncplyn" class="rainbow-text">@NCPlyn</a></p>
     </main>
   </body>
 </html>
@@ -179,6 +180,21 @@
   .animbtn {
     line-height: 2.5;
   }
+  .rainbow-text {
+    font-weight: bold;
+    background-image: repeating-linear-gradient(45deg, violet, indigo, blue, green, yellow, orange, red, violet);
+    background-size: 800% 800%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rainbow 8s ease infinite;
+    border: none;
+    padding: 0;
+  }
+  @keyframes rainbow {
+    0% {background-position: 0% 50%}
+    50% {background-position: 100% 25%}
+    100% {background-position: 0% 50%}
+  }
 </style>
 
 <script src="jquerymin.js"></script>
@@ -243,7 +259,6 @@
 		xmlhttp.open("GET", "/gyro", false);
 		xmlhttp.send();
 	}
-	loadFiles();
 
 	function loadConfig() {
 		xmlhttp=new XMLHttpRequest();
