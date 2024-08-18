@@ -1,7 +1,8 @@
 //ESP32(Vin), all LEDs and fan is wired with 5V
 //Gyro,OLED,Microphone,INA219 and touch is wired with 3.3V (gyro and mic needs RC filter)
+//IF you change something in 'config.json', run 'generateCRC.py' first, then upload filesystem
 
-#ifdef ESP32S3 //ESP32-S3
+#if defined(ESP32S3) //ESP32-S3
   #define MICpin 1 //Microphone
   #define T_in 2 //Output from Touch Sensor
   #define T_en 42 //Enable pin to Touch Sensor
@@ -13,11 +14,10 @@
   #define MAX_CLK 12 //Clock for MAX72xx matrixes if used
   #define MAX_MOSI 11 //Data for MAX72xx matrixes if used
   #define MAX_CS 10 //ChipSelect for MAX72xx matrixes if used
-#endif
-
-#ifdef ESP32 //Normal ESP32 pins
+  #define animBtn 4 //Pulling this pin LOW cycles trough animations
+#elif defined(ESP32) //Normal ESP32 pins
   #define MICpin 35 //Microphone
-  #define T_in 27 //Output from Touch Sensor
+  #define T_in 33 //Output from Touch Sensor ->33
   #define T_en 23 //Enable pin to Touch Sensor
   #define DATA_PIN_EARS 5  //Ears (from outer to inner, right cheek first)
   #define DATA_PIN_BLUSH 18 //Blush (from top to bottom, right cheek nearest to ear first) 
@@ -27,10 +27,10 @@
   #define MAX_CLK 18 //Clock for MAX72xx matrixes if used
   #define MAX_MOSI 23 //Data for MAX72xx matrixes if used
   #define MAX_CS 5 //ChipSelect for MAX72xx matrixes if used
+  #define animBtn 32 //Pulling this pin LOW cycles trough animations
 #endif
 
 #define wifi_en 13 //Pulling this pin LOW disables WiFi
-#define animBtn 4 //Pulling this pin LOW cycles trough animations
 
 //LEDs amount
 #define MAX72xx_DEVICES 11
@@ -117,17 +117,31 @@ BLECharacteristic * pCharacteristic;
 class MyCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic* pCharacteristic) {
       String temp = String(pCharacteristic->getValue().c_str());
-      if(temp.charAt(0) == 'g') {
+      if(temp.charAt(0) == 'g') { //legacy remote reasons
         pCharacteristic->setValue("i"+String(BLEnum));
+        pCharacteristic->notify(true);
+      } else if (temp.charAt(0) == '?') { //make better
+        String animtemp;
+        for(int i = 0; i < BLEnum; i++) {
+          animtemp += BLEfiles[i].substring(0, BLEfiles[i].length() - 5);
+          animtemp += ";";
+        }
+        pCharacteristic->setValue(animtemp);
         pCharacteristic->notify(true);
       } else if (temp.toInt() > 0 && temp.toInt() <= BLEnum){
         animToLoad = BLEfiles[temp.toInt()-1];
+      } else {
+        for(int i = 0; i < BLEnum; i++) {
+          if(temp == BLEfiles[i].substring(0, BLEfiles[i].length() - 5)) {
+            animToLoad = BLEfiles[i];
+          }
+        }
       }
       Serial.println(temp);
     };
 };
 
-bool startBLE() {
+void countAnims() {
   File root = SPIFFS.open("/anims");
   File file = root.openNextFile();
   BLEnum = 0;
@@ -139,8 +153,12 @@ bool startBLE() {
     }
     file = root.openNextFile();
   }
+}
 
-  BLEDevice::init("ProtoBLE");
+bool startBLE() {
+  std::string stdStr(wifiName.c_str(), wifiName.length());
+  BLEDevice::init(stdStr);
+  NimBLEDevice::setPower(ESP_PWR_LVL_P9);
 
   pServer = BLEDevice::createServer();
 
@@ -795,6 +813,7 @@ void setup() {
     startWiFiWeb();
   }
 
+  countAnims();
   if(bleEna) { //you can disable BLE in config
     if(!startBLE()) {
       Serial.println("[E] An Error has occurred while starting BLE!");
@@ -1061,7 +1080,7 @@ void loop() {
   if(millis() > 200 && boopEna) {
     digitalWrite(T_en, HIGH);
     delayMicroseconds(210);
-    Serial.println(analogRead(T_in));
+    //Serial.println(analogRead(T_in));
     if(booping == false && !digitalRead(T_in)) {
       delayMicroseconds(395);
       if(!digitalRead(T_in)) {

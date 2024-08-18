@@ -7,8 +7,11 @@
 - [x] More user-friendly UI on mobile for controls (could be better, but will do)
 - [x] Factory settings when error read and CRC checking
 - [x] Online web version of animator ([HERE](https://foxxo.cz/proto/animator.html))
+- [x] Fix current animations
+- [x] Add function to change anims with button
+- [x] Proper definitions, buggy platformio with defines (should work)
+- [ ] Replace the HM10 in the remote with something else to make it fail less (ESP??) (**needs polishing**)
 - [ ] Support different sized OLED (**priority**)
-- [ ] Add option to change anims with button (**needs testing**)
 - [ ] OLED init bug fix (**needs testing**)
 - [ ] Redo tilt calibration code (**needs testing**)
 - [ ] Supported both MAX and WS28xx displays in the same codebase (**needs testing**)
@@ -16,15 +19,14 @@
 - [ ] Support for ESP32 with PSRAM soldered on / without (**soldered on should work, without not done yet**)
 - [ ] Better custom WS28xx display (**designed but not manufactured yet**)
 - [ ] Auto gen CRC before filesystem upload (platformio sucks at running scripts at events, manual for now)
-- [ ] Proper enable/disable of features (code wise or reset)
-- [ ] Replace the HM10 in the remote with something else to make it fail less (ESP??)
+- [ ] Proper enable/disable of features (code wise or reset. same with remote)
 - [ ] Custom PCB remote
 - [ ] More anims (Rainbow from boop,...)
 - [ ] Proper wiring and flashing tutorial
 - [ ] Make how to proper boop sensor
 - [ ] Make sure ifdef for definitons work, add definition for wifiena etc
 - [ ] Proper partition tables for microcontrollers
-- [ ] Fix current animations
+- [ ] Boop AVG, Automatic change to boop when changed anim wtf? bug or should be like that??
   
 - But I'm limited in my free time that I can give here so it will take a while!
 - If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)

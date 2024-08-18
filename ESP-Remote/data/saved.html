@@ -1,0 +1,41 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Saved</title>
+  </head>
+  <body>
+    <main>
+      <div>
+        <h1>Saved/changed OK</h1>
+        <h3>Redirecting in 1s</h3>
+        <script>
+          var timer = setTimeout(function() {
+            if(window.location.href.includes("main")) {
+              window.location='/';
+            } else if (window.location.href.includes("anim")) {
+              window.location='/animator.html';
+            }
+          }, 1000);
+        </script>
+      </div>
+    </main>
+  </body>
+</html>
+
+<style>
+  h1,h2 {
+    margin-block-start: 0.4em;
+    margin-block-end: 0.4em;
+  }
+  body {
+    font-family:Verdana;
+    margin:0;
+    background-color:#333743;
+    color:white;
+    text-align:center;
+  }
+  main {
+    width:30em;
+    margin: auto;
+  }
+</style>

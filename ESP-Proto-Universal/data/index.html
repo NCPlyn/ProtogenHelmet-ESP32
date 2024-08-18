@@ -3,6 +3,7 @@
     <meta charset="utf-8">
     <title>ProtoESP</title>
     <meta name="viewport" content="width=device-width, initial-scale=0.95" />
+    <link rel="shortcut icon" href="data:," />
   </head>
   <body>
     <main>
@@ -23,15 +24,15 @@
         <div class="config">
           <h2>Basic</h2>
           <form>
-            <label for="boop"> Boop</label>
+            <label for="boop">Boop</label>
             <input type="checkbox" id="boop">
-            <label for="speech"> Speech</label>
+            <label for="speech">Speech</label>
             <input type="checkbox" id="speech">
-            <label for="tilt"> Tilt</label>
+            <label for="tilt">Tilt</label>
             <input type="checkbox" id="tilt">
-            <label for="ble"> BLE</label>
+            <label for="ble">BLE</label>
             <input type="checkbox" id="ble">
-            <label for="oled"> OLED</label>
+            <label for="oled">OLED</label>
             <input type="checkbox" id="oled">
             <br>
             <button type="button" onclick="saveConfig()">Save config</button>
@@ -41,24 +42,24 @@
         <div class="config">
           <h2>Advanced</h2>
           <form action="./saveconfig" method="get">
-            <i><label for="bEar">Name (limits|default)</label></i>
+            <i><label>Name (limits|default)</label></i>
             <i><span>value</span></i>
             <label for="visColor">Visor color</label>
-            <input type="color" name="visColor" value="#ff0000">
+            <input type="color" name="visColor">
             <label for="bEar">Brightness ears (0-255|64)</label>
-            <input type="number" name="bEar" min="0" max="255" value="64">
+            <input type="number" name="bEar" min="0">
             <label for="bVisor">Brightness visor (0-255|:128)</label>
-            <input type="number" name="bVisor" min="0" max="255" value="128">
+            <input type="number" name="bVisor" min="0" max="255">
             <label for="rbSpeed">Rainbow prefab speed (1-200ms|15)</label>
-            <input type="number" name="rbSpeed" min="1" max="200" value="15">
+            <input type="number" name="rbSpeed" min="1" max="200">
             <label for="rbWidth">Rainbow hue width (1-32|8)</label>
-            <input type="number" name="rbWidth" min="1" max="32" value="8">
+            <input type="number" name="rbWidth" min="1" max="32">
             <label for="spMin">Speak min delay (20-500ms|90)</label>
-            <input type="number" name="spMin" min="20" max="500" value="90">
+            <input type="number" name="spMin" min="20" max="500">
             <label for="spMax">Speak max delay (30-600ms|130)</label>
-            <input type="number" name="spMax" min="30" max="600" value="130">
+            <input type="number" name="spMax" min="30" max="600">
             <label for="spTrig">Speak trigger point (500-2500|1800)</label>
-            <input type="number" name="spTrig" min="500" max="2500" value="1800">
+            <input type="number" name="spTrig" min="500" max="2500">
             <label for="aTilt">Animation for tilt (confused.json)</label>
             <select id="aTilt" name="aTilt"></select>
             <label for="aUp">Animation for up (upset.json)</label>
@@ -81,21 +82,21 @@
           <form action="./saveconfig" method="get">
             <i><p>X Y Z</p></i>
             Idle: 
-            <input type="number" name="neutralX" min="0" max="255" value="64">
-            <input type="number" name="neutralY" min="0" max="255" value="64">
-            <input type="number" name="neutralZ" min="0" max="255" value="64">
+            <input type="number" name="neutralX" min="0" max="255">
+            <input type="number" name="neutralY" min="0" max="255">
+            <input type="number" name="neutralZ" min="0" max="255">
             <button onclick="pullFor('Neutral')">Pull data</button>
             <br>
             Tilt: 
-            <input type="number" name="tiltX" min="0" max="255" value="64">
-            <input type="number" name="tiltY" min="0" max="255" value="64">
-            <input type="number" name="tiltZ" min="0" max="255" value="64">
+            <input type="number" name="tiltX" min="0" max="255">
+            <input type="number" name="tiltY" min="0" max="255">
+            <input type="number" name="tiltZ" min="0" max="255">
             <button onclick="pullFor('Tilt')">Pull data</button>
             <br>
             Up: 
-            <input type="number" name="upX" min="0" max="255" value="64">
-            <input type="number" name="upY" min="0" max="255" value="64">
-            <input type="number" name="upZ" min="0" max="255" value="64">
+            <input type="number" name="upX" min="0" max="255">
+            <input type="number" name="upY" min="0" max="255">
+            <input type="number" name="upZ" min="0" max="255">
             <button onclick="pullFor('Up')">Pull data</button>
             <br>
             <button type="submit">Save tilt</button>
@@ -305,6 +306,15 @@
 		var params = "boopEna="+document.getElementById("boop").checked+"&speechEna="+document.getElementById("speech").checked+"&tiltEna="+document.getElementById("tilt").checked+"&bleEna="+document.getElementById("ble").checked+"&oledEna="+document.getElementById("oled").checked;
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", "/saveconfig?"+params, true);
-		xhr.send(null);
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        if (xhr.responseURL.includes("saved.html?main")) {
+          window.location.replace("/saved.html?main");
+        } else {
+          alert(xhr.responseText);
+        }
+      }
+    }
+	  xhr.send(null);
 	}
 </script>
