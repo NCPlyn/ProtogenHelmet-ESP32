@@ -1,12 +1,14 @@
 /*
-First HM-10 setup with USB-Serial converter (with proto helmet running)
+First HM-10 setup with USB-Serial converter
 1. Flash new firmware (v700+)
 2. AT (responds: OK)
 3. AT+IMME1
 4. AT+ROLE1
-5. AT+DISC?
-6. AT+CONN0 (0 means index of found proto BLE)
+5. AT+NOTI1
+6. AT+DISC? (with proto helmet running)
+7. AT+CONN0 (0 means index of found proto BLE)
 Now you can connect the HM-10 to the Arduino
+For the first time hold 4,6,7 pin low when powering up and wait 20s. (resets button values to index 1)
 */
 
 #include <ezButton.h>
