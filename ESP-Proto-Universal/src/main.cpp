@@ -1,6 +1,8 @@
 //ESP32(Vin), all LEDs and fan is wired with 5V
 //Gyro,OLED,Microphone,INA219 and touch is wired with 3.3V (gyro and mic needs RC filter)
-//IF you change something in 'config.json', run 'generateCRC.py' first, then upload filesystem
+//IF "configCRC.txt" doesn't get automaticaly generated before building filesystem, run "genCRC_manual.py" by hand and then build filesystem etc... again. (needs python installed)
+//IF your WS leds do not correspond to set color, check color order for each strip in setup():FastLED.addLeds...
+//Replace 0.1R with 0.03R resistor on INA219 board
 
 #if defined(ESP32S3) //ESP32-S3
   #define MICpin 1 //Microphone
@@ -47,6 +49,7 @@ ezButton hwBtn(animBtn);
 #include <sstream>
 #define FASTLED_ESP8266_RAW_PIN_ORDER
 #include <FastLED.h>
+#define ARDUINOJSON_USE_DOUBLE 0
 #include <ArduinoJson.h>
 
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
@@ -95,6 +98,7 @@ private:
 //--------------------------------//web / wifi
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
+#include <ElegantOTA.h>
 
 AsyncWebServer server(80);
 
@@ -141,20 +145,6 @@ class MyCallbacks: public BLECharacteristicCallbacks {
     };
 };
 
-void countAnims() {
-  File root = SPIFFS.open("/anims");
-  File file = root.openNextFile();
-  BLEnum = 0;
-  while(file){
-    String tempName = String(file.name());
-    if(tempName.charAt(0) != '_') {
-      BLEfiles[BLEnum] = tempName;
-      BLEnum++;
-    }
-    file = root.openNextFile();
-  }
-}
-
 bool startBLE() {
   std::string stdStr(wifiName.c_str(), wifiName.length());
   BLEDevice::init(stdStr);
@@ -184,6 +174,25 @@ bool startBLE() {
   }
 
   return true;
+}
+
+//--------------------------------//getting stored anims names and count
+String getfilesCache;
+bool getfilesProper = true;
+
+void getFilesFunc() {
+  String temp;
+  BLEnum = 0;
+  File root = LittleFS.open("/anims");
+  File file = root.openNextFile();
+  while(file){
+    temp += String(file.name()) + ";";
+    BLEfiles[BLEnum] = String(file.name());
+    BLEnum++;
+    file = root.openNextFile();
+  }
+  getfilesCache = temp;
+  getfilesProper = false;
 }
 
 //--------------------------------//MAX LEDs
@@ -592,14 +601,10 @@ void startWiFiWeb() {
   server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
 
   server.on("/getfiles", HTTP_GET, [](AsyncWebServerRequest *request){ //returns current anim + all avaible anims
-    String files = currentAnim+";";
-    File root = LittleFS.open("/anims");
-    File file = root.openNextFile();
-    while(file){
-      files += String(file.name()) + ";";
-      file = root.openNextFile();
+    if(getfilesProper) {
+      getFilesFunc();
     }
-    request->send(200, "text/plain", files);
+    request->send(200, "text/plain", currentAnim+";"+getfilesCache);
   });
 
   server.on("/saveconfig", HTTP_GET, [](AsyncWebServerRequest *request){ //saves config
@@ -685,6 +690,7 @@ void startWiFiWeb() {
         Serial.println("File saved!");
         file.print(request->getParam("content", true)->value());
         file.close();
+        getfilesProper = true;
         request->redirect("/saved.html?anim");
       }
     } else {
@@ -694,7 +700,8 @@ void startWiFiWeb() {
 
   server.on("/deletefile", HTTP_GET, [](AsyncWebServerRequest *request){ //deletes asked file
     if(request->hasParam("file")) {
-     LittleFS.remove("/anims/"+request->getParam("file")->value());
+      LittleFS.remove("/anims/"+request->getParam("file")->value());
+      getfilesProper = true;
       request->redirect("/saved.html?main");
     } else {
       request->send(200, "text/plain", "Parameter 'file' not present!");
@@ -734,7 +741,10 @@ void startWiFiWeb() {
   });
 
   server.onNotFound([](AsyncWebServerRequest *request){request->send(404, "text/plain", "Not found");});
+  ElegantOTA.begin(&server);
   server.begin();
+
+  ElegantOTA.setAutoReboot(true);
 }
 
 //--------------------------------//OLED Init
@@ -813,7 +823,7 @@ void setup() {
     startWiFiWeb();
   }
 
-  countAnims();
+  getFilesFunc();
   if(bleEna) { //you can disable BLE in config
     if(!startBLE()) {
       Serial.println("[E] An Error has occurred while starting BLE!");
@@ -867,6 +877,7 @@ bool isApproxEqual(const float ax, const float ay, const float az, const float b
 }  
 
 void loop() {
+  ElegantOTA.loop();
   //--------------------------------//EAR Leds render
   if(earsNow->type == 0) { //custom
     if(lastMillsEars+earsNow->frames[currentEarsFrame-1].timespan <= millis() || instantReload) {
@@ -1131,7 +1142,7 @@ void loop() {
     if(ledType == "WS2812") {
       //FastLED.show(); //doing it before because ears and blush
     } else if (ledType == "MAX72XX") {
-      mx.control(MD_MAX72XX::INTENSITY, bVisor);
+      mx.control(MD_MAX72XX::INTENSITY, bEar); //seperate setting? (int(bVisor/17))
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
     }

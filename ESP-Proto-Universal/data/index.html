@@ -82,21 +82,21 @@
           <form action="./saveconfig" method="get">
             <i><p>X Y Z</p></i>
             Idle: 
-            <input type="number" name="neutralX" min="0" max="255">
-            <input type="number" name="neutralY" min="0" max="255">
-            <input type="number" name="neutralZ" min="0" max="255">
+            <input type="number" name="neutralX" step="any" min="0" max="255">
+            <input type="number" name="neutralY" step="any" min="0" max="255">
+            <input type="number" name="neutralZ" step="any" min="0" max="255">
             <button onclick="pullFor('Neutral')">Pull data</button>
             <br>
             Tilt: 
-            <input type="number" name="tiltX" min="0" max="255">
-            <input type="number" name="tiltY" min="0" max="255">
-            <input type="number" name="tiltZ" min="0" max="255">
+            <input type="number" name="tiltX" step="any" min="0" max="255">
+            <input type="number" name="tiltY" step="any" min="0" max="255">
+            <input type="number" name="tiltZ" step="any" min="0" max="255">
             <button onclick="pullFor('Tilt')">Pull data</button>
             <br>
             Up: 
-            <input type="number" name="upX" min="0" max="255">
-            <input type="number" name="upY" min="0" max="255">
-            <input type="number" name="upZ" min="0" max="255">
+            <input type="number" name="upX" step="any" min="0" max="255">
+            <input type="number" name="upY" step="any" min="0" max="255">
+            <input type="number" name="upZ" step="any" min="0" max="255">
             <button onclick="pullFor('Up')">Pull data</button>
             <br>
             <button type="submit">Save tilt</button>
@@ -243,17 +243,17 @@
 				var partsArray = xmlhttp.responseText.split(';');
 				partsArray.pop();
         if (what == "Neutral") {
-          document.getElementsByName("neutralX")[0].value = partsArray[0];
-          document.getElementsByName("neutralY")[0].value = partsArray[1];
-          document.getElementsByName("neutralZ")[0].value = partsArray[2];
+          document.getElementsByName("neutralX")[0].value = parseFloat(partsArray[0]).toFixed(2);
+          document.getElementsByName("neutralY")[0].value = parseFloat(partsArray[1]).toFixed(2);
+          document.getElementsByName("neutralZ")[0].value = parseFloat(partsArray[2]).toFixed(2);
         } else if (what == "Tilt") {
-          document.getElementsByName("tiltX")[0].value = partsArray[0];
-          document.getElementsByName("tiltY")[0].value = partsArray[1];
-          document.getElementsByName("tiltZ")[0].value = partsArray[2];
+          document.getElementsByName("tiltX")[0].value = parseFloat(partsArray[0]).toFixed(2);
+          document.getElementsByName("tiltY")[0].value = parseFloat(partsArray[1]).toFixed(2);
+          document.getElementsByName("tiltZ")[0].value = parseFloat(partsArray[2]).toFixed(2);
         } else if (what == "Up") {
-          document.getElementsByName("upX")[0].value = partsArray[0];
-          document.getElementsByName("upY")[0].value = partsArray[1];
-          document.getElementsByName("upZ")[0].value = partsArray[2];
+          document.getElementsByName("upX")[0].value = parseFloat(partsArray[0]).toFixed(2);
+          document.getElementsByName("upY")[0].value = parseFloat(partsArray[1]).toFixed(2);
+          document.getElementsByName("upZ")[0].value = parseFloat(partsArray[2]).toFixed(2);
         } 
 			}
 		}

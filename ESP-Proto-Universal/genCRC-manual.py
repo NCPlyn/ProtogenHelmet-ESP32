@@ -1,5 +1,7 @@
 import binascii
+
 with open('data\config.json', 'r') as file:
+  print("Generating CRC...")
   data = file.read().replace('\n', '').replace(' ', '')
   crc = binascii.crc32(data.encode())
   print(crc)

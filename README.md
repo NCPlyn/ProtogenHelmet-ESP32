@@ -1,5 +1,5 @@
 # An *universal* controller for your protogen!
-- Beta version (no idea if it works now)
+- Beta version
 - [x] PlatformIO based for ease of use (no longer Arduino IDE)
 - [x] Use of ESP32-S3 with PSRAM
 - [x] Dynamic anim selector instead of dropdown
@@ -9,24 +9,25 @@
 - [x] Online web version of animator ([HERE](https://foxxo.cz/proto/animator.html))
 - [x] Fix current animations
 - [x] Add function to change anims with button
+- [x] Proper partition tables for current microcontrollers
 - [x] Proper definitions, buggy platformio with defines (should work)
-- [ ] Replace the HM10 in the remote with something else to make it fail less (ESP??) (**needs polishing**)
-- [ ] Support different sized OLED (**priority**)
-- [ ] OLED init bug fix (**needs testing**)
+- [x] Auto gen CRC before filesystem upload (platformio is unpredictable)
+- [x] Make sure ifdef for definitons work (should), add definition for wifiena (done), RGB orders def (wrote comment)
+- [x] Support for ESP32 with PSRAM soldered on / without (**soldered on should work, without... might never be...**)
+- [x] Supported both MAX and WS28xx displays in the same codebase (**should work but need to be kept under supervision**)
+- [x] Custom amount of displays and their placement (**same as above**)
+- [ ] Replace the HM10 in the remote with something else to make it fail less (ESP??) (**needs polishing, it's own project and ElegantOTA**)
+- [ ] OLED init bug fix at runtime (**needs testing**)
 - [ ] Redo tilt calibration code (**needs testing**)
-- [ ] Supported both MAX and WS28xx displays in the same codebase (**needs testing**)
-- [ ] Custom amount of displays and their placement (**needs testing**)
-- [ ] Support for ESP32 with PSRAM soldered on / without (**soldered on should work, without not done yet**)
-- [ ] Better custom WS28xx display (**designed but not manufactured yet**)
-- [ ] Auto gen CRC before filesystem upload (platformio sucks at running scripts at events, manual for now)
+- [ ] Support different sized OLED
+- [ ] Better custom WS28xx display (**designed, ordered test pcbs**)
 - [ ] Proper enable/disable of features (code wise or reset. same with remote)
-- [ ] Custom PCB remote
 - [ ] More anims (Rainbow from boop,...)
 - [ ] Proper wiring and flashing tutorial
 - [ ] Make how to proper boop sensor
-- [ ] Make sure ifdef for definitons work, add definition for wifiena etc
-- [ ] Proper partition tables for microcontrollers
 - [ ] Boop AVG, Automatic change to boop when changed anim wtf? bug or should be like that??
+- [ ] visor / blush brightness fix (ws 0-255, max 0-16)
+- [ ] More QOL for animator (similiar to https://xantorohara.github.io/led-matrix-editor/, load custom visor file option)
   
 - But I'm limited in my free time that I can give here so it will take a while!
 - If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)

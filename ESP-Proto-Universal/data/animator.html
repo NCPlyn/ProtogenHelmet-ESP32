@@ -2,6 +2,7 @@
 <head>
   <meta charset="utf-8">
   <title>Proto Animator</title>
+  <link rel="shortcut icon" href="data:," />
 </head>
 <body>
   <main>
@@ -293,7 +294,7 @@
       visTypeMouth = "[false,false,true,true,true,true,false,false,true,true,true,true,false,false]";
       createHTML(visType);
     } else if ($("#visorConfig").val() == "M16mk2") {
-      visType = "t0;t1;-;-;-;t9;t10;_;blush0;blush1;-;t5;-;blush2;blush3;_;t2;t3;t4;-;t6;t7;t8";
+      visType = "t0;t1;-;-;-;t9;t10;_;b0;b1;-;t5;-;b2;b3;_;t2;t3;t4;-;t6;t7;t8";
       visTypeMouth = "[false,false,true,true,true,false,true,true,true,false,false]";
       createHTML(visType);
     } else if ($("#visorConfig").val() == "custom") {
@@ -324,7 +325,7 @@
       } else if (arr[x].includes("t")) {
         output+= "<td id='"+arr[x]+"'></td>";
         numOfSegm++;
-      } else if (arr[x].includes("blush")) {
+      } else if (arr[x].includes("b")) {
         output+= "<td id='"+arr[x]+"'></td>";
         numOfBlush++;
       }
