@@ -48,8 +48,10 @@
             <input type="color" name="visColor">
             <label for="bEar">Brightness ears (0-255|64)</label>
             <input type="number" name="bEar" min="0">
-            <label for="bVisor">Brightness visor (0-255|:128)</label>
+            <label for="bVisor">Brightness visor (WS:0-255|MAX:0-15)</label>
             <input type="number" name="bVisor" min="0" max="255">
+            <label for="bBlush">Brightness blush (0-255|128)</label>
+            <input type="number" name="bBlush" min="0" max="255">
             <label for="rbSpeed">Rainbow prefab speed (1-200ms|15)</label>
             <input type="number" name="rbSpeed" min="1" max="200">
             <label for="rbWidth">Rainbow hue width (1-32|8)</label>
@@ -82,22 +84,25 @@
           <form action="./saveconfig" method="get">
             <i><p>X Y Z</p></i>
             Idle: 
-            <input type="number" name="neutralX" step="any" min="0" max="255">
-            <input type="number" name="neutralY" step="any" min="0" max="255">
-            <input type="number" name="neutralZ" step="any" min="0" max="255">
-            <button onclick="pullFor('Neutral')">Pull data</button>
+            <input type="number" name="neutralX" step="any" min="-1" max="1">
+            <input type="number" name="neutralY" step="any" min="-1" max="1">
+            <input type="number" name="neutralZ" step="any" min="-1" max="1">
+            <button type="button" onclick="pullFor('Neutral')">Pull data</button>
             <br>
             Tilt: 
-            <input type="number" name="tiltX" step="any" min="0" max="255">
-            <input type="number" name="tiltY" step="any" min="0" max="255">
-            <input type="number" name="tiltZ" step="any" min="0" max="255">
-            <button onclick="pullFor('Tilt')">Pull data</button>
+            <input type="number" name="tiltX" step="any" min="-1" max="1">
+            <input type="number" name="tiltY" step="any" min="-1" max="1">
+            <input type="number" name="tiltZ" step="any" min="-1" max="1">
+            <button type="button" onclick="pullFor('Tilt')">Pull data</button>
             <br>
             Up: 
-            <input type="number" name="upX" step="any" min="0" max="255">
-            <input type="number" name="upY" step="any" min="0" max="255">
-            <input type="number" name="upZ" step="any" min="0" max="255">
-            <button onclick="pullFor('Up')">Pull data</button>
+            <input type="number" name="upX" step="any" min="-1" max="1">
+            <input type="number" name="upY" step="any" min="-1" max="1">
+            <input type="number" name="upZ" step="any" min="-1" max="1">
+            <button type="button" onclick="pullFor('Up')">Pull data</button>
+            <br>
+            Tilt toleration:
+            <input type="number" name="tiltTol" step="any" min="0.01" max="1">
             <br>
             <button type="submit">Save tilt</button>
           </form>
@@ -241,7 +246,6 @@
 			if (xmlhttp.readyState==4 && xmlhttp.status==200)
 			{
 				var partsArray = xmlhttp.responseText.split(';');
-				partsArray.pop();
         if (what == "Neutral") {
           document.getElementsByName("neutralX")[0].value = parseFloat(partsArray[0]).toFixed(2);
           document.getElementsByName("neutralY")[0].value = parseFloat(partsArray[1]).toFixed(2);
@@ -275,6 +279,7 @@
         document.getElementById("oled").checked = obj.oledEna;
 				document.getElementsByName("bEar")[0].value = obj.bEar;
 				document.getElementsByName("bVisor")[0].value = obj.bVisor;
+        document.getElementsByName("bBlush")[0].value = obj.bBlush;
 				document.getElementsByName("rbSpeed")[0].value = obj.rbSpeed;
 				document.getElementsByName("rbWidth")[0].value = obj.rbWidth;
 				document.getElementsByName("spMin")[0].value = obj.spMin;
@@ -292,12 +297,16 @@
         document.getElementsByName("upX")[0].value = obj.upX;
         document.getElementsByName("upY")[0].value = obj.upY;
         document.getElementsByName("upZ")[0].value = obj.upZ;
+        document.getElementsByName("tiltTol")[0].value = obj.tiltTol;
         document.getElementsByName("wifiName")[0].value = obj.wifiName;
         document.getElementsByName("wifiPass")[0].value = obj.wifiPass;
         document.getElementsByName("ledType")[0].value = obj.ledType;
 			}
 		}
 		xmlhttp.open("GET", "/config.json", false );
+    xmlhttp.setRequestHeader('Cache-Control', 'no-cache, no-store, max-age=0');
+    xmlhttp.setRequestHeader('Expires', 'Thu, 1 Jan 1970 00:00:00 GMT');
+    xmlhttp.setRequestHeader('Pragma', 'no-cache');
 		xmlhttp.send();
 	}
 	loadConfig();

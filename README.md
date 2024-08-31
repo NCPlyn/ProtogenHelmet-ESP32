@@ -13,21 +13,26 @@
 - [x] Proper definitions, buggy platformio with defines (should work)
 - [x] Auto gen CRC before filesystem upload (platformio is unpredictable)
 - [x] Make sure ifdef for definitons work (should), add definition for wifiena (done), RGB orders def (wrote comment)
-- [x] Support for ESP32 with PSRAM soldered on / without (**soldered on should work, without... might never be...**)
-- [x] Supported both MAX and WS28xx displays in the same codebase (**should work but need to be kept under supervision**)
+- [x] Support for ESP32 with PSRAM soldered on / without (**soldered works, without might never be...**)
+- [x] Supported both MAX and WS28xx displays in the same codebase (**should work but needs to be kept under supervision**)
 - [x] Custom amount of displays and their placement (**same as above**)
+- [x] Redo tilt calibration code (**same as above**)
+- [x] OLED init bug fix at runtime
+- [x] ElegantOTA (**192.168.4.1/update**)
+- [x] visor / blush brightness fix (ws 0-255, max 0-16)
+
 - [ ] Replace the HM10 in the remote with something else to make it fail less (ESP??) (**needs polishing, it's own project and ElegantOTA**)
-- [ ] OLED init bug fix at runtime (**needs testing**)
-- [ ] Redo tilt calibration code (**needs testing**)
-- [ ] Support different sized OLED
-- [ ] Better custom WS28xx display (**designed, ordered test pcbs**)
-- [ ] Proper enable/disable of features (code wise or reset. same with remote)
+- [ ] Support different sized OLED, define addreses
+- [ ] Proper enable/disable of features (code wise or reset, same with remote, tilt?working?)
 - [ ] More anims (Rainbow from boop,...)
-- [ ] Proper wiring and flashing tutorial
-- [ ] Make how to proper boop sensor
-- [ ] Boop AVG, Automatic change to boop when changed anim wtf? bug or should be like that??
-- [ ] visor / blush brightness fix (ws 0-255, max 0-16)
-- [ ] More QOL for animator (similiar to https://xantorohara.github.io/led-matrix-editor/, load custom visor file option)
+- [ ] More QOL for animator (similiar to https://xantorohara.github.io/led-matrix-editor/, load custom visor file option(done), update web version)
+- [ ] Default values comment and hw button? (same for remote)
+- [ ] Better custom WS28xx display (**pcbs came, needs check and do website**)
+- [ ] Clean up
+
+- [ ] Make "How to properly place and tune proximity sensor" for boop (do not need SW fixing, all is about proper placement and tuning sensor)
+- [ ] Make wiring and flashing tutorial (including fs things)
+- [ ] Make uptodate parts list for most options
   
 - But I'm limited in my free time that I can give here so it will take a while!
 - If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)

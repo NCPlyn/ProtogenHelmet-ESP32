@@ -92,12 +92,14 @@
     <div> <!-- START OF VISOR PART -->
       <h2>Visor</h2>
       <hr>
-      <label for="visorConfig">Config: </label> <sup onclick="alert('Select config/wiring of your visor')">&#9432;</sup>
+      <label for="visorConfig">Config: </label> <sup onclick="alert('Select config/wiring of your visor\n\'custom_file\' works only if your visor files are on the ESP!')">&#9432;</sup>
       <select id="visorConfig">
         <option value="none">None</option>
         <option value="M16mk2">M16 mk2</option>
+        <option value="M16mk3">M16 mk3</option>
         <option value="BFoxCZ">BFoxCZ</option>
         <option value="custom">custom</option>
+        <option value="custom_file">custom_file</option>
       </select> | 
       <label for="typeVisor">Animation: </label> <sup onclick="alert('Select custom or modifier for visor animation')">&#9432;</sup>
       <select id="typeVisor">
@@ -106,7 +108,7 @@
       </select><br>
       <div id="customConfig" style="display: none;">
         <label for="visorCfg">Visor cfg: </label>
-        <sup onclick="alert('\'t0\'.. means first matrix etc with numbering\n\'b0\'.. means first blush segment etc with numbering\n\'-\' means nothing in place\n\'_\' means new line\nExample:\nt0;t1;-;-;-;-;t12;t13;_;-;-;-;t6;t7;-;-;-;_;t2;t3;t4;t5;t8;t9;t10;t11')">&#9432;</sup>
+        <sup onclick="alert('\'t0\'.. means first matrix etc with numbering\n\'blush0\'.. means first blush segment etc with numbering\n\'-\' means nothing in place\n\'_\' means new line\nExample:\nt0;t1;-;-;-;-;t12;t13;_;-;-;-;t6;t7;-;-;-;_;t2;t3;t4;t5;t8;t9;t10;t11')">&#9432;</sup>
         <input type="text" name="visorCfg" id="visorCfg" size=100><br>
         <label for="mouthCfg">Mouth cfg: </label>
         <sup onclick="alert('Array of bools telling if the segment in order is mouth or not\n(For dynamic speaking effect)\nExample:\n[false,false,true,true,true,true,false,false,true,true,true,true,false,false]')">&#9432;</sup>
@@ -294,8 +296,15 @@
       visTypeMouth = "[false,false,true,true,true,true,false,false,true,true,true,true,false,false]";
       createHTML(visType);
     } else if ($("#visorConfig").val() == "M16mk2") {
-      visType = "t0;t1;-;-;-;t9;t10;_;b0;b1;-;t5;-;b2;b3;_;t2;t3;t4;-;t6;t7;t8";
+      visType = "t0;t1;-;-;-;t9;t10;_;blush0;blush1;-;t5;-;blush2;blush3;_;t2;t3;t4;-;t6;t7;t8";
       visTypeMouth = "[false,false,true,true,true,false,true,true,true,false,false]";
+      createHTML(visType);
+    } else if ($("#visorConfig").val() == "M16mk3") {
+      visType = "t0;t1;-;-;-;-;-;-;t12;t13;_;blush0;blush1;-;t6;-;-;t7;-;blush2;blush3;_;t2;t3;t4;t5;-;-;t8;t9;t10;t11";
+      visTypeMouth = "[false,false,true,true,true,true,false,false,true,true,true,true,false,false]";
+      createHTML(visType);
+    } else if ($("#visorConfig").val() == "custom_file") {
+      loadVisorConfig();
       createHTML(visType);
     } else if ($("#visorConfig").val() == "custom") {
       $("#customConfig").show();
@@ -797,6 +806,32 @@
       type: 'post',
       data: {
         anim: $("#output").val()
+      }
+    });
+  }
+
+  //loads visor type files
+  function loadVisorConfig(part) {
+    $.ajax({
+      type: "GET",
+      url: "/visType.txt",
+      async: false,
+      success: function(response){
+        visType = response;
+      },
+      error: function(XMLHttpRequest, textStatus, errorThrown) {
+        alert("Couldn't load /visType.txt");
+      }
+    });
+    $.ajax({
+      type: "GET",
+      url: "/visTypeMouth.txt",
+      async: false,
+      success: function(response){
+        visTypeMouth = response;
+      },
+      error: function(XMLHttpRequest, textStatus, errorThrown) {
+        alert("Couldn't load /visTypeMouth.txt");
       }
     });
   }

@@ -19,7 +19,7 @@
   #define animBtn 4 //Pulling this pin LOW cycles trough animations
 #elif defined(ESP32) //Normal ESP32 pins
   #define MICpin 35 //Microphone
-  #define T_in 33 //Output from Touch Sensor ->33
+  #define T_in 33 //Output from Touch Sensor
   #define T_en 23 //Enable pin to Touch Sensor
   #define DATA_PIN_EARS 5  //Ears (from outer to inner, right cheek first)
   #define DATA_PIN_BLUSH 18 //Blush (from top to bottom, right cheek nearest to ear first) 
@@ -39,6 +39,11 @@
 #define EarLedsNum 74
 #define VisorLedsNum 704
 #define BlushLedsNum 8
+
+#define MaxFEars 30 //Max amount of Ear frames (hardcoded to assign memory)
+#define MaxFVisor 30 //Max amount of Visor frames
+
+#define revertTilt 8000 //The maximum time that animation caused by tilt gets shown (used as if tilt bugs out etc)
 
 //--------------------------------//No touching after this
 
@@ -124,7 +129,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
       if(temp.charAt(0) == 'g') { //legacy remote reasons
         pCharacteristic->setValue("i"+String(BLEnum));
         pCharacteristic->notify(true);
-      } else if (temp.charAt(0) == '?') { //make better
+      } else if (temp.charAt(0) == '?') {
         String animtemp;
         for(int i = 0; i < BLEnum; i++) {
           animtemp += BLEfiles[i].substring(0, BLEfiles[i].length() - 5);
@@ -252,7 +257,7 @@ struct FramesEars {
 struct AnimNowEars {
   int type;
   int numOfFrames;
-  FramesEars frames[30]; //max amount of ear frames
+  FramesEars frames[MaxFEars]; //max amount of ear frames
 };
 
 struct FramesVisor {
@@ -264,7 +269,7 @@ struct FramesVisor {
 struct AnimNowVisor {
   int type;
   int numOfFrames;
-  FramesVisor frames[30]; //max amount of visor frames
+  FramesVisor frames[MaxFVisor]; //max amount of visor frames
   bool isMouth[20];
 };
 
@@ -278,10 +283,10 @@ void displayCenter(String text, uint16_t h) {
 }
 
 //--------------------------------//Config vars
-bool speechEna = false, boopEna = false, tiltEna = false, bleEna = false, oledEna = false, instantReload = false, oledInitDone = false;
-int rbSpeed, rbWidth, spMin, spMax, spTrig, currentEarsFrame = 0, currentVisorFrame = 0, bEar, bVisor, numOfSegm, numAnimBlush;
+bool speechEna = false, boopEna = false, tiltEna = false, bleEna = false, oledEna = false, instantReload = false, oledInitDone = false, tiltInitDone = false;
+int rbSpeed, rbWidth, spMin, spMax, spTrig, currentEarsFrame = 0, currentVisorFrame = 0, bEar, bVisor, bBlush, numOfSegm, numAnimBlush;
 String aTilt = "confused.json", aUp = "upset.json", currentAnim = "", visColorStr = "", ledType = "";
-float neutralX, neutralY, neutralZ, tiltX, tiltY, tiltZ, upX, upY, upZ;
+float neutralX, neutralY, neutralZ, tiltX, tiltY, tiltZ, upX, upY, upZ, tiltTol = 0.1;
 unsigned long visColor = 0xFF0000;
 
 String earTypes[5] = {"custom","rainbow","white_noise","corner_sabers","custom_glow"};
@@ -426,6 +431,7 @@ bool loadConfig() {
   oledEna = doc["oledEna"].as<bool>();
   bEar = doc["bEar"].as<int>();
   bVisor = doc["bVisor"].as<int>();
+  bBlush = doc["bBlush"].as<int>();
   rbSpeed = doc["rbSpeed"].as<int>();
   rbWidth = doc["rbWidth"].as<int>();
   spMin = doc["spMin"].as<int>();
@@ -442,6 +448,7 @@ bool loadConfig() {
   upX = doc["upX"].as<float>();
   upY = doc["upY"].as<float>();
   upZ = doc["upZ"].as<float>();
+  tiltTol = doc["tiltTol"].as<float>();
   visColorStr = doc["visColor"].as<String>();
   visColor = strtol(visColorStr.c_str()+1, NULL, 16);
   wifiName = doc["wifiName"].as<String>();
@@ -469,6 +476,7 @@ bool saveConfig() {
   doc["oledEna"] = oledEna;
   doc["bEar"] = bEar;
   doc["bVisor"] = bVisor;
+  doc["bBlush"] = bBlush;
   doc["rbSpeed"] = rbSpeed;
   doc["rbWidth"] = rbWidth;
   doc["spMin"] = spMin;
@@ -485,6 +493,7 @@ bool saveConfig() {
   doc["upX"] = upX;
   doc["upY"] = upY;
   doc["upZ"] = upZ;
+  doc["tiltTol"] = tiltTol;
   doc["visColor"] = visColorStr;
   doc["wifiName"] = wifiName;
   doc["wifiPass"] = wifiPass;
@@ -522,22 +531,24 @@ void setDefault() {
   oledEna = false;
   bEar = 60;
   bVisor = 100;
+  bBlush = 100;
   rbSpeed = 15;
   rbWidth = 8;
   spMin = 90;
-  spMax = 130;
+  spMax = 110;
   spTrig = 1500;
   aTilt = "confused.json";
   aUp = "sad.json";
-  neutralX = 0.0; //TBD
-  neutralY = 0.0;
-  neutralZ = 0.0;
-  tiltX = 0.0;
-  tiltY = 0.0;
-  tiltZ = 0.0;
-  upX = 0.0;
-  upY = 0.0;
-  upZ = 0.0;
+  neutralX = 0.3;
+  neutralY = 0.92;
+  neutralZ = 0.33;
+  tiltX = 0.05;
+  tiltY = 0.7;
+  tiltZ = 0.73;
+  upX = -0.17;
+  upY = 0.99;
+  upZ = 0.11;
+  tiltTol = 0.1;
   visColorStr = "#ff0000";
   visColor = strtol(visColorStr.c_str()+1, NULL, 16);
   wifiName = "Proto";
@@ -580,15 +591,6 @@ uint64_t speakMatrix(uint64_t input) {
   return out;
 }
 
-//--------------------------------//Accel check if neutral
-bool isNeutral() {
-  if(myIMU.readFloatAccelX() < neutralX+0.2 && myIMU.readFloatAccelX() > neutralX-0.2 && myIMU.readFloatAccelZ() < neutralZ+0.2 && myIMU.readFloatAccelZ() > neutralZ-0.2) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 //--------------------------------//Float mapping
 float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -624,6 +626,8 @@ void startWiFiWeb() {
       bEar = request->getParam("bEar")->value().toInt();
     if(request->hasParam("bVisor"))
       bVisor = request->getParam("bVisor")->value().toInt();
+    if(request->hasParam("bBlush"))
+      bBlush = request->getParam("bBlush")->value().toInt();
     //anims configs
     if(request->hasParam("rbSpeed"))
       rbSpeed = request->getParam("rbSpeed")->value().toInt();
@@ -648,18 +652,21 @@ void startWiFiWeb() {
       neutralZ = request->getParam("neutralZ")->value().toFloat();
     //side tilt
     if(request->hasParam("tiltX"))
-      neutralX = request->getParam("tiltX")->value().toFloat();
+      tiltX = request->getParam("tiltX")->value().toFloat();
     if(request->hasParam("tiltY"))
-      neutralY = request->getParam("tiltY")->value().toFloat();
+      tiltY = request->getParam("tiltY")->value().toFloat();
     if(request->hasParam("tiltZ"))
-      neutralZ = request->getParam("tiltZ")->value().toFloat();
+      tiltZ = request->getParam("tiltZ")->value().toFloat();
     //up tilt
     if(request->hasParam("upX"))
-      neutralX = request->getParam("upX")->value().toFloat();
+      upX = request->getParam("upX")->value().toFloat();
     if(request->hasParam("upY"))
-      neutralY = request->getParam("upY")->value().toFloat();
+      upY = request->getParam("upY")->value().toFloat();
     if(request->hasParam("upZ"))
-      neutralZ = request->getParam("upZ")->value().toFloat();
+      upZ = request->getParam("upZ")->value().toFloat();
+    //tilt tolerant
+    if(request->hasParam("tiltTol"))
+      tiltTol = request->getParam("tiltTol")->value().toFloat();
     //color
     if(request->hasParam("visColor"))
       visColorStr = String(request->getParam("visColor")->value());
@@ -775,7 +782,7 @@ void setup() {
   Serial.begin(115200);
 
   pinMode(MICpin, INPUT);
-  pinMode(T_in, INPUT);
+  pinMode(T_in, INPUT_PULLUP);
   pinMode(T_en, OUTPUT);
   pinMode(wifi_en, INPUT_PULLUP);
   pinMode(animBtn, INPUT_PULLUP);
@@ -816,6 +823,8 @@ void setup() {
     if(myIMU.begin()) {
       Serial.println("[E] An Error has occurred while connecting to LSM!");
       tiltEna = false;
+    } else {
+      tiltInitDone = true;
     }
   }
 
@@ -845,7 +854,7 @@ String oldanim, boopoldanim;
 bool booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false, displayLeds = false;
 float zAx,yAx,finalMicAvg,nvol,micline,avgMicArr[10];
 int randomNum, boopRead, randomTimespan = 0, startIndex = 1, speaking = 0, currentMicAvg = 0, btnNum = 0;
-unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime =0;
+unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0;
 byte row = 0;
 
 //--------------------------------//Visor bufferer
@@ -871,9 +880,8 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
   displayLeds = true;
 }
 
-float tol = 0.1;
 bool isApproxEqual(const float ax, const float ay, const float az, const float bx, const float by, const float bz) {
-  return (fabs(ax-bx) < tol && fabs(ay-by) < tol && fabs(az-bz) < tol);
+  return (fabs(ax-bx) < tiltTol && fabs(ay-by) < tiltTol && fabs(az-bz) < tiltTol);
 }  
 
 void loop() {
@@ -953,7 +961,7 @@ void loop() {
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
       setAllVisor(visorLeds,visColor,currentVisorFrame); //set visor leds
       for(int x = 0; x<8; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
-      fadeToBlackBy(blushLeds, 8, 128-bVisor);
+      fadeToBlackBy(blushLeds, 8, 128-bBlush);
       currentVisorFrame++;
       instantReload = false;
     }
@@ -967,33 +975,40 @@ void loop() {
     fill_rainbow(visorPixelBuffer, 1, millis()/rbSpeed, 128/rbWidth);
     setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame);
     for(int x = 0; x<numAnimBlush; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
-      fadeToBlackBy(blushLeds, 8, 128-bVisor);
+      fadeToBlackBy(blushLeds, 8, 128-bBlush);
       if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
         currentVisorFrame++;
         instantReload = false;
       }
   }
 
-  //--------------------------------//TILT //does redo work? does the changing to right anim work?
+  //--------------------------------//TILT
   if(lastMillsTilt+100<=millis() && tiltEna) {
-    //Serial.println(myIMU.readFloatAccelX());
-    //Serial.println(myIMU.readFloatAccelZ());
     if(isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),upX,upY,upZ) && !wasTilt) {
       Serial.println("up");
       wasTilt = true;
       oldanim = currentAnim;
+      tiltChange = millis();
       loadAnim(aUp,"");
     } else if (isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),tiltX,tiltY,tiltZ) && !wasTilt) {
       Serial.println("tilt");
       wasTilt = true;
       oldanim = currentAnim;
+      tiltChange = millis();
       loadAnim(aTilt,"");
-    } else if (isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),neutralX,neutralY,neutralZ) && wasTilt) {
+    } else if ((tiltChange+revertTilt<millis() || isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),neutralX,neutralY,neutralZ)) && wasTilt) {
       Serial.println("neutral");
       wasTilt = false;
       loadAnim(oldanim,"");
     }
     lastMillsTilt = millis();
+  } else if (!tiltInitDone && tiltEna) {
+    if(myIMU.begin()) {
+      Serial.println("[E] An Error has occurred while connecting to LSM!");
+      tiltEna = false;
+    } else {
+      tiltInitDone = true;
+    }
   }
 
   //--------------------------------//SPEECH Detection
@@ -1087,11 +1102,10 @@ void loop() {
     }
   }
 
-  //--------------------------------//BOOP Detection, avg then check
+  //--------------------------------//BOOP Detection
   if(millis() > 200 && boopEna) {
     digitalWrite(T_en, HIGH);
     delayMicroseconds(210);
-    //Serial.println(analogRead(T_in));
     if(booping == false && !digitalRead(T_in)) {
       delayMicroseconds(395);
       if(!digitalRead(T_in)) {
@@ -1142,7 +1156,7 @@ void loop() {
     if(ledType == "WS2812") {
       //FastLED.show(); //doing it before because ears and blush
     } else if (ledType == "MAX72XX") {
-      mx.control(MD_MAX72XX::INTENSITY, bEar); //seperate setting? (int(bVisor/17))
+      mx.control(MD_MAX72XX::INTENSITY, bVisor);
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
     }
