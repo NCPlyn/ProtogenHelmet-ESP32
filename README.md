@@ -21,18 +21,23 @@
 - [x] ElegantOTA (**192.168.4.1/update**)
 - [x] visor / blush brightness fix (ws 0-255, max 0-16)
 
-- [ ] Replace the HM10 in the remote with something else to make it fail less (ESP??) (**needs polishing, it's own project and ElegantOTA**)
-- [ ] Support different sized OLED, define addreses
-- [ ] Proper enable/disable of features (code wise or reset, same with remote, tilt?working?)
-- [ ] More anims (Rainbow from boop,...)
-- [ ] More QOL for animator (similiar to https://xantorohara.github.io/led-matrix-editor/, load custom visor file option(done), update web version)
-- [ ] Default values comment and hw button? (same for remote)
+- ToDo: Helmet
+- [ ] More QOL for animator (similiar to https://xantorohara.github.io/led-matrix-editor/, update web version)
 - [ ] Better custom WS28xx display (**pcbs came, needs check and do website**)
+- [ ] Support different sized OLED, define addreses, brightness
+- [ ] Proper enable/disable of features (code wise or reset)
+- [ ] More anims (Rainbow from boop,...)
+
+- ToDo: Remote
+- [ ] Replace the HM10 in the remote with something else to make it fail less (ESP??) (**needs polishing, it's own project and ElegantOTA**)
+- [ ] Default values comment and hw button?
 - [ ] Clean up
 
+- ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune proximity sensor" for boop (do not need SW fixing, all is about proper placement and tuning sensor)
 - [ ] Make wiring and flashing tutorial (including fs things)
 - [ ] Make uptodate parts list for most options
   
 - But I'm limited in my free time that I can give here so it will take a while!
 - If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)
+- Thank you **Arkoss** for your donation! [IG](https://www.instagram.com/snowkatark/)

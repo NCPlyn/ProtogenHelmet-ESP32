@@ -38,7 +38,7 @@
 #define MAX72xx_DEVICES 11
 #define EarLedsNum 74
 #define VisorLedsNum 704
-#define BlushLedsNum 8
+#define blushLedsNum 8
 
 #define MaxFEars 30 //Max amount of Ear frames (hardcoded to assign memory)
 #define MaxFVisor 30 //Max amount of Visor frames
@@ -295,32 +295,30 @@ String visorTypes[2] = {"custom","all_rainbow"};
 //--------------------------------//Load functions
 bool loadAnim(String anim, String temp) {
   JsonDocument doc;
+  DeserializationError error;
 
-  if(anim == "POSTAnimLoad") {
-    Serial.println("POST");
-    if(deserializeJson(doc, temp)){
-      Serial.println("[E] Failed to deserialize POST of a animation!");
-      return false;
-    }
-  } else if (currentAnim != anim) {
-    File file = LittleFS.open("/anims/"+anim, "r");
-    if (!file) {
-      Serial.println("[E] There was an error opening the animation file!");
+  if (currentAnim != anim) {
+    if(anim == "POSTAnimLoad") {
+      Serial.println("POST");
+      error = deserializeJson(doc, temp);
+    } else {
+      File file = LittleFS.open("/anims/"+anim, "r");
+      if (!file) {
+        Serial.println("[E] There was an error opening the animation file!");
+        file.close();
+        return false;
+      }
+      Serial.println("[I] Animation file opened!");
+      ReadBufferingStream bufferedFile{file, 64};
+      error = deserializeJson(doc, bufferedFile);
       file.close();
-      return false;
     }
-    Serial.println("[I] Animation file opened!");
-
-    ReadBufferingStream bufferedFile{file, 64};
-    DeserializationError error = deserializeJson(doc, bufferedFile);
-
+    
     if(error){
       Serial.println("[E] Failed to deserialize animation file!");
       Serial.println(error.c_str());
       return false;
     }
-
-    file.close();
 
     currentAnim = anim;
 
@@ -808,7 +806,7 @@ void setup() {
   }
 
   ledController[0] = &FastLED.addLeds<WS2812B, DATA_PIN_EARS, GRB>(earLeds, EarLedsNum);
-  ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, BlushLedsNum);
+  ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, blushLedsNum);
   if(ledType == "WS2812") { //atm doing only visor, blush & ears stays on
     ledController[2] = &FastLED.addLeds<WS2812B, DATA_PIN_VISOR, GRB>(visorLeds, VisorLedsNum);
     FastLED.setCorrection(TypicalPixelString);
@@ -961,7 +959,7 @@ void loop() {
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
       setAllVisor(visorLeds,visColor,currentVisorFrame); //set visor leds
       for(int x = 0; x<8; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
-      fadeToBlackBy(blushLeds, 8, 128-bBlush);
+      fadeToBlackBy(blushLeds, blushLedsNum, 255-bBlush);
       currentVisorFrame++;
       instantReload = false;
     }
@@ -975,7 +973,7 @@ void loop() {
     fill_rainbow(visorPixelBuffer, 1, millis()/rbSpeed, 128/rbWidth);
     setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame);
     for(int x = 0; x<numAnimBlush; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
-      fadeToBlackBy(blushLeds, 8, 128-bBlush);
+      fadeToBlackBy(blushLeds, blushLedsNum, 255-bBlush);
       if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
         currentVisorFrame++;
         instantReload = false;
