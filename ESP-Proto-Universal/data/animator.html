@@ -3,6 +3,7 @@
   <meta charset="utf-8">
   <title>Proto Animator</title>
   <link rel="shortcut icon" href="data:," />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
   <main>
@@ -120,12 +121,30 @@
         <div id="matrixes"></div>
         <br><br>
         <p>Matrix control:</p>
-        <button type="button" onclick='setAction("copy");'>Copy</button> <button type="button" onclick='setAction("paste");'>Paste</button> <sup onclick="alert('Click on Copy or Paste and then click on matrix which you want to affect')">&#9432;</sup><br>
-        <button type="button" onclick="fillBlackVisor()">Empty visor</button>
-        <button type="button" onclick="mirrorVisor()">Copy left to right</button> <sup onclick="alert('Might not work due to wierd config/wiring')">&#9432;</sup><br>
-        <label for="timespanVisor">Timespan: </label>
-        <input type="number" id="timespanVisor" value="500" min="1"> |
-        <button onclick="frameGenVisor(-1)">Add visor frame</button><br>
+        <div style="display: flex;">
+          <div style="">
+            <button type="button" onclick='setAction("select");'>Select</button>
+            <button type="button" onclick='setAction("select");'>Deselect</button>
+            <div id="shift-buttons-container">
+              <button id="shift-up-button" style="left:35px;" title="Shift matrix up">🔼</button>
+              <button id="shift-right-button" style="top:35px;left:70px;" title="Shift matrix right">▶️</button>
+              <button id="shift-down-button" style="top:70px;left:35px;" title="Shift matrix down">🔽</button>
+              <button id="shift-left-button" style="top:35px;" title="Shift matrix left">◀️</button>
+              <button id="invert-button" style="top:35px;left:35px;" title="Invert matrix">🔀</button>
+              <button id="rotate-back-button"title="Rotate matrix counterclock-wise">🔄</button>
+              <button id="rotate-button" style="left:70px;" title="Rotate matrix clockwise">🔃</button>
+            </div>
+          </div>
+          <div style="margin-left:20px;">
+            <button type="button" onclick='setAction("copy");'>Copy</button> <button type="button" onclick='setAction("paste");'>Paste</button> <sup onclick="alert('Click on Copy or Paste and then click on matrix which you want to affect')">&#9432;</sup><br>
+            <button type="button" onclick="fillBlackVisor()">Empty visor</button>
+            <button type="button" onclick="mirrorVisor()">Copy left to right</button> <sup onclick="alert('Might not work due to wierd config/wiring')">&#9432;</sup><br>
+            <label for="timespanVisor">Timespan: </label>
+            <input type="number" id="timespanVisor" value="500" min="1"> |
+            <button onclick="frameGenVisor(-1)">Add visor frame</button>
+          </div>
+        </div>
+        <br>
         <p class="timespan">Frames:</p>
         <div id="visorFramesP"></div>
         <div id="editDivVisor" style="display:none">
@@ -141,7 +160,7 @@
     1. <button onclick="completeGen()">Generate final JSON</button><br>
     <form action="./savefile" method="post" id="footerForm">
       <label for="output">File content / paste here to load:</label><br>
-      <textarea rows="7" cols="100" name="content" id="output" required></textarea><br>
+      <textarea rows="7" cols="50" name="content" id="output" required></textarea><br>
       2. Name of animation (without .json): <input type="text" name="file" required id="fileName"><br>
     </form>
   	<hr>
@@ -161,6 +180,23 @@
 </html>
 
 <style>
+  #shift-buttons-container {
+    position: relative;
+    box-sizing: content-box;
+    width: 130px;
+    height: 105px;
+    margin-bottom: 0 !important;
+    margin-left:10px;
+  }
+  #rotate-button,#rotate-back-button,#invert-button,#shift-up-button,#shift-right-button,#shift-down-button,#shift-left-button {
+    position: absolute;
+    height: 30px;
+    width: 30px;
+    box-sizing: border-box;
+    padding: 0;
+    font-size: 18px;
+    background-color: transparent;
+  }
   input,option,button {
     margin-bottom: 5px;
   }
@@ -283,6 +319,8 @@
   let visTypeMouth;
   let numOfSegm = 0;
   let numOfBlush = 0;
+  
+  let selMatrix = "t0";
   
   $("#visorConfig").change(function() {
     numOfSegm = 0;
@@ -701,14 +739,124 @@
       if(matrixAction == "paste") {
         for (var i = 1; i < 9; i++) {
           for (var j = 1; j < 9; j++) {
-            $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $("#"+selMatrix).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class"));
+            $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $("#t"+selMatrix).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class"));
           }
         }
-      } else if (matrixAction == "copy") {
-        selMatrix = tID;
+      } else if (matrixAction == "copy" || matrixAction == "select") {
+        selMatrix = tID.slice(1);
       }
       matrixAction = "";
     }
+  });
+  
+  function Bitmap(hexString) {
+    let matrix = fromHexString(hexString);
+
+    function fromHexString(hexString) {
+      const out = [];
+      for (let i = 0; i < hexString.length / 2; i++) {
+        let byte = parseInt(hexString.substr(i * 2, 2), 16).toString(2);
+        byte = ('00000000' + byte).substr(-8);
+        out.push(byte.split('').reverse());
+      }
+      return out.reverse();
+    }
+
+    function toHexString() {
+      const out = [];
+      for (let i = 0; i < matrix.length; i++) {
+        let byte = parseInt(matrix[i].slice().reverse().join(''), 2).toString(16);
+        byte = ('0' + byte).substr(-2);
+        out.push(byte);
+      }
+      return out.reverse().join('');
+    }
+
+    function transpose() {
+      for (let i = 0; i < matrix.length; i++) {
+        for (let j = i; j < 8; j++) {
+          const tmp = matrix[i][j];
+          matrix[i][j] = matrix[j][i];
+          matrix[j][i] = tmp;
+        }
+      }
+    }
+
+    function shiftLeft() {
+      for (let i = 0; i < matrix.length; i++) {
+        const len = matrix[i].length - 1;
+        for (let j = 0; j < len; j++) {
+          matrix[i][j] = matrix[i][j + 1];
+        }
+        matrix[i][len] = 0;
+      }
+    }
+
+    function shiftRight() {
+      for (let i = 0; i < matrix.length; i++) {
+        const len = matrix[i].length - 1;
+        for (let j = len; j > 0; j--) {
+          matrix[i][j] = matrix[i][j - 1];
+        }
+        matrix[i][0] = 0;
+      }
+    }
+
+    function rotate() {
+      matrix.reverse();
+      transpose();
+    }
+
+    function rotateBack() {
+      transpose();
+      matrix.reverse();
+    }
+
+    return {
+      toHexString: toHexString,
+      shiftLeft: shiftLeft,
+      shiftRight: shiftRight,
+      rotate: rotate,
+      rotateBack: rotateBack,
+    }
+  }
+  
+  $('#invert-button').click(function () {
+    $("#t"+selMatrix).find('.item').toggleClass('active');
+  });
+
+  $('#shift-up-button').click(function () {
+    var val = '00' + fixPattern(ledsToHex(selMatrix)).substr(0, 14);
+    hexInputToLeds(selMatrix, val);
+  });
+
+  $('#shift-down-button').click(function () {
+    var val = fixPattern(ledsToHex(selMatrix)).substr(2, 14) + '00';
+    hexInputToLeds(selMatrix, val);
+  });
+
+  $('#shift-right-button').click(function () {
+    const bitmap = Bitmap(fixPattern(ledsToHex(selMatrix)));
+    bitmap.shiftRight();
+    hexInputToLeds(selMatrix, bitmap.toHexString());
+  });
+
+  $('#shift-left-button').click(function () {
+    const bitmap = Bitmap(fixPattern(ledsToHex(selMatrix)));
+    bitmap.shiftLeft();
+    hexInputToLeds(selMatrix, bitmap.toHexString());
+  });
+
+  $('#rotate-button').click(function () {
+    const bitmap = Bitmap(fixPattern(ledsToHex(selMatrix)));
+    bitmap.rotate();
+    hexInputToLeds(selMatrix, bitmap.toHexString());
+  });
+
+  $('#rotate-back-button').click(function () {
+    const bitmap = Bitmap(fixPattern(ledsToHex(selMatrix)));
+    bitmap.rotateBack();
+    hexInputToLeds(selMatrix, bitmap.toHexString());
   });
 
   var framesVisor = [];
