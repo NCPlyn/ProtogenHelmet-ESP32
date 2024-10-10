@@ -120,11 +120,11 @@
       <div id="visorDiv">
         <div id="matrixes"></div>
         <br><br>
-        <p>Matrix control:</p>
+        <p>Matrix control: <sup onclick="alert('There are keyboard shortcuts! Hover over button to see')">&#9432;</sup></p> 
         <div style="display: flex;">
-          <div style="">
-            <button type="button" onclick='setAction("select");'>Select</button>
-            <button type="button" onclick='setAction("select");'>Deselect</button>
+          <div>
+            <button type="button" onclick='setAction("select");' title="Keyboard: 'S' - Select matrix to work on">Select</button>
+            <button type="button" id="entire-button" title="Keyboard: 'T' - Toggle entire selected matrix">Toggle</button>
             <div id="shift-buttons-container">
               <button id="shift-up-button" style="left:35px;" title="Shift matrix up">🔼</button>
               <button id="shift-right-button" style="top:35px;left:70px;" title="Shift matrix right">▶️</button>
@@ -136,7 +136,8 @@
             </div>
           </div>
           <div style="margin-left:20px;">
-            <button type="button" onclick='setAction("copy");'>Copy</button> <button type="button" onclick='setAction("paste");'>Paste</button> <sup onclick="alert('Click on Copy or Paste and then click on matrix which you want to affect')">&#9432;</sup><br>
+            <button type="button" onclick='setAction("row");' title="Keyboard: 'R' - Toggle entire clicked row">Row</button> <button type="button" onclick='setAction("col");' title="Keyboard: 'C' - Toggle entire clicked column">Column</button> <sup onclick="alert('Click on Row/Column and then click on Row/Column which you want to toggle')">&#9432;</sup><br>
+            <button type="button" onclick='setAction("select");' title="Keyboard: 'S' - Select matrix to copy from">Copy</button> <button type="button" onclick='setAction("paste");'title="Keyboard: 'P' - Select matrix to paste to">Paste</button> <sup onclick="alert('Click on Copy or Paste and then click on matrix which you want to affect')">&#9432;</sup><br>
             <button type="button" onclick="fillBlackVisor()">Empty visor</button>
             <button type="button" onclick="mirrorVisor()">Copy left to right</button> <sup onclick="alert('Might not work due to wierd config/wiring')">&#9432;</sup><br>
             <label for="timespanVisor">Timespan: </label>
@@ -215,7 +216,8 @@
     font-size: 30px;
   }
   #earsFramesP a,#visorFramesP a {
-    padding-right: 10px;
+    margin-right: 5px;
+    margin-left: 5px;
   }
   h1,h2 {
     margin-block-start: 0.4em;
@@ -506,7 +508,9 @@
   //detects click on frame to edit, call function to load it
   $("#earsFramesP").on('click', "a", function() {
     if ($(this).closest('div').attr('id') == "earsFramesP") {
+      $("#earsFramesP").find('a[id="'+nowEditEarsFrame+'"]').css("border","");
       nowEditEarsFrame = $(this).attr('id');
+      $(this).css("border","red dotted 1px");
       loadEarsFrame();
     }
   });
@@ -529,7 +533,7 @@
   //calls frame generator to save currently editing frame
   $("#saveEditFrameEars").on('click', function() {
     frameGenEars($(this).attr('value'));
-    $("#editDivEars").hide();
+    //$("#editDivEars").hide();
   });
 
   //get json code for ears and visor, generates final usable code and resets stuff
@@ -628,7 +632,9 @@
   //detects click on frame to edit, call function to load it
   $("#visorFramesP").on('click', "a", function() {
     if ($(this).closest('div').attr('id') == "visorFramesP") {
+      $("#visorFramesP").find('a[id="'+nowEditVisorFrame+'"]').css("border","");
       nowEditVisorFrame = $(this).attr('id');
+      $(this).css("border","red dotted 1px");
       loadVisorFrame();
     }
   });
@@ -670,7 +676,7 @@
   //calls frame generator to save currently editing frame
   $("#saveEditFrameVisor").on('click', function() {
     frameGenVisor($(this).attr('value'));
-    $("#editDivVisor").hide();
+    //$("#editDivVisor").hide();
   });
 
   function fillBlackVisor() {
@@ -742,11 +748,55 @@
             $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $("#t"+selMatrix).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class"));
           }
         }
-      } else if (matrixAction == "copy" || matrixAction == "select") {
+      } else if (matrixAction == "select") {
+        $("#t"+selMatrix).find("table").css("border-color","");
+        $("#"+tID).find("table").css("border-color","red");
         selMatrix = tID.slice(1);
       }
       matrixAction = "";
     }
+  });
+  
+  $("#matrixes").on('click', 'td', function(e) {
+    let iRowID = $(this).closest('td[data-row]').attr('data-row');
+    let iColID = $(this).closest('td[data-col]').attr('data-col');
+    let tID = $(this).closest('td[data-row]').parents('td[id]').attr('id');
+    if(iColID !== undefined && iRowID !== undefined && tID !== undefined && tID.includes("t")) {
+      if(matrixAction == "col") {
+        $('#'+tID).find('.item[data-col=' + iColID + ']').toggleClass('active', $('#'+tID).find('.item[data-col=' + iColID + '].active').length != 8);
+      } else if (matrixAction == "row") {
+        $('#'+tID).find('.item[data-row=' + iRowID + ']').toggleClass('active', $('#'+tID).find('.item[data-row=' + iRowID + '].active').length != 8);
+      } else if (matrixAction == "paste") {
+        for (var i = 1; i < 9; i++) {
+          for (var j = 1; j < 9; j++) {
+            $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $("#t"+selMatrix).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class"));
+          }
+        }
+      } else if (matrixAction == "select") {
+        $("#t"+selMatrix).find("table").css("border-color","");
+        $("#"+tID).find("table").css("border-color","red");
+        selMatrix = tID.slice(1);
+      }
+      matrixAction = "";
+    }
+  });
+
+  $(document).ready(()=>{
+    $(document).keypress(function (event) {
+      let key = (event.keyCode ? event.keyCode : event.which);
+      let charr = String.fromCharCode(key)
+      if(charr == "c") {
+        matrixAction = "col";
+      } else if(charr == "r") {
+        matrixAction = "row";
+      } else if(charr == "p") {
+        matrixAction = "paste";
+      } else if(charr == "s") {
+        matrixAction = "select";
+      } else if(charr == "t") {
+        entireMatrix()
+      }
+    });
   });
   
   function Bitmap(hexString) {
@@ -858,6 +908,14 @@
     bitmap.rotateBack();
     hexInputToLeds(selMatrix, bitmap.toHexString());
   });
+  
+  $('#entire-button').click(function () {
+    entireMatrix();
+  });
+  
+  function entireMatrix() {
+    $("#t"+selMatrix).find('.item').toggleClass('active', $("#t"+selMatrix).find('.item.active').length != 64);
+  }
 
   var framesVisor = [];
 

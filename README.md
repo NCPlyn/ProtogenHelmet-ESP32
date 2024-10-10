@@ -20,16 +20,18 @@
 - [x] OLED init bug fix at runtime
 - [x] ElegantOTA (**192.168.4.1/update**)
 - [x] visor / blush brightness fix (ws 0-255, max 0-16)
+- [x] More QOL for animator (credit to https://xantorohara.github.io/led-matrix-editor/, this is kinda built on top xD)
 
 - ToDo: Helmet
-- [ ] More QOL for animator (similiar to https://xantorohara.github.io/led-matrix-editor/, update web version)
+- [ ] Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
 - [ ] Better custom WS28xx display (**pcbs came, needs check and do website**)
 - [ ] Support different sized OLED, define addreses, brightness
 - [ ] Proper enable/disable of features (code wise or reset)
 - [ ] More anims (Rainbow from boop,...)
 
 - ToDo: Remote
-- [ ] Replace the HM10 in the remote with something else to make it fail less (ESP??) (**needs polishing, it's own project and ElegantOTA**)
+- [ ] Save set button actions
+- [ ] Convert to PlatformIO + add ElegantOTA
 - [ ] Default values comment and hw button?
 - [ ] Clean up
 
