@@ -1,6 +1,8 @@
 # A controller for your protogen!
 - There's planned a big update (custom amount of displays, supported both MAX and WS28xx displays in the same codebase, using PSRAM & more!)... But I'm limited in my free time that I can give here so it will take a while!
+- Early access is in the beta branch of this repo.
 - If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)
+- Once I finish the code in the beta branch, this branch will get renamed to "Legacy" and no longer supported (but is working) and the beta branch will be moved to be the main code as "ProtoESP".
 ### Please read:
 - If you experience any bug or want to add/suggest something, create an issue or pull request.
 - There are two versions:
