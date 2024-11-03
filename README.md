@@ -21,19 +21,25 @@
 - [x] ElegantOTA (**192.168.4.1/update**)
 - [x] visor / blush brightness fix (ws 0-255, max 0-16)
 - [x] More QOL for animator (credit to https://xantorohara.github.io/led-matrix-editor/, this is kinda built on top xD)
+- [x] Remote: Convert to PlatformIO + add ElegantOTA
+- [x] Remote: Buttons XIAO + PCB
 
 - ToDo: Helmet
 - [ ] Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
-- [ ] Better custom WS28xx display (**pcbs came, needs check and do website**)
+- [ ] Better custom WS28xx display (**waiting for v3, taking preorders** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
 - [ ] Support different sized OLED, define addreses, brightness
 - [ ] Proper enable/disable of features (code wise or reset)
-- [ ] More anims (Rainbow from boop,...)
+- [ ] More RGB anims/modes (Rainbow from boop/front, etc)
+- [ ] Button from remote to change the RGB modes + show on OLED
+- [ ] Put into functions/files
+- [ ] Hide WS stuff if MAX is choosen
+- [ ] GPIO1 hold when boot = factory (close enough)
 
 - ToDo: Remote
-- [ ] Save set button actions
-- [ ] Convert to PlatformIO + add ElegantOTA
-- [ ] Default values comment and hw button?
-- [ ] Clean up
+- [ ] getBLE/scanBLE - timeout watchdog????
+- [ ] Flex sensors
+- [ ] Different modes of using the buttons
+- [ ] GPIO1 hold when boot = factory (close enough)
 
 - ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune proximity sensor" for boop (do not need SW fixing, all is about proper placement and tuning sensor)
@@ -43,3 +49,4 @@
 - But I'm limited in my free time that I can give here so it will take a while!
 - If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)
 - Thank you **Arkoss** for your donation! [IG](https://www.instagram.com/snowkatark/)
+- Thank you **Alellv** for you donation! [GitHub](https://github.com/Alellv)

@@ -45,6 +45,8 @@
 
 #define revertTilt 8000 //The maximum time that animation caused by tilt gets shown (used as if tilt bugs out etc)
 
+#define oldMatrixFix true
+
 //--------------------------------//No touching after this
 
 #include <ezButton.h>
@@ -867,7 +869,11 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
       row = (tempSegment >> i * 8) & 0xFF;
       for (int j = 0; j < 8; j++) {
         if(ledType == "WS2812") {
-          ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?ledColor:CRGB::Black; //includes fix for bad rgbmatrix, to be fixed with new matrixes
+          if(oldMatrixFix) {
+            ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?ledColor:CRGB::Black; //includes fix for bad rgbmatrix, to be fixed with new matrixes
+          } else {
+            ledArray[(y*64)+(i*8)+j] = (bitRead(row,j))?ledColor:CRGB::Black;
+          }
         } else if (ledType == "MAX72XX") {
           mx.setPoint(i, j+(y*8), bitRead(row, j)); //MAXstuff
         }
