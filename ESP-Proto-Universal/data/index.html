@@ -24,6 +24,8 @@
         <div class="config">
           <h2>Basic</h2>
           <form>
+            <label for="fanspeed">Fan</label>
+            <input type="range" min="0" max="255" value="200" id="fanspeed">
             <label for="boop">Boop</label>
             <input type="checkbox" id="boop">
             <label for="speech">Speech</label>
@@ -52,6 +54,8 @@
             <input type="number" name="bVisor" min="0" max="255">
             <label for="bBlush">Brightness blush (0-255|128)</label>
             <input type="number" name="bBlush" min="0" max="255">
+            <label for="bOled">Brightness OLED (0-2|2)</label>
+            <input type="number" name="bOled" min="0" max="2">
             <label for="rbSpeed">Rainbow prefab speed (1-200ms|15)</label>
             <input type="number" name="rbSpeed" min="1" max="200">
             <label for="rbWidth">Rainbow hue width (1-32|8)</label>
@@ -147,7 +151,7 @@
     width: fit-content;
     margin: auto;
   }
-  input, select {
+  input:not(#fanspeed), select {
     background-color:#21252B;
     color:white;
     border:3px solid #3f444d;
@@ -212,6 +216,22 @@
 		option.value = option.text = val;
 		select.add(option);
 	}
+
+  $("#fanspeed").change(function() {
+    console.log();
+    var xhr = new XMLHttpRequest();
+		xhr.open("GET", "/fanpwm?duty="+$("#fanspeed").val(), true);
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        if (xhr.responseText.includes("Set")) {
+          //do nothing
+        } else {
+          alert(xhr.responseText);
+        }
+      }
+    }
+	  xhr.send(null);
+  });
 
 	function loadFiles() {
 		xmlhttp=new XMLHttpRequest();
@@ -280,6 +300,7 @@
 				document.getElementsByName("bEar")[0].value = obj.bEar;
 				document.getElementsByName("bVisor")[0].value = obj.bVisor;
         document.getElementsByName("bBlush")[0].value = obj.bBlush;
+        document.getElementsByName("bOled")[0].value = obj.bOled;
 				document.getElementsByName("rbSpeed")[0].value = obj.rbSpeed;
 				document.getElementsByName("rbWidth")[0].value = obj.rbWidth;
 				document.getElementsByName("spMin")[0].value = obj.spMin;
@@ -301,6 +322,7 @@
         document.getElementsByName("wifiName")[0].value = obj.wifiName;
         document.getElementsByName("wifiPass")[0].value = obj.wifiPass;
         document.getElementsByName("ledType")[0].value = obj.ledType;
+        document.getElementById("fanspeed").value = obj.fanDuty;
 			}
 		}
 		xmlhttp.open("GET", "/config.json", false );

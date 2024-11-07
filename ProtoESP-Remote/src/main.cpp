@@ -42,6 +42,8 @@ NimBLEClient* pClient;
 bool doConnect = false,connected = false,buttonPressed = false;
 String foundDevices = "", BLE = "ProtoESP";
 
+unsigned long check0button = 0;
+
 // BLE Scan callback
 class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
   void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
@@ -221,6 +223,8 @@ void startWiFiWeb() {
 //--------------------------------//Setup
 void setup() {
   Serial.begin(115200);
+  
+  pinMode(0, INPUT);
 
   if(!LittleFS.begin(true)) {
     Serial.println("[E] An Error has occurred while mounting LittleFS! Halting");
@@ -286,6 +290,19 @@ void loop() {
         }
       }
     }
+  }
+  
+  //press boot button for 10sec to reset
+  if(check0button+10000 < millis() && check0button+10500 > millis() && digitalRead(0) == LOW) {
+    Serial.println("[I] Resetting to defaults");
+    setDefault();
+    delay(20);
+    ESP.restart();
+  } else if (digitalRead(0) == HIGH && check0button+10000 > millis() && check0button < millis()) {
+    check0button = 0;
+  } else if (digitalRead(0) == LOW && check0button+10000 < millis() && check0button < millis()) {
+    check0button = millis();
+    Serial.println("[I] set def wait");
   }
 
   delay(20); // Prevent spamming the loop?

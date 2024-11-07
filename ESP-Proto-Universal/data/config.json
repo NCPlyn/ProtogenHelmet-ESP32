@@ -7,6 +7,7 @@
   "bEar":64,
   "bVisor":100,
   "bBlush":100,
+  "bOled":2,
   "rbSpeed":15,
   "rbWidth":8,
   "spMin":90,
@@ -27,5 +28,6 @@
   "visColor":"#ff0000",
   "wifiName":"Proto",
   "wifiPass":"Proto123",
-  "ledType":"WS2812"
+  "ledType":"WS2812",
+  "fanDuty": 255
 }

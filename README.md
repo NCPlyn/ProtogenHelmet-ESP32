@@ -17,29 +17,30 @@
 - [x] Supported both MAX and WS28xx displays in the same codebase (**should work but needs to be kept under supervision**)
 - [x] Custom amount of displays and their placement (**same as above**)
 - [x] Redo tilt calibration code (**same as above**)
-- [x] OLED init bug fix at runtime
+- [x] OLED init bug fix at runtime (now fixed fr)
 - [x] ElegantOTA (**192.168.4.1/update**)
 - [x] visor / blush brightness fix (ws 0-255, max 0-16)
 - [x] More QOL for animator (credit to https://xantorohara.github.io/led-matrix-editor/, this is kinda built on top xD)
 - [x] Remote: Convert to PlatformIO + add ElegantOTA
 - [x] Remote: Buttons XIAO + PCB
+- [x] GPIO0 hold when boot = factory (after 10s of runtine, hold boot button for 10s)
+- [x] Ledc PWM fan control (should work)
+- [x] Remote: GPIO0 hold when boot = factory (not tested but should)
 
 - ToDo: Helmet
-- [ ] Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
+- [ ] VL6180 nope, try APDS9960 -Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
 - [ ] Better custom WS28xx display (**waiting for v3, taking preorders** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
-- [ ] Support different sized OLED, define addreses, brightness
+- [ ] Support different sized OLED, define addreses, setups with INA or not (brightness done)
 - [ ] Proper enable/disable of features (code wise or reset)
 - [ ] More RGB anims/modes (Rainbow from boop/front, etc)
 - [ ] Button from remote to change the RGB modes + show on OLED
 - [ ] Put into functions/files
-- [ ] Hide WS stuff if MAX is choosen
-- [ ] GPIO1 hold when boot = factory (close enough)
+- [ ] esp32 spi defines ok??? 2x 18pin? 23 pin? 2x 5 pin esp board, does max really work?
 
 - ToDo: Remote
 - [ ] getBLE/scanBLE - timeout watchdog????
 - [ ] Flex sensors
-- [ ] Different modes of using the buttons
-- [ ] GPIO1 hold when boot = factory (close enough)
+- [ ] Different modes of using the buttons (hold button to change sets)
 
 - ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune proximity sensor" for boop (do not need SW fixing, all is about proper placement and tuning sensor)

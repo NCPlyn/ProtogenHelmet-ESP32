@@ -17,6 +17,7 @@
   #define MAX_MOSI 11 //Data for MAX72xx matrixes if used
   #define MAX_CS 10 //ChipSelect for MAX72xx matrixes if used
   #define animBtn 4 //Pulling this pin LOW cycles trough animations
+  #define fanPWM 13 //PWM pin to control 4pin fan
 #elif defined(ESP32) //Normal ESP32 pins
   #define MICpin 35 //Microphone
   #define T_in 33 //Output from Touch Sensor
@@ -30,6 +31,7 @@
   #define MAX_MOSI 23 //Data for MAX72xx matrixes if used
   #define MAX_CS 5 //ChipSelect for MAX72xx matrixes if used
   #define animBtn 32 //Pulling this pin LOW cycles trough animations
+  #define fanPWM 25 //PWM pin to control 4pin fan
 #endif
 
 #define wifi_en 13 //Pulling this pin LOW disables WiFi
@@ -47,6 +49,8 @@
 
 #define oldMatrixFix true
 
+#define oledAddr 60 //define oled on address 0x3c
+
 //--------------------------------//No touching after this
 
 #include <ezButton.h>
@@ -63,6 +67,9 @@ ezButton hwBtn(animBtn);
 #define SPIFFS LittleFS
 #include <LittleFS.h>
 
+#include "fileOp.h" //CRC + Config variables store/save/load/default
+Config cfg;
+
 #include "SparkFunLSM6DS3.h"
 #include <Wire.h>
 LSM6DS3 myIMU;
@@ -74,33 +81,6 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0,/* reset=*/ U8X8_PIN_NONE);
 Adafruit_INA219 ina219;
 
 bool loadAnim(String anim, String temp);
-
-//--------------------------------//CRC checksum func
-#include <FastCRC.h>
-class CrcWriter {
-public:
-  CrcWriter() {
-    _hash = _hasher.crc32(NULL, 0);
-  }
-
-  size_t write(uint8_t c) {
-    _hash = _hasher.crc32_upd(&c, 1);
-    return 1;
-  }
-
-  size_t write(const uint8_t *buffer, size_t length) {
-    _hash = _hasher.crc32_upd(buffer, length);
-    return length;
-  }
-
-  uint32_t hash() const {
-    return _hash;
-  }
-
-private:
-  FastCRC32 _hasher;
-  uint32_t _hash;
-};
 
 //--------------------------------//web / wifi
 #include "WiFi.h"
@@ -212,7 +192,7 @@ MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, MAX_MOSI, MAX_CLK, MAX_CS, MAX72xx_DEV
 
 //--------------------------------//WS2812 LEDs
 CRGB earLeds[EarLedsNum];
-CRGB blushLeds[8];
+CRGB blushLeds[blushLedsNum];
 CRGB visorLeds[VisorLedsNum];
 
 CLEDController *ledController[3];
@@ -265,7 +245,7 @@ struct AnimNowEars {
 struct FramesVisor {
   int timespan;
   uint64_t leds[20];
-  long ledsBlush[8];
+  long ledsBlush[blushLedsNum];
 };
 
 struct AnimNowVisor {
@@ -285,11 +265,10 @@ void displayCenter(String text, uint16_t h) {
 }
 
 //--------------------------------//Config vars
-bool speechEna = false, boopEna = false, tiltEna = false, bleEna = false, oledEna = false, instantReload = false, oledInitDone = false, tiltInitDone = false;
-int rbSpeed, rbWidth, spMin, spMax, spTrig, currentEarsFrame = 0, currentVisorFrame = 0, bEar, bVisor, bBlush, numOfSegm, numAnimBlush;
-String aTilt = "confused.json", aUp = "upset.json", currentAnim = "", visColorStr = "", ledType = "";
-float neutralX, neutralY, neutralZ, tiltX, tiltY, tiltZ, upX, upY, upZ, tiltTol = 0.1;
-unsigned long visColor = 0xFF0000;
+bool instantReload = false;
+bool oledInitDone = false, tiltInitDone = false;
+int currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush;
+String currentAnim = "";
 
 String earTypes[5] = {"custom","rainbow","white_noise","corner_sabers","custom_glow"};
 String visorTypes[2] = {"custom","all_rainbow"};
@@ -369,7 +348,7 @@ bool loadAnim(String anim, String temp) {
     currentVisorFrame = 0;
     currentEarsFrame = 0;
 
-    if(oledEna) {
+    if(cfg.oledEna && oledInitDone) {
       u8g2.setDrawColor(0);
       u8g2.drawBox(0, 0, 128, 17);
       u8g2.setDrawColor(1);
@@ -381,180 +360,6 @@ bool loadAnim(String anim, String temp) {
   }
 
   return false;
-}
-
-bool loadConfig() {
-  JsonDocument doc;
-
-  File file = LittleFS.open("/config.json", "r");
-  if (!file) {
-    Serial.println("[E] There was an error opening the config file, using default config");
-    //using default
-    return false;
-  }
-  Serial.println("[I] Config file opened");
-
-  if(deserializeJson(doc, file)){
-    Serial.println("[E] Failed to deserialize the config file, using default config");
-    //using default
-    return false;
-  }
-  file.close();
-  Serial.println("[I] Deserialized JSON");
-  
-  CrcWriter CRCchk;
-  serializeJson(doc, CRCchk);
-  File fileCRC = LittleFS.open("/configCRC.txt", "r");
-  if(!fileCRC) {
-    Serial.println("[E] There was an error opening the config CRC file, using default config");
-    fileCRC.close();
-    return false;
-  } else {
-    String jsonCRC;
-    while(fileCRC.available()) {
-      jsonCRC+=char(fileCRC.read());
-    }
-    fileCRC.close();
-    Serial.println("[I] CRC is: " + String(CRCchk.hash()) + " and should be: " + jsonCRC);
-    if(jsonCRC == String(CRCchk.hash())) {
-      Serial.println("[I] CRC check OK");
-    } else {
-      Serial.println("[E] CRC not the same, using default config");
-      return false;
-    }
-  }
-  
-  boopEna = doc["boopEna"].as<bool>();
-  speechEna = doc["speechEna"].as<bool>();
-  tiltEna = doc["tiltEna"].as<bool>();
-  bleEna = doc["bleEna"].as<bool>();
-  oledEna = doc["oledEna"].as<bool>();
-  bEar = doc["bEar"].as<int>();
-  bVisor = doc["bVisor"].as<int>();
-  bBlush = doc["bBlush"].as<int>();
-  rbSpeed = doc["rbSpeed"].as<int>();
-  rbWidth = doc["rbWidth"].as<int>();
-  spMin = doc["spMin"].as<int>();
-  spMax = doc["spMax"].as<int>();
-  spTrig = doc["spTrig"].as<int>();
-  aTilt = doc["aTilt"].as<String>();
-  aUp = doc["aUp"].as<String>();
-  neutralX = doc["neutralX"].as<float>();
-  neutralY = doc["neutralY"].as<float>();
-  neutralZ = doc["neutralZ"].as<float>();
-  tiltX = doc["tiltX"].as<float>();
-  tiltY = doc["tiltY"].as<float>();
-  tiltZ = doc["tiltZ"].as<float>();
-  upX = doc["upX"].as<float>();
-  upY = doc["upY"].as<float>();
-  upZ = doc["upZ"].as<float>();
-  tiltTol = doc["tiltTol"].as<float>();
-  visColorStr = doc["visColor"].as<String>();
-  visColor = strtol(visColorStr.c_str()+1, NULL, 16);
-  wifiName = doc["wifiName"].as<String>();
-  wifiPass = doc["wifiPass"].as<String>();
-  ledType = doc["ledType"].as<String>();
-
-  return true;
-}
-
-bool saveConfig() {
-  JsonDocument doc;
-
-  File file = LittleFS.open("/config.json", "w");
-  if (!file) {
-    Serial.println("[E] There was an error opening the config file!");
-    file.close();
-    return false;
-  }
-  Serial.println("[I] Config file opened to save!");
-
-  doc["boopEna"] = boopEna;
-  doc["speechEna"] = speechEna;
-  doc["tiltEna"] = tiltEna;
-  doc["bleEna"] = bleEna;
-  doc["oledEna"] = oledEna;
-  doc["bEar"] = bEar;
-  doc["bVisor"] = bVisor;
-  doc["bBlush"] = bBlush;
-  doc["rbSpeed"] = rbSpeed;
-  doc["rbWidth"] = rbWidth;
-  doc["spMin"] = spMin;
-  doc["spMax"] = spMax;
-  doc["spTrig"] = spTrig;
-  doc["aTilt"] = aTilt;
-  doc["aUp"] = aUp;
-  doc["neutralX"] = neutralX;
-  doc["neutralY"] = neutralY;
-  doc["neutralZ"] = neutralZ;
-  doc["tiltX"] = tiltX;
-  doc["tiltY"] = tiltY;
-  doc["tiltZ"] = tiltZ;
-  doc["upX"] = upX;
-  doc["upY"] = upY;
-  doc["upZ"] = upZ;
-  doc["tiltTol"] = tiltTol;
-  doc["visColor"] = visColorStr;
-  doc["wifiName"] = wifiName;
-  doc["wifiPass"] = wifiPass;
-  doc["ledType"] = ledType;
-  
-  CrcWriter CRCchk;
-  serializeJson(doc, CRCchk);
-  Serial.println("[I] Config CRC is: "+ String(CRCchk.hash()));
-  File fileCRC = LittleFS.open("/configCRC.txt", "w");
-  if(!fileCRC) {
-    Serial.println("[E] There was an error opening the config CRC file!");
-    fileCRC.close();
-  } else {
-    fileCRC.print(String(CRCchk.hash()));
-    fileCRC.close();
-    Serial.println("[I] CRC saved");
-  }
-
-  if(serializeJson(doc, file) == 0) {
-    Serial.println("[E] Failed to deserialize the config file");
-    return false;
-  }
-
-  file.close();
-  Serial.println("[I] Config file saved with CRC");
-
-  return true;
-}
-
-void setDefault() {
-  boopEna = true;
-  speechEna = true;
-  tiltEna = false;
-  bleEna = false;
-  oledEna = false;
-  bEar = 60;
-  bVisor = 100;
-  bBlush = 100;
-  rbSpeed = 15;
-  rbWidth = 8;
-  spMin = 90;
-  spMax = 110;
-  spTrig = 1500;
-  aTilt = "confused.json";
-  aUp = "sad.json";
-  neutralX = 0.3;
-  neutralY = 0.92;
-  neutralZ = 0.33;
-  tiltX = 0.05;
-  tiltY = 0.7;
-  tiltZ = 0.73;
-  upX = -0.17;
-  upY = 0.99;
-  upZ = 0.11;
-  tiltTol = 0.1;
-  visColorStr = "#ff0000";
-  visColor = strtol(visColorStr.c_str()+1, NULL, 16);
-  wifiName = "Proto";
-  wifiPass = "Proto123";
-  ledType = "WS2812";
-  saveConfig();
 }
 
 //--------------------------------//Dynamic speak anim
@@ -596,6 +401,22 @@ float mapfloat(float x, float in_min, float in_max, float out_min, float out_max
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+//--------------------------------//OLED Brightness
+void oledBright(int level) {
+  if(cfg.oledEna && oledInitDone) {
+    if(level == 0) { //dim
+      u8g2.sendF("ca", 0x0d9, (15 << 4) | 0 );
+      u8g2.sendF("ca", 0x0db, 0 << 4);
+    } else if (level == 1) { //mid
+      u8g2.sendF("ca", 0x0d9, (15 << 4) | 15 );
+      u8g2.sendF("ca", 0x0db, 0 << 4);
+    } else if (level == 2) { //normal
+      u8g2.sendF("ca", 0x0d9, (15 << 4) | 15 );
+      u8g2.sendF("ca", 0x0db, 7 << 4);
+    }
+  }
+}
+
 //--------------------------------//WiFi server setup
 void startWiFiWeb() {
   WiFi.softAP(wifiName, wifiPass);
@@ -612,74 +433,77 @@ void startWiFiWeb() {
   server.on("/saveconfig", HTTP_GET, [](AsyncWebServerRequest *request){ //saves config
     //enabled or disabled features
     if(request->hasParam("boopEna"))
-      std::istringstream(request->getParam("boopEna")->value().c_str()) >> std::boolalpha >> boopEna;
+      std::istringstream(request->getParam("boopEna")->value().c_str()) >> std::boolalpha >> cfg.boopEna;
     if(request->hasParam("speechEna"))
-      std::istringstream(request->getParam("speechEna")->value().c_str()) >> std::boolalpha >> speechEna;
+      std::istringstream(request->getParam("speechEna")->value().c_str()) >> std::boolalpha >> cfg.speechEna;
     if(request->hasParam("tiltEna"))
-      std::istringstream(request->getParam("tiltEna")->value().c_str()) >> std::boolalpha >> tiltEna;
+      std::istringstream(request->getParam("tiltEna")->value().c_str()) >> std::boolalpha >> cfg.tiltEna;
     if(request->hasParam("bleEna"))
-      std::istringstream(request->getParam("bleEna")->value().c_str()) >> std::boolalpha >> bleEna;
+      std::istringstream(request->getParam("bleEna")->value().c_str()) >> std::boolalpha >> cfg.bleEna;
     if(request->hasParam("oledEna"))
-      std::istringstream(request->getParam("oledEna")->value().c_str()) >> std::boolalpha >> oledEna;
+      std::istringstream(request->getParam("oledEna")->value().c_str()) >> std::boolalpha >> cfg.oledEna;
     //brightness
     if(request->hasParam("bEar"))
-      bEar = request->getParam("bEar")->value().toInt();
+      cfg.bEar = request->getParam("bEar")->value().toInt();
     if(request->hasParam("bVisor"))
-      bVisor = request->getParam("bVisor")->value().toInt();
+      cfg.bVisor = request->getParam("bVisor")->value().toInt();
     if(request->hasParam("bBlush"))
-      bBlush = request->getParam("bBlush")->value().toInt();
+      cfg.bBlush = request->getParam("bBlush")->value().toInt();
+    if(request->hasParam("bOled"))
+      cfg.bOled = request->getParam("bOled")->value().toInt();
+      oledBright(cfg.bOled);
     //anims configs
     if(request->hasParam("rbSpeed"))
-      rbSpeed = request->getParam("rbSpeed")->value().toInt();
+      cfg.rbSpeed = request->getParam("rbSpeed")->value().toInt();
     if(request->hasParam("rbWidth"))
-      rbWidth = request->getParam("rbWidth")->value().toInt();
+      cfg.rbWidth = request->getParam("rbWidth")->value().toInt();
     if(request->hasParam("spMin"))
-      spMin = request->getParam("spMin")->value().toInt();
+      cfg.spMin = request->getParam("spMin")->value().toInt();
     if(request->hasParam("spMax"))
-      spMax = request->getParam("spMax")->value().toInt();
+      cfg.spMax = request->getParam("spMax")->value().toInt();
     if(request->hasParam("spTrig"))
-      spTrig = request->getParam("spTrig")->value().toInt();
+      cfg.spTrig = request->getParam("spTrig")->value().toInt();
     if(request->hasParam("aTilt"))
-      aTilt = String(request->getParam("aTilt")->value());
+      cfg.aTilt = String(request->getParam("aTilt")->value());
     if(request->hasParam("aUp"))
-      aUp = String(request->getParam("aUp")->value());
+      cfg.aUp = String(request->getParam("aUp")->value());
     //neutral tilt
     if(request->hasParam("neutralX"))
-      neutralX = request->getParam("neutralX")->value().toFloat();
+      cfg.neutralX = request->getParam("neutralX")->value().toFloat();
     if(request->hasParam("neutralY"))
-      neutralY = request->getParam("neutralY")->value().toFloat();
+      cfg.neutralY = request->getParam("neutralY")->value().toFloat();
     if(request->hasParam("neutralZ"))
-      neutralZ = request->getParam("neutralZ")->value().toFloat();
+      cfg.neutralZ = request->getParam("neutralZ")->value().toFloat();
     //side tilt
     if(request->hasParam("tiltX"))
-      tiltX = request->getParam("tiltX")->value().toFloat();
+      cfg.tiltX = request->getParam("tiltX")->value().toFloat();
     if(request->hasParam("tiltY"))
-      tiltY = request->getParam("tiltY")->value().toFloat();
+      cfg.tiltY = request->getParam("tiltY")->value().toFloat();
     if(request->hasParam("tiltZ"))
-      tiltZ = request->getParam("tiltZ")->value().toFloat();
+      cfg.tiltZ = request->getParam("tiltZ")->value().toFloat();
     //up tilt
     if(request->hasParam("upX"))
-      upX = request->getParam("upX")->value().toFloat();
+      cfg.upX = request->getParam("upX")->value().toFloat();
     if(request->hasParam("upY"))
-      upY = request->getParam("upY")->value().toFloat();
+      cfg.upY = request->getParam("upY")->value().toFloat();
     if(request->hasParam("upZ"))
-      upZ = request->getParam("upZ")->value().toFloat();
+      cfg.upZ = request->getParam("upZ")->value().toFloat();
     //tilt tolerant
     if(request->hasParam("tiltTol"))
-      tiltTol = request->getParam("tiltTol")->value().toFloat();
+      cfg.tiltTol = request->getParam("tiltTol")->value().toFloat();
     //color
     if(request->hasParam("visColor"))
-      visColorStr = String(request->getParam("visColor")->value());
-      visColor = strtol(visColorStr.c_str()+1, NULL, 16);
+      cfg.visColorStr = String(request->getParam("visColor")->value());
+      cfg.visColor = strtol(cfg.visColorStr.c_str()+1, NULL, 16);
     //wifi
     if(request->hasParam("wifiName"))
-      wifiName = String(request->getParam("wifiName")->value());
+      cfg.wifiName = String(request->getParam("wifiName")->value());
     if(request->hasParam("wifiPass"))
-      wifiPass = String(request->getParam("wifiPass")->value());
+      cfg.wifiPass = String(request->getParam("wifiPass")->value());
     //led type
     if(request->hasParam("ledType"))
-      ledType = String(request->getParam("ledType")->value());
-    if(saveConfig()) {
+      cfg.ledType = String(request->getParam("ledType")->value());
+    if(cfg.save()) {
       request->redirect("/saved.html?main");
     } else {
       request->send(200, "text/plain", "Saving config failed!");
@@ -742,6 +566,23 @@ void startWiFiWeb() {
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
+
+  server.on("/fanpwm", HTTP_GET, [](AsyncWebServerRequest *request){
+    if(request->hasParam("duty")) {
+      int duty = request->getParam("duty")->value().toInt();
+      if(duty < 256 && duty >= 0) {
+        ledcWrite(0, duty);
+        //ledcWrite(fanPWM, duty); //Arduino 3.x core
+        cfg.fanDuty = duty;
+        cfg.save();
+        request->send(200, "text/plain", "Set PWM to: " + String(duty));
+      } else {
+        request->send(200, "text/plain", "Invalid duty cycle");
+      }
+    } else {
+      request->send(200, "text/plain", "No valid parameters detected!");
+    }
+  });
   
   server.on("/gyro", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(floor(myIMU.readFloatAccelX()*100)/100)+";"+String(floor(myIMU.readFloatAccelY()*100)/100)+";"+String(floor(myIMU.readFloatAccelZ()*100)/100));
@@ -757,7 +598,7 @@ void startWiFiWeb() {
 //--------------------------------//OLED Init
 void initOled() {
   Wire.begin();
-  Wire.beginTransmission(60); //check for oled on address 0x3c
+  Wire.beginTransmission(oledAddr); //check for oled on address 0x3c
   byte error = Wire.endTransmission();
   if(error == 0) {
     u8g2.setBusClock(1500000);
@@ -770,10 +611,11 @@ void initOled() {
     } else {
       ina219.setCalibration_16V_8A();
     }
+    oledBright(cfg.bOled);
     oledInitDone = true;
   } else {
     Serial.println("[E] An Error has occurred while initializing SSD1306.");
-    oledEna = false;
+    cfg.oledEna = false;
   }
 }
 
@@ -786,6 +628,8 @@ void setup() {
   pinMode(T_en, OUTPUT);
   pinMode(wifi_en, INPUT_PULLUP);
   pinMode(animBtn, INPUT_PULLUP);
+  pinMode(0, INPUT);
+  pinMode(fanPWM, OUTPUT);
 
   hwBtn.setDebounceTime(50);
 
@@ -802,27 +646,32 @@ void setup() {
     while(1){};
   }
 
-  if(!loadConfig()) {
+  if(!cfg.load()) {
     Serial.println("[E] An Error has occurred while loading config file! Loading defaults");
-    setDefault();
+    cfg.setDefault();
   }
+
+  //ledcAttach(fanPWM, 25000, 8); //suport Arduino 3.x in future
+  ledcSetup(0, 25000, 8); //For Arduino 2.x
+  ledcAttachPin(fanPWM, 0);
+  ledcWrite(0, cfg.fanDuty); //ledcWrite(fanPWM, duty); //Arduino 3.x core
 
   ledController[0] = &FastLED.addLeds<WS2812B, DATA_PIN_EARS, GRB>(earLeds, EarLedsNum);
   ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, blushLedsNum);
-  if(ledType == "WS2812") { //atm doing only visor, blush & ears stays on
+  if(cfg.ledType == "WS2812") { //atm doing only visor, blush & ears stays on
     ledController[2] = &FastLED.addLeds<WS2812B, DATA_PIN_VISOR, GRB>(visorLeds, VisorLedsNum);
     FastLED.setCorrection(TypicalPixelString);
     FastLED.setDither(0);
-  } else if (ledType == "MAX72XX") {
+  } else if (cfg.ledType == "MAX72XX") {
     mx.begin();
   }
 
   Wire.setPins(I2C_SDA, I2C_SCL);
 
-  if(tiltEna) {
+  if(cfg.tiltEna) {
     if(myIMU.begin()) {
       Serial.println("[E] An Error has occurred while connecting to LSM!");
-      tiltEna = false;
+      cfg.tiltEna = false;
     } else {
       tiltInitDone = true;
     }
@@ -833,13 +682,13 @@ void setup() {
   }
 
   getFilesFunc();
-  if(bleEna) { //you can disable BLE in config
+  if(cfg.bleEna) { //you can disable BLE in config
     if(!startBLE()) {
       Serial.println("[E] An Error has occurred while starting BLE!");
     }
   }
 
-  if(oledEna) {
+  if(cfg.oledEna) {
     initOled();
   }
 
@@ -854,7 +703,7 @@ String oldanim, boopoldanim;
 bool booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false, displayLeds = false;
 float zAx,yAx,finalMicAvg,nvol,micline,avgMicArr[10];
 int randomNum, boopRead, randomTimespan = 0, startIndex = 1, speaking = 0, currentMicAvg = 0, btnNum = 0;
-unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0;
+unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0;
 byte row = 0;
 
 //--------------------------------//Visor bufferer
@@ -868,24 +717,24 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
     for (int i = 0; i < 8; i++) {
       row = (tempSegment >> i * 8) & 0xFF;
       for (int j = 0; j < 8; j++) {
-        if(ledType == "WS2812") {
+        if(cfg.ledType == "WS2812") {
           if(oldMatrixFix) {
             ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?ledColor:CRGB::Black; //includes fix for bad rgbmatrix, to be fixed with new matrixes
           } else {
             ledArray[(y*64)+(i*8)+j] = (bitRead(row,j))?ledColor:CRGB::Black;
           }
-        } else if (ledType == "MAX72XX") {
+        } else if (cfg.ledType == "MAX72XX") {
           mx.setPoint(i, j+(y*8), bitRead(row, j)); //MAXstuff
         }
       }
     }
   }
-  fadeToBlackBy(visorLeds, VisorLedsNum, 255-bVisor);
+  fadeToBlackBy(visorLeds, VisorLedsNum, 255-cfg.bVisor);
   displayLeds = true;
 }
 
 bool isApproxEqual(const float ax, const float ay, const float az, const float bx, const float by, const float bz) {
-  return (fabs(ax-bx) < tiltTol && fabs(ay-by) < tiltTol && fabs(az-bz) < tiltTol);
+  return (fabs(ax-bx) < cfg.tiltTol && fabs(ay-by) < cfg.tiltTol && fabs(az-bz) < cfg.tiltTol);
 }  
 
 void loop() {
@@ -897,11 +746,11 @@ void loop() {
       if(currentEarsFrame == earsNow->numOfFrames) { currentEarsFrame = 0; } //loop back to first frame if last frame
       for(int y = 0; y < EarLedsNum; y++) { earLeds[y] = earsNow->frames[currentEarsFrame].ledColor[y]; } //set ear leds
       currentEarsFrame++;
-      fadeToBlackBy(earLeds, EarLedsNum, 255-bEar);
+      fadeToBlackBy(earLeds, EarLedsNum, 255-cfg.bEar);
       displayLeds = true;
     }
   } else if (earsNow->type == 1) { //rainbow
-    fill_rainbow(pixelBuffer, 4, millis()/rbSpeed, 255/rbWidth);
+    fill_rainbow(pixelBuffer, 4, millis()/cfg.rbSpeed, 255/cfg.rbWidth);
     for(int x = 0;x<EarLedsNum;x++) {
       if(x<16) {
         earLeds[x] = pixelBuffer[0];
@@ -917,7 +766,7 @@ void loop() {
         earLeds[x+37] = pixelBuffer[3];
       }
     }
-    fadeToBlackBy(earLeds, EarLedsNum, 255-bEar);
+    fadeToBlackBy(earLeds, EarLedsNum, 255-cfg.bEar);
     displayLeds = true;
   } else if (earsNow->type == 2) { //white_noise
     memset(noiseData, 0, EarLedsNum);
@@ -925,10 +774,10 @@ void loop() {
     for(int x = 0;x<EarLedsNum;x++) {
       earLeds[x] = ColorFromPalette(blackWhite, noiseData[x]);
     }
-    fadeToBlackBy(earLeds, EarLedsNum, 255-bEar);
+    fadeToBlackBy(earLeds, EarLedsNum, 255-cfg.bEar);
     displayLeds = true;
   } else if (earsNow->type == 3) { //corner_sabers
-    if(lastFLED+rbSpeed < millis()) {
+    if(lastFLED+cfg.rbSpeed < millis()) {
       lastFLED = millis();
       startIndex++;
       int tempIndex = startIndex;
@@ -942,11 +791,11 @@ void loop() {
           earLeds[lookupDiag1[x][y]+36] = pixelBuffer[x];
         }
       }
-      fadeToBlackBy(earLeds, EarLedsNum, 255-bEar);
+      fadeToBlackBy(earLeds, EarLedsNum, 255-cfg.bEar);
       displayLeds = true;
     }
   } else if (earsNow->type == 4) { //custom_glow
-    fill_rainbow(pixelBuffer, 4, millis()/rbSpeed, 255/rbWidth);
+    fill_rainbow(pixelBuffer, 4, millis()/cfg.rbSpeed, 255/cfg.rbWidth);
     for(int y = 0; y < EarLedsNum; y++) {
       if(earsNow->frames[0].ledColor[y] == 0) {
         earLeds[y] = 0x000000;
@@ -954,7 +803,7 @@ void loop() {
         earLeds[y] = pixelBuffer[0];
       }
     }
-    fadeToBlackBy(earLeds, EarLedsNum, 255-bEar);
+    fadeToBlackBy(earLeds, EarLedsNum, 255-cfg.bEar);
     displayLeds = true;
   }
 
@@ -963,23 +812,23 @@ void loop() {
     if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
-      setAllVisor(visorLeds,visColor,currentVisorFrame); //set visor leds
+      setAllVisor(visorLeds,cfg.visColor,currentVisorFrame); //set visor leds
       for(int x = 0; x<8; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
-      fadeToBlackBy(blushLeds, blushLedsNum, 255-bBlush);
+      fadeToBlackBy(blushLeds, blushLedsNum, 255-cfg.bBlush);
       currentVisorFrame++;
       instantReload = false;
     }
-  } else if (visorNow->type == 1 && ledType == "WS2812") { //all_rainbow
+  } else if (visorNow->type == 1 && cfg.ledType == "WS2812") { //all_rainbow
     if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) {
         currentVisorFrame = 0;
       }
     }
-    fill_rainbow(visorPixelBuffer, 1, millis()/rbSpeed, 128/rbWidth);
+    fill_rainbow(visorPixelBuffer, 1, millis()/cfg.rbSpeed, 128/cfg.rbWidth);
     setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame);
     for(int x = 0; x<numAnimBlush; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
-      fadeToBlackBy(blushLeds, blushLedsNum, 255-bBlush);
+      fadeToBlackBy(blushLeds, blushLedsNum, 255-cfg.bBlush);
       if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
         currentVisorFrame++;
         instantReload = false;
@@ -987,36 +836,36 @@ void loop() {
   }
 
   //--------------------------------//TILT
-  if(lastMillsTilt+100<=millis() && tiltEna) {
-    if(isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),upX,upY,upZ) && !wasTilt) {
+  if(lastMillsTilt+100<=millis() && cfg.tiltEna) {
+    if(isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.upX,cfg.upY,cfg.upZ) && !wasTilt) {
       Serial.println("up");
       wasTilt = true;
       oldanim = currentAnim;
       tiltChange = millis();
-      loadAnim(aUp,"");
-    } else if (isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),tiltX,tiltY,tiltZ) && !wasTilt) {
+      loadAnim(cfg.aUp,"");
+    } else if (isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.tiltX,cfg.tiltY,cfg.tiltZ) && !wasTilt) {
       Serial.println("tilt");
       wasTilt = true;
       oldanim = currentAnim;
       tiltChange = millis();
-      loadAnim(aTilt,"");
-    } else if ((tiltChange+revertTilt<millis() || isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),neutralX,neutralY,neutralZ)) && wasTilt) {
+      loadAnim(cfg.aTilt,"");
+    } else if ((tiltChange+revertTilt<millis() || isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.neutralX,cfg.neutralY,cfg.neutralZ)) && wasTilt) {
       Serial.println("neutral");
       wasTilt = false;
       loadAnim(oldanim,"");
     }
     lastMillsTilt = millis();
-  } else if (!tiltInitDone && tiltEna) {
+  } else if (!tiltInitDone && cfg.tiltEna) {
     if(myIMU.begin()) {
       Serial.println("[E] An Error has occurred while connecting to LSM!");
-      tiltEna = false;
+      cfg.tiltEna = false;
     } else {
       tiltInitDone = true;
     }
   }
 
   //--------------------------------//SPEECH Detection
-  if(speechEna) {
+  if(cfg.speechEna) {
     finalMicAvg = 0;
     nvol = 0;
     for (int i = 0; i<64; i++){
@@ -1034,15 +883,15 @@ void loop() {
     }
     //Serial.println(finalMicAvg/10);
   }
-  if(speechEna && laskSpeakCheck+10<=millis()) {
-    if(finalMicAvg/10 > spTrig) {
+  if(cfg.speechEna && laskSpeakCheck+10<=millis()) {
+    if(finalMicAvg/10 > cfg.spTrig) {
       speaking++;
       lastSpeak = millis();
     }
     if(speaking > 4 && !speak) {
       speak = true;
       speechResetDone = false;
-      if(oledEna) {
+      if(cfg.oledEna && oledInitDone) {
         u8g2.drawStr(8, 62, "speak");
         u8g2.updateDisplayArea(0,6,8,2);
       }
@@ -1052,7 +901,7 @@ void loop() {
       if(speak) {
         speak = false;
         speechFirst = true;
-        if(oledEna) {
+        if(cfg.oledEna && oledInitDone) {
           u8g2.setDrawColor(0);
           u8g2.drawBox(8, 48, 56, 16);
           u8g2.updateDisplayArea(0,6,8,2);
@@ -1065,8 +914,8 @@ void loop() {
     laskSpeakCheck = millis();
   }
   //--------------------------------//SPEECH Animation
-  if(speechEna && speak && lastMillsSpeechAnim+randomTimespan<=millis()) {
-    randomTimespan = random(spMin,spMax);
+  if(cfg.speechEna && speak && lastMillsSpeechAnim+randomTimespan<=millis()) {
+    randomTimespan = random(cfg.spMin,cfg.spMax);
     if(speechFirst == true){
       randomNum = 0;
       speechFirst = false;
@@ -1074,7 +923,7 @@ void loop() {
       randomNum = random(2);
     }
     if(visorNow->type == 0) { //custom
-      setAllVisor(visorLeds,visColor,currentVisorFrame-1);
+      setAllVisor(visorLeds,cfg.visColor,currentVisorFrame-1);
     }
     
     lastMillsSpeechAnim = millis();
@@ -1082,7 +931,7 @@ void loop() {
   //--------------------------------//SPEECH Reset frames
   if(!speechResetDone && !speak && lastMillsSpeechAnim+800<millis()) {
     if(visorNow->type == 0) { //custom
-      setAllVisor(visorLeds,visColor,currentVisorFrame-1);
+      setAllVisor(visorLeds,cfg.visColor,currentVisorFrame-1);
     } else if (visorNow->type == 1) { //all_rainbow
       setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame-1);
     }
@@ -1107,13 +956,13 @@ void loop() {
   }
 
   //--------------------------------//BOOP Detection
-  if(millis() > 200 && boopEna) {
+  if(millis() > 200 && cfg.boopEna) {
     digitalWrite(T_en, HIGH);
     delayMicroseconds(210);
     if(booping == false && !digitalRead(T_in)) {
       delayMicroseconds(395);
       if(!digitalRead(T_in)) {
-        Serial.println("BOOP");
+        Serial.println("[I] IR BOOP");
         booping = true;
         boopoldanim = currentAnim;
         loadAnim("boop.json","");
@@ -1122,7 +971,7 @@ void loop() {
       digitalWrite(T_en, LOW);
     } else if(booping == true && lastMillsBoop+1000<millis() && digitalRead(T_in)) {
       digitalWrite(T_en, LOW);
-      Serial.println("unBOOP");
+      Serial.println("[I] IR unBOOP");
       booping = false;
       if(!wasTilt) {
         loadAnim(boopoldanim,"");
@@ -1131,7 +980,7 @@ void loop() {
   }
 
   //--------------------------------//OLED routine, make for multiple sizes
-  if(oledEna && vaStatLast+500<millis() && oledInitDone) {
+  if(cfg.oledEna && vaStatLast+500<millis() && oledInitDone) {
     float BusV = ina219.getBusVoltage_V();
     int barStatus = mapfloat(BusV,5.5,8.42,0,100);
     if(barStatus > 100) {
@@ -1150,20 +999,34 @@ void loop() {
     u8g2.drawBox(14, 36, barStatus, 9);
     u8g2.updateDisplayArea(1,4,14,2);
     vaStatLast = millis();
-  } else if (!oledInitDone && oledEna) {
+  } else if (!oledInitDone && cfg.oledEna) {
     initOled();
   }
 
   if(displayLeds) {
     displayLeds = false;
     FastLED.show();
-    if(ledType == "WS2812") {
+    if(cfg.ledType == "WS2812") {
       //FastLED.show(); //doing it before because ears and blush
-    } else if (ledType == "MAX72XX") {
-      mx.control(MD_MAX72XX::INTENSITY, bVisor);
+    } else if (cfg.ledType == "MAX72XX") {
+      if(cfg.bVisor > 15) { cfg.bVisor = 15;}
+      mx.control(MD_MAX72XX::INTENSITY, cfg.bVisor);
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
     }
+  }
+
+  //press boot button for 10sec to reset
+  if(check0button+10000 < millis() && check0button+10500 > millis() && digitalRead(0) == LOW) {
+    Serial.println("[I] Resetting to defaults");
+    cfg.setDefault();
+    delay(20);
+    ESP.restart();
+  } else if (digitalRead(0) == HIGH && check0button+10000 > millis() && check0button < millis()) {
+    check0button = 0;
+  } else if (digitalRead(0) == LOW && check0button+10000 < millis() && check0button < millis()) {
+    check0button = millis();
+    Serial.println("[I] set def wait");
   }
 
   if(animToLoad != "") {
