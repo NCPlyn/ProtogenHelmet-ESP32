@@ -36,15 +36,16 @@ static BLEUUID serviceUUID("FFE0");
 static BLEUUID charUUID("FFE1");
 
 NimBLERemoteCharacteristic* pRemoteCharacteristic;
+NimBLERemoteService* pRemoteService;
 NimBLEAdvertisedDevice* pAdvertisedDevice;
 NimBLEClient* pClient;
 
 bool doConnect = false,connected = false,buttonPressed = false;
 String foundDevices = "", BLE = "ProtoESP";
-
+int connectTry = 0;
 unsigned long check0button = 0;
 
-// BLE Scan callback
+// BLE Scan callback, get a comma-separated list of found devices and check for valid one to connect to
 class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
   void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
     // Add device name to found devices list
@@ -53,17 +54,19 @@ class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
         foundDevices += ",";
       }
       foundDevices += String(advertisedDevice->getName().c_str());
-      Serial.println("[I] BT: Found "+String(advertisedDevice->getName().c_str())+", finding "+BLE);
+      Serial.println("[I] BT: Found: "+String(advertisedDevice->getName().c_str())+", finding: "+BLE);
     }
+    // If it's the one were finding, stop scan and set bool to connect
     if (advertisedDevice->getName() == std::string(BLE.c_str(), BLE.length())) {
-      advertisedDevice->getScan()->stop();
+      Serial.println("[I] BT: Found correct: "+BLE);
+      //advertisedDevice->getScan()->stop();
       pAdvertisedDevice = advertisedDevice;
       doConnect = true;
     }
   }
 };
 
-// Perform a new scan and get a comma-separated list of found devices
+// Perform a new scan and set callback for found device
 void scanBLE() {
   foundDevices = "";
   NimBLEScan* pScan = NimBLEDevice::getScan();
@@ -72,24 +75,30 @@ void scanBLE() {
   pScan->start(5, nullptr, false);
 }
 
-// Connect to the BLE server
+// Connect to the BLE server and check for valid service/char
 bool connectToServer() {
   pClient = NimBLEDevice::createClient();
 
   if (pClient->connect(pAdvertisedDevice)) {
-    Serial.println("[I] BT: Connected to server.");
-    pRemoteCharacteristic = pClient->getService(serviceUUID)->getCharacteristic(charUUID);
+    Serial.println("[I] BT: Connected to server to get services/chars.");
 
-    if (pRemoteCharacteristic == nullptr) {
-      Serial.println("[I] BT: Failed to find characteristic.");
-      pClient->disconnect();
-      return false;
+    pRemoteService = pClient->getService(serviceUUID);
+    if(pRemoteService != nullptr) {
+      Serial.println("[I] BT: Got valid service.");
+      pRemoteCharacteristic = pRemoteService->getCharacteristic(charUUID);
+      if(pRemoteCharacteristic != nullptr) {
+        Serial.println("[I] BT: Got valid characteristic.");
+        connected = true;
+        return true;
+      }
     }
-
-    connected = true;
-    return true;
+    Serial.println("[I] BT: Failed to find service or characteristic.");
+    pClient->disconnect();
+    NimBLEDevice::deleteClient(pClient);
+    return false;
   } else {
     Serial.println("[I] BT: Failed to connect to server.");
+    NimBLEDevice::deleteClient(pClient);
     return false;
   }
 }
@@ -174,26 +183,33 @@ void startWiFiWeb() {
       Serial.println("[I] BT: Sent ?");
       delay(100);
       String response = pRemoteCharacteristic->readValue();
-      request->send(200, "text/plain", response);
       Serial.println("[I] BT: Received: " + response);
+      request->send(200, "text/plain", response);
+    } else {
+      request->send(503);
     }
-    request->send(503);
   });
 
-  server.on("/scanBLE", HTTP_GET, [](AsyncWebServerRequest *request){ //all available BLE -----will timeout watchdog? 5s scan, set flag and do in loop and wait in JS
+  server.on("/scanBLE", HTTP_GET, [](AsyncWebServerRequest *request){ //all available BLE
     scanBLE();
     request->send(200, "text/plain", "Started scan");
   });
 
   server.on("/getBLE", HTTP_GET, [](AsyncWebServerRequest *request){ //return found ble devices
-    request->send(200, "text/plain", foundDevices);
+    if(connected && pRemoteCharacteristic->canWrite() && pRemoteCharacteristic->canRead()) { //bc connected doesn't appear while scanning
+      request->send(200, "text/plain", BLE+","+foundDevices);
+    } else {
+      request->send(200, "text/plain", foundDevices);
+    }
   });
 
   server.on("/saveconfig", HTTP_GET, [](AsyncWebServerRequest *request){ //saves config
     //btns
     for (int i = 0; i < BUTTONS; i++) {
       if(request->hasParam(String(i+1)))
-        btnAnims[i] = String(request->getParam(String(i+1))->value());
+        if(String(request->getParam(String(i+1))->value()) != "") {
+          btnAnims[i] = String(request->getParam(String(i+1))->value());
+        }
     }
     //wifi/ble
     if(request->hasParam("BLE"))
@@ -203,6 +219,7 @@ void startWiFiWeb() {
     if(request->hasParam("wifiPass"))
       wifiPass = String(request->getParam("wifiPass")->value());
     if(saveConfig()) {
+      connectTry = 0;
       request->redirect("/saved.html?main");
     } else {
       request->send(200, "text/plain", "Saving config failed!");
@@ -224,7 +241,7 @@ void startWiFiWeb() {
 void setup() {
   Serial.begin(115200);
   
-  pinMode(0, INPUT);
+  pinMode(0, INPUT_PULLUP);
 
   if(!LittleFS.begin(true)) {
     Serial.println("[E] An Error has occurred while mounting LittleFS! Halting");
@@ -261,15 +278,20 @@ void loop() {
     if (connectToServer()) {
       Serial.println("[I] BT: Successfully connected to server.");
     } else {
-      Serial.println("[I] BT: Failed to connect. Retrying...");
-      NimBLEDevice::getScan()->start(0, false);
+      if(connectTry < 3) {
+        Serial.println("[I] BT: Failed to connect. Retrying...");
+        connectTry++;
+        NimBLEDevice::getScan()->start(0,nullptr, false);
+      } else {
+        Serial.println("[I] BT: Tried to connect 3 times and failed all 3, restart ESP or change BLE Server!");
+      }
     }
     doConnect = false;
   }
   if (connected && !pClient->isConnected()) {
     Serial.println("[I] BT: Disconnected from server. Reconnecting...");
     connected = false;
-    NimBLEDevice::getScan()->start(0, false);
+    NimBLEDevice::getScan()->start(0,nullptr, false);
   }
 
   //check & send button press

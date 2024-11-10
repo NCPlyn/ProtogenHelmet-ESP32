@@ -30,7 +30,7 @@
 - ToDo: Helmet
 - [ ] VL6180 nope, try APDS9960 -Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
 - [ ] Better custom WS28xx display (**waiting for v3, taking preorders** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
-- [ ] Support different sized OLED, define addreses, setups with INA or not (brightness done)
+- [ ] Support different sized OLED, setups with INA or not (define addreses, brightness done)
 - [ ] Proper enable/disable of features (code wise or reset)
 - [ ] More RGB anims/modes (Rainbow from boop/front, etc)
 - [ ] Button from remote to change the RGB modes + show on OLED
@@ -38,14 +38,14 @@
 - [ ] esp32 spi defines ok??? 2x 18pin? 23 pin? 2x 5 pin esp board, does max really work?
 
 - ToDo: Remote
-- [ ] getBLE/scanBLE - timeout watchdog????
 - [ ] Flex sensors
-- [ ] Different modes of using the buttons (hold button to change sets)
+- [ ] Different modes of using the buttons (7 anims,6anims+modifier-long change sets-short change rgb mode)
 
 - ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune proximity sensor" for boop (do not need SW fixing, all is about proper placement and tuning sensor)
 - [ ] Make wiring and flashing tutorial (including fs things)
 - [ ] Make uptodate parts list for most options
+- [ ] Make how to do the remote
   
 - But I'm limited in my free time that I can give here so it will take a while!
 - If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)
