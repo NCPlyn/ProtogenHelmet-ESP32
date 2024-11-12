@@ -1,7 +1,7 @@
 # ProtoESP
-#### _Protogen ESP32 controller for MAX7219 / WS2812 Matrix_
-**ESP32-S3** code which makes your protogen alive with animations and interactivity!
-*Not 100% complete, might be buggy, refer to  [Legacy](../Legacy/readme.md) branch.*
+### _Protogen ESP32 controller for MAX7219 / WS2812 Matrix_
+**ESP32-S3** code which makes your protogen alive with animations and interactivity!  
+*Not 100% complete, might be buggy, refer to  [Legacy](../Legacy) branch.*
 
 ##### Main features
 - Utilizes **MAX7219** matrixes using SPI or **[WS2812B RGB Matrixes]()** to show faces/animations
@@ -9,7 +9,7 @@
 	1. for ring LEDs in the ears (animated or coded);
 	2. for leds under the eyes (can be repurposed for something else)
 - Provides a WiFi AP with **site to control** your protogen (choose animation; change color,brightness,tilt anims,triggers...)
-	- Has copy of a **Animator** , so you can make, edit or test the animations on the fly. Frame by frame, pixel by pixel.
+	- Has copy of an **Animator** , so you can make, edit or test the animations on the fly. Frame by frame, pixel by pixel.
 - You can change your animations/faces either by:
 	1. Cycling them using a button from the ESP;
 	2. Choosing on the WiFi site on a phone;
@@ -27,10 +27,12 @@
 
 Sponsored by: <a href="https://pcbway.com/g/77jC58"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png"  height="40"></a>
 
+![espprotopromo](https://github.com/user-attachments/assets/c8a63f7a-2e5f-45b6-80ef-6bb01c3a7538)
+
 ## Navigation
-- [**Controller**](ProtoESP-Controller/readme.md) .md: ProtoESP controller code with all features
-- [**Remote**](ProtoESP-Remote/readme.md) .md: ProtoESP *(Not legacy)*  Wireless control remote
-- [**Legacy**](../Legacy/readme.md) branch: Legacy controller&remote&WS2812 matrix <- all three not supported anymore but **stable&working**
+- [**Controller**](ProtoESP-Controller) .md: ProtoESP controller code with all features
+- [**Remote**](ProtoESP-Remote) .md: ProtoESP *(Not legacy)*  Wireless control remote
+- [**Legacy**](../Legacy) branch: Legacy controller&remote&WS2812 matrix <- all three not supported anymore but **stable&working**
 - [**Matrix**](https://foxxo.cz/proto/matrix/) site: WS2812B 8x8 RGB Matrix replacement for single color MAX7219 Matrixes
 - [**Animator**](https://foxxo.cz/proto/animator.html) site: Program to make animations for the controller
 - [**ToDo**](todo.md) .md: Checklist of To Do things
@@ -60,7 +62,3 @@ Any amount is more than welcome! Don't forget to add contact info or DM me, so I
 - GPL 3.0 code license applies
 - If you use this code, try to make your protogen unique and change the animations up a little bit in the Animator!
 - Sharing and small credit won't hurt right?
-
-photo
-
-
