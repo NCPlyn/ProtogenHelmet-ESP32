@@ -70,6 +70,9 @@ ezButton hwBtn(animBtn);
 #include "fileOp.h" //CRC + Config variables store/save/load/default
 Config cfg;
 
+#include "Misc.h" //Misc/helping functions
+Misc misc;
+
 #include "SparkFunLSM6DS3.h"
 #include <Wire.h>
 LSM6DS3 myIMU;
@@ -354,51 +357,10 @@ bool loadAnim(String anim, String temp) {
       u8g2.setDrawColor(1);
       displayCenter(anim.substring(0,anim.length()-5),14);
       u8g2.updateDisplayArea(0,0,16,2);
-    } 
-  
+    }
     return true;
   }
-
   return false;
-}
-
-//--------------------------------//Dynamic speak anim
-uint64_t speakMatrix(uint64_t input) {
-  int darray[8][8];
-  for (int i = 0; i < 8; i++) { //convert int64 to 2darray
-    byte row = (input >> i * 8) & 0xFF;
-    for (int j = 0; j < 8; j++) {
-      darray[i][j] = bitRead(row, j);
-    }
-  }
-  for (int i = 0; i < 8; i++) { //do something to 2darray
-    for (int j = 0; j < 8; j++) {
-      if(darray[j][i] == 1 && j != 0) {
-        darray[j-1][i] = 1;
-        break;
-      }
-    }
-    for (int j = 7; j > -1; j--) {
-      if(darray[j][i] == 1 && j != 7) {
-        darray[j+1][i] = 1;
-        break;
-      }
-    }
-  }
-  uint64_t out = 0;
-  for (int i = 0; i < 8; i++) { //convert 2darray to int64
-    byte row = 0;
-    for (int j = 0; j < 8; j++) {
-      bitWrite(row, j, darray[i][j]);
-    }
-    out |= (uint64_t)row << i * 8;
-  }
-  return out;
-}
-
-//--------------------------------//Float mapping
-float mapfloat(float x, float in_min, float in_max, float out_min, float out_max) {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 //--------------------------------//OLED Brightness
@@ -628,7 +590,7 @@ void setup() {
   pinMode(T_en, OUTPUT);
   pinMode(wifi_en, INPUT_PULLUP);
   pinMode(animBtn, INPUT_PULLUP);
-  pinMode(0, INPUT);
+  pinMode(0, INPUT_PULLUP);
   pinMode(fanPWM, OUTPUT);
 
   hwBtn.setDebounceTime(50);
@@ -701,9 +663,9 @@ void setup() {
 //--------------------------------//Loop vars
 String oldanim, boopoldanim;
 bool booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false, displayLeds = false;
-float zAx,yAx,finalMicAvg,nvol,micline,avgMicArr[10];
+float zAx,yAx,finalMicAvg,micline,avgMicArr[10];
 int randomNum, boopRead, randomTimespan = 0, startIndex = 1, speaking = 0, currentMicAvg = 0, btnNum = 0;
-unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0;
+unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0, looptime = 0;
 byte row = 0;
 
 //--------------------------------//Visor bufferer
@@ -712,7 +674,7 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
   for(int y = 0; y < numOfSegm; y++) {
     tempSegment = visorNow->frames[visorFrame].leds[y];
     if(visorNow->isMouth[y] && speak && randomNum == 0) { //if sets mouth and we are talking
-      tempSegment = speakMatrix(tempSegment);
+      tempSegment = misc.speakMatrix(tempSegment);
     }
     for (int i = 0; i < 8; i++) {
       row = (tempSegment >> i * 8) & 0xFF;
@@ -732,10 +694,6 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
   fadeToBlackBy(visorLeds, VisorLedsNum, 255-cfg.bVisor);
   displayLeds = true;
 }
-
-bool isApproxEqual(const float ax, const float ay, const float az, const float bx, const float by, const float bz) {
-  return (fabs(ax-bx) < cfg.tiltTol && fabs(ay-by) < cfg.tiltTol && fabs(az-bz) < cfg.tiltTol);
-}  
 
 void loop() {
   ElegantOTA.loop();
@@ -837,19 +795,19 @@ void loop() {
 
   //--------------------------------//TILT
   if(lastMillsTilt+100<=millis() && cfg.tiltEna) {
-    if(isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.upX,cfg.upY,cfg.upZ) && !wasTilt) {
+    if(misc.isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.upX,cfg.upY,cfg.upZ,cfg.tiltTol) && !wasTilt) {
       Serial.println("up");
       wasTilt = true;
       oldanim = currentAnim;
       tiltChange = millis();
       loadAnim(cfg.aUp,"");
-    } else if (isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.tiltX,cfg.tiltY,cfg.tiltZ) && !wasTilt) {
+    } else if (misc.isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.tiltX,cfg.tiltY,cfg.tiltZ,cfg.tiltTol) && !wasTilt) {
       Serial.println("tilt");
       wasTilt = true;
       oldanim = currentAnim;
       tiltChange = millis();
       loadAnim(cfg.aTilt,"");
-    } else if ((tiltChange+revertTilt<millis() || isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.neutralX,cfg.neutralY,cfg.neutralZ)) && wasTilt) {
+    } else if ((tiltChange+revertTilt<millis() || misc.isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.neutralX,cfg.neutralY,cfg.neutralZ,cfg.tiltTol)) && wasTilt) {
       Serial.println("neutral");
       wasTilt = false;
       loadAnim(oldanim,"");
@@ -864,26 +822,28 @@ void loop() {
     }
   }
 
+  //looptime = micros();
   //--------------------------------//SPEECH Detection
-  if(cfg.speechEna) {
-    finalMicAvg = 0;
-    nvol = 0;
+  if(cfg.speechEna) { //8.8ms qwq
+    float nvol = 0;
     for (int i = 0; i<64; i++){
       micline = abs(analogRead(MICpin) - 512);
       nvol = max(micline, nvol);
     }
-    avgMicArr[currentMicAvg] = nvol;
     if(currentMicAvg == 9) {
       currentMicAvg = 0;
     } else {
-      currentMicAvg++;
+      avgMicArr[currentMicAvg++] = nvol;
     }
+  }
+  //Serial.println(">SPK1:"+String(micros()-looptime));
+  //looptime = micros();
+  
+  if(cfg.speechEna && laskSpeakCheck+10<=millis()) {
+    finalMicAvg = 0;
     for (int i = 0; i<10; i++){
       finalMicAvg+=avgMicArr[i];
     }
-    //Serial.println(finalMicAvg/10);
-  }
-  if(cfg.speechEna && laskSpeakCheck+10<=millis()) {
     if(finalMicAvg/10 > cfg.spTrig) {
       speaking++;
       lastSpeak = millis();
@@ -897,18 +857,16 @@ void loop() {
       }
       Serial.println("Speak");
     }
-    if(lastSpeak+500<millis()) {
-      if(speak) {
-        speak = false;
-        speechFirst = true;
-        if(cfg.oledEna && oledInitDone) {
-          u8g2.setDrawColor(0);
-          u8g2.drawBox(8, 48, 56, 16);
-          u8g2.updateDisplayArea(0,6,8,2);
-          u8g2.setDrawColor(1);
-        }
-        Serial.println("unSpeak");
+    if(lastSpeak+500<millis() && speak) {
+      speak = false;
+      speechFirst = true;
+      if(cfg.oledEna && oledInitDone) {
+        u8g2.setDrawColor(0);
+        u8g2.drawBox(8, 48, 56, 16);
+        u8g2.updateDisplayArea(0,6,8,2);
+        u8g2.setDrawColor(1);
       }
+      Serial.println("unSpeak");
       speaking = 0;
     }
     laskSpeakCheck = millis();
@@ -925,7 +883,6 @@ void loop() {
     if(visorNow->type == 0) { //custom
       setAllVisor(visorLeds,cfg.visColor,currentVisorFrame-1);
     }
-    
     lastMillsSpeechAnim = millis();
   }
   //--------------------------------//SPEECH Reset frames
@@ -979,10 +936,11 @@ void loop() {
     }
   }
 
-  //--------------------------------//OLED routine, make for multiple sizes
+  //looptime = micros();
+  //--------------------------------//OLED routine, make for multiple sizes, 10ms qwq
   if(cfg.oledEna && vaStatLast+500<millis() && oledInitDone) {
     float BusV = ina219.getBusVoltage_V();
-    int barStatus = mapfloat(BusV,5.5,8.42,0,100);
+    int barStatus = misc.mapfloat(BusV,5.5,8.42,0,100);
     if(barStatus > 100) {
       barStatus = 100;
     } else if (barStatus < 0) {
@@ -1002,6 +960,8 @@ void loop() {
   } else if (!oledInitDone && cfg.oledEna) {
     initOled();
   }
+  //Serial.println(">OLED:"+String(micros()-looptime));
+  //looptime = micros();
 
   if(displayLeds) {
     displayLeds = false;

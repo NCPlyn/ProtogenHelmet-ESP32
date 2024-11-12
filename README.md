@@ -1,53 +1,66 @@
-# An *universal* controller for your protogen!
-- Beta version
-- [x] PlatformIO based for ease of use (no longer Arduino IDE)
-- [x] Use of ESP32-S3 with PSRAM
-- [x] Dynamic anim selector instead of dropdown
-- [x] Using PSRAM (so far only current anim)
-- [x] More user-friendly UI on mobile for controls (could be better, but will do)
-- [x] Factory settings when error read and CRC checking
-- [x] Online web version of animator ([HERE](https://foxxo.cz/proto/animator.html))
-- [x] Fix current animations
-- [x] Add function to change anims with button
-- [x] Proper partition tables for current microcontrollers
-- [x] Proper definitions, buggy platformio with defines (should work)
-- [x] Auto gen CRC before filesystem upload (platformio is unpredictable)
-- [x] Make sure ifdef for definitons work (should), add definition for wifiena (done), RGB orders def (wrote comment)
-- [x] Support for ESP32 with PSRAM soldered on / without (**soldered works, without might never be...**)
-- [x] Supported both MAX and WS28xx displays in the same codebase (**should work but needs to be kept under supervision**)
-- [x] Custom amount of displays and their placement (**same as above**)
-- [x] Redo tilt calibration code (**same as above**)
-- [x] OLED init bug fix at runtime (now fixed fr)
-- [x] ElegantOTA (**192.168.4.1/update**)
-- [x] visor / blush brightness fix (ws 0-255, max 0-16)
-- [x] More QOL for animator (credit to https://xantorohara.github.io/led-matrix-editor/, this is kinda built on top xD)
-- [x] Remote: Convert to PlatformIO + add ElegantOTA
-- [x] Remote: Buttons XIAO + PCB
-- [x] GPIO0 hold when boot = factory (after 10s of runtine, hold boot button for 10s)
-- [x] Ledc PWM fan control (should work)
-- [x] Remote: GPIO0 hold when boot = factory (not tested but should)
+# ProtoESP
+#### _Protogen ESP32 controller for MAX7219 / WS2812 Matrix_
+**ESP32-S3** code which makes your protogen alive with animations and interactivity!
+*Not 100% complete, might be buggy, refer to  [Legacy](../Legacy/readme.md) branch.*
 
-- ToDo: Helmet
-- [ ] VL6180 nope, try APDS9960 -Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
-- [ ] Better custom WS28xx display (**waiting for v3, taking preorders** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
-- [ ] Support different sized OLED, setups with INA or not (define addreses, brightness done)
-- [ ] Proper enable/disable of features (code wise or reset)
-- [ ] More RGB anims/modes (Rainbow from boop/front, etc)
-- [ ] Button from remote to change the RGB modes + show on OLED
-- [ ] Put into functions/files
-- [ ] esp32 spi defines ok??? 2x 18pin? 23 pin? 2x 5 pin esp board, does max really work?
+##### Main features
+- Utilizes **MAX7219** matrixes using SPI or **[WS2812B RGB Matrixes]()** to show faces/animations
+- Has two additional WS2812 outputs:
+	1. for ring LEDs in the ears (animated or coded);
+	2. for leds under the eyes (can be repurposed for something else)
+- Provides a WiFi AP with **site to control** your protogen (choose animation; change color,brightness,tilt anims,triggers...)
+	- Has copy of a **Animator** , so you can make, edit or test the animations on the fly. Frame by frame, pixel by pixel.
+- You can change your animations/faces either by:
+	1. Cycling them using a button from the ESP;
+	2. Choosing on the WiFi site on a phone;
+	3. Using a **wireless remote** with buttons
+- & much more with these parts:
 
-- ToDo: Remote
-- [ ] Flex sensors
-- [ ] Different modes of using the buttons (7 anims,6anims+modifier-long change sets-short change rgb mode)
+##### Connect and get more features from:
+- **KY-032**: IR Sensor for changing to different animation if booped
+- **MAX9814**: Microphone to move protogens mouth (not used to change voice!)
+- **LSM6DS3**: Accelerometer to change animations by tilting your head
+- **SSD1306**: OLED display to show current animation, speaking status, current&voltage (INA219) and more
+- **INA219**: Measure current and voltage of the protogen helmet
+- **XIAO ESP32**: Change animations remotely without wiring a single cable from the helmet
+- **PWM fan**: Connect speed signal to a 4 pin fan and control its speed
 
-- ToDo: Manuals etc.
-- [ ] Make "How to properly place and tune proximity sensor" for boop (do not need SW fixing, all is about proper placement and tuning sensor)
-- [ ] Make wiring and flashing tutorial (including fs things)
-- [ ] Make uptodate parts list for most options
-- [ ] Make how to do the remote
-  
-- But I'm limited in my free time that I can give here so it will take a while!
-- If you have found this project helpful or if you have used it and want to support me and encourage me into working more on this project, you can do so here: [PayPal.me](https://paypal.me/NCPlyn)
-- Thank you **Arkoss** for your donation! [IG](https://www.instagram.com/snowkatark/)
-- Thank you **Alellv** for you donation! [GitHub](https://github.com/Alellv)
+Sponsored by: <a href="https://pcbway.com/g/77jC58"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png"  height="40"></a>
+
+## Navigation
+- [**Controller**](ProtoESP-Controller/readme.md) .md: ProtoESP controller code with all features
+- [**Remote**](ProtoESP-Remote/readme.md) .md: ProtoESP *(Not legacy)*  Wireless control remote
+- [**Legacy**](../Legacy/readme.md) branch: Legacy controller&remote&WS2812 matrix <- all three not supported anymore but **stable&working**
+- [**Matrix**](https://foxxo.cz/proto/matrix/) site: WS2812B 8x8 RGB Matrix replacement for single color MAX7219 Matrixes
+- [**Animator**](https://foxxo.cz/proto/animator.html) site: Program to make animations for the controller
+- [**ToDo**](todo.md) .md: Checklist of To Do things
+
+## Documentation
+- How to DIY protogen: [Imgur](https://imgur.com/a/jYpSbuZ)
+- Parts list: [Pastebin](https://pastebin.com/7z4fnVfQ)
+- Connection diagram: TBD
+- Program/flash manual: TBD
+- Remote how to: TBD
+- IR Sensor setup: TBD
+- Alive ProtoESP protogens: 
+
+### Feature request / issues
+- If you have found an issue with this code (crashes, something not working like it should), please open a issue in this repository!
+- If you have thought of a new feature or QoL improvement you would like to see being implemented, please contact me directly on Discord or Telegram: @NCPlyn.
+
+## Support
+If you have found this project helpful / used it / want to support and encourage me into working more, you can do so here: [PayPal](https://paypal.me/NCPlyn) or [Revolut](https://revolut.me/ncplyn).
+Any amount is more than welcome! Don't forget to add contact info or DM me, so I can add you here:
+
+- **<a href="https://pcbway.com/g/77jC58">PCBWay</a>** has sponsored this project by providing prototype PCBs!
+- [**Arkoss**](https://www.instagram.com/snowkatark/), Thank you for your donation!
+- [**Alellv**](https://github.com/Alellv), Thank you for your donation!
+
+## Use / license
+- GPL 3.0 code license applies
+- If you use this code, try to make your protogen unique and change the animations up a little bit in the Animator!
+- Sharing and small credit won't hurt right?
+
+photo
+
+

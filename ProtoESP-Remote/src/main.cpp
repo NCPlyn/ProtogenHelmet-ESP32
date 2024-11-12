@@ -67,12 +67,12 @@ class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
 };
 
 // Perform a new scan and set callback for found device
-void scanBLE() {
+void scanBLE(int time) {
   foundDevices = "";
   NimBLEScan* pScan = NimBLEDevice::getScan();
   pScan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks());
   pScan->setActiveScan(true);
-  pScan->start(5, nullptr, false);
+  pScan->start(time, nullptr, false);
 }
 
 // Connect to the BLE server and check for valid service/char
@@ -191,7 +191,7 @@ void startWiFiWeb() {
   });
 
   server.on("/scanBLE", HTTP_GET, [](AsyncWebServerRequest *request){ //all available BLE
-    scanBLE();
+    scanBLE(5);
     request->send(200, "text/plain", "Started scan");
   });
 
@@ -242,6 +242,8 @@ void setup() {
   Serial.begin(115200);
   
   pinMode(0, INPUT_PULLUP);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
 
   if(!LittleFS.begin(true)) {
     Serial.println("[E] An Error has occurred while mounting LittleFS! Halting");
@@ -261,7 +263,7 @@ void setup() {
   startWiFiWeb();
 
   NimBLEDevice::init("");
-  scanBLE();
+  scanBLE(0);
 
   Serial.println("[I] Free heap: "+String(ESP.getFreeHeap()));
 }
@@ -312,6 +314,13 @@ void loop() {
         }
       }
     }
+  }
+
+  //status LED
+  if(connected && digitalRead(LED_BUILTIN) == HIGH) {
+    digitalWrite(LED_BUILTIN,LOW);
+  } else if (!connected && digitalRead(LED_BUILTIN) == LOW) {
+    digitalWrite(LED_BUILTIN, HIGH);
   }
   
   //press boot button for 10sec to reset
