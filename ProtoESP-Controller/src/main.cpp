@@ -53,6 +53,13 @@
 
 //--------------------------------//No touching after this
 
+#include <Arduino.h>
+
+#define earTypeSize 5
+#define visTypeSize 2
+String earTypes[earTypeSize] = {"custom","rainbow","white_noise","corner_sabers","custom_glow"};
+String visorTypes[visTypeSize] = {"custom","all_rainbow"};
+
 #include <ezButton.h>
 ezButton hwBtn(animBtn);
 
@@ -94,6 +101,34 @@ AsyncWebServer server(80);
 
 String wifiName = "Proto", wifiPass = "Proto123";
 
+//--------------------------------//Structs for anims in psram
+struct FramesEars {
+  int timespan;
+  long ledColor[EarLedsNum];
+};
+
+struct AnimNowEars {
+  int type;
+  int numOfFrames;
+  FramesEars frames[MaxFEars]; //max amount of ear frames
+};
+
+struct FramesVisor {
+  int timespan;
+  uint64_t leds[20];
+  long ledsBlush[blushLedsNum];
+};
+
+struct AnimNowVisor {
+  int type;
+  int numOfFrames;
+  FramesVisor frames[MaxFVisor]; //max amount of visor frames
+  bool isMouth[20];
+};
+
+AnimNowEars* earsNow;
+AnimNowVisor* visorNow;
+
 //--------------------------------//BLE
 #define CONFIG_BT_NIMBLE_MAX_CONNECTIONS 2
 #define CONFIG_BT_NIMBLE_ROLE_CENTRAL_DISABLED
@@ -122,7 +157,18 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         }
         pCharacteristic->setValue(animtemp);
         pCharacteristic->notify(true);
-      } else if (temp.toInt() > 0 && temp.toInt() <= BLEnum){
+      } else if (temp.charAt(0) == ';') { //command
+        if (temp.indexOf("rgb") > 0 && cfg.ledType == "WS2812") {
+          visorNow->type++;
+          if(visorNow->type == visTypeSize)
+            visorNow->type = 0;
+          //do OLED stuff
+        } else if (temp.indexOf("set") > 0) {
+          temp.remove(0,4);
+          int test = temp.toInt();
+          //change set variable and do OLED stuff
+        }
+      } else if (temp.toInt() > 0 && temp.toInt() <= BLEnum){ //legacy remote reasons
         animToLoad = BLEfiles[temp.toInt()-1];
       } else {
         for(int i = 0; i < BLEnum; i++) {
@@ -233,34 +279,6 @@ const std::vector<std::vector<int>> lookupDiag2 =
  {13,25,24,9},
  {12,11,10}};
 
-//--------------------------------//Structs for anims in psram
-struct FramesEars {
-  int timespan;
-  long ledColor[EarLedsNum];
-};
-
-struct AnimNowEars {
-  int type;
-  int numOfFrames;
-  FramesEars frames[MaxFEars]; //max amount of ear frames
-};
-
-struct FramesVisor {
-  int timespan;
-  uint64_t leds[20];
-  long ledsBlush[blushLedsNum];
-};
-
-struct AnimNowVisor {
-  int type;
-  int numOfFrames;
-  FramesVisor frames[MaxFVisor]; //max amount of visor frames
-  bool isMouth[20];
-};
-
-AnimNowEars* earsNow;
-AnimNowVisor* visorNow;
-
 //--------------------------------//Print centered text to oled buffer
 void displayCenter(String text, uint16_t h) {
   float width = u8g2.getStrWidth(text.c_str());
@@ -272,9 +290,6 @@ bool instantReload = false;
 bool oledInitDone = false, tiltInitDone = false;
 int currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush;
 String currentAnim = "";
-
-String earTypes[5] = {"custom","rainbow","white_noise","corner_sabers","custom_glow"};
-String visorTypes[2] = {"custom","all_rainbow"};
 
 //--------------------------------//Load functions
 bool loadAnim(String anim, String temp) {
@@ -307,7 +322,7 @@ bool loadAnim(String anim, String temp) {
     currentAnim = anim;
 
     //Ears anim type
-    for(int o=0;o<5;o++) {
+    for(int o=0;o<earTypeSize;o++) {
       if(doc["ears"]["type"].as<String>() == earTypes[o]) {
         earsNow->type = o;
         break;
@@ -323,7 +338,7 @@ bool loadAnim(String anim, String temp) {
     }
 
     //Visor anim type
-    for(int o=0;o<2;o++) {
+    for(int o=0;o<visTypeSize;o++) {
       if(doc["visor"]["type"].as<String>() == visorTypes[o]) {
         visorNow->type = o;
         break;
@@ -766,7 +781,7 @@ void loop() {
   }
 
   //--------------------------------//VISOR+BLUSH Leds render
-  if(visorNow->type == 0) { //custom
+  if(visorNow->type == 0 || (visorNow->type == 1 && cfg.ledType == "MAX72XX")) { //custom
     if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
@@ -779,18 +794,14 @@ void loop() {
   } else if (visorNow->type == 1 && cfg.ledType == "WS2812") { //all_rainbow
     if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
-      if(currentVisorFrame == visorNow->numOfFrames) {
-        currentVisorFrame = 0;
-      }
+      if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
+      currentVisorFrame++;
+      instantReload = false;
     }
     fill_rainbow(visorPixelBuffer, 1, millis()/cfg.rbSpeed, 128/cfg.rbWidth);
-    setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame);
-    for(int x = 0; x<numAnimBlush; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
-      fadeToBlackBy(blushLeds, blushLedsNum, 255-cfg.bBlush);
-      if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
-        currentVisorFrame++;
-        instantReload = false;
-      }
+    setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame-1);
+    for(int x = 0; x<numAnimBlush; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame-1].ledsBlush[x]; } //set blush leds
+    fadeToBlackBy(blushLeds, blushLedsNum, 255-cfg.bBlush);
   }
 
   //--------------------------------//TILT

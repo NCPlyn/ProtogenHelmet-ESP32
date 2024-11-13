@@ -2,20 +2,19 @@
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
 #include <LittleFS.h>
 
-#define BTNTIME 1500
+#define BTNTIME 800
 #define BUTTONS 7
-ezButton buttonArray[BUTTONS] = {
-  ezButton(7), //left (18)
-  ezButton(1), //right (19)
-  ezButton(3), //up (2)
-  ezButton(4), //down (17)
-  ezButton(9), //center (16)
-  ezButton(2), //up right (4)
-  ezButton(8)  //up left (5)
+ezButton buttonArray[BUTTONS] = { //1.. left to right, row by row
+  ezButton(8), //up left
+  ezButton(2), //up right
+  ezButton(3), //up
+  ezButton(7), //left
+  ezButton(9), //center
+  ezButton(1), //right
+  ezButton(4)  //down
 };
 unsigned long btnPressTime[BUTTONS];
-int btnVal[BUTTONS];
-String btnAnims[BUTTONS];
+String btnAnims[3][BUTTONS];
 
 #define ELEGANTOTA_USE_ASYNC_WEBSERVER 1
 #include "WiFi.h"
@@ -42,7 +41,7 @@ NimBLEClient* pClient;
 
 bool doConnect = false,connected = false,buttonPressed = false;
 String foundDevices = "", BLE = "ProtoESP";
-int connectTry = 0;
+int connectTry = 0, functionBtn = -1, animSet = 0;
 unsigned long check0button = 0;
 
 // BLE Scan callback, get a comma-separated list of found devices and check for valid one to connect to
@@ -123,8 +122,11 @@ bool loadConfig() {
   Serial.println("[I] Deserialized JSON");
 
   for (int i = 0; i < BUTTONS; i++) {
-    btnAnims[i] = doc[String(i+1)].as<String>();
+    btnAnims[0][i] = doc[String(i+1+10)].as<String>();
+    btnAnims[1][i] = doc[String(i+1+20)].as<String>();
+    btnAnims[2][i] = doc[String(i+1+30)].as<String>();
   }
+  functionBtn = doc["functionBtn"].as<int>();
   wifiName = doc["wifiName"].as<String>();
   wifiPass = doc["wifiPass"].as<String>();
   BLE = doc["BLE"].as<String>();
@@ -144,8 +146,11 @@ bool saveConfig() {
   Serial.println("[I] Config file opened to save!");
 
   for (int i = 0; i < BUTTONS; i++) {
-    doc[String(i+1)] = btnAnims[i];
+    doc[String(i+1+10)] = btnAnims[0][i];
+    doc[String(i+1+20)] = btnAnims[1][i];
+    doc[String(i+1+30)] = btnAnims[2][i];
   }
+  doc["functionBtn"] = functionBtn;
   doc["wifiName"] = wifiName;
   doc["wifiPass"] = wifiPass;
   doc["BLE"] = BLE;
@@ -163,8 +168,11 @@ bool saveConfig() {
 
 void setDefault() {
   for (int i = 0; i < BUTTONS; i++) {
-    btnAnims[i] = "default";
+    btnAnims[0][i] = "default";
+    btnAnims[1][i] = "default";
+    btnAnims[2][i] = "default";
   }
+  functionBtn = -1;
   wifiName = "ProtoRemote";
   wifiPass = "Proto123";
   BLE = "ProtoBLE";
@@ -206,10 +214,26 @@ void startWiFiWeb() {
   server.on("/saveconfig", HTTP_GET, [](AsyncWebServerRequest *request){ //saves config
     //btns
     for (int i = 0; i < BUTTONS; i++) {
-      if(request->hasParam(String(i+1)))
-        if(String(request->getParam(String(i+1))->value()) != "") {
-          btnAnims[i] = String(request->getParam(String(i+1))->value());
-        }
+      if(request->hasParam(String(i+1+10)))
+        if(String(request->getParam(String(i+1+10))->value()) != "") {
+          btnAnims[0][i] = String(request->getParam(String(i+1+10))->value());
+      }
+      if(request->hasParam(String(i+1+20)))
+        if(String(request->getParam(String(i+1+20))->value()) != "") {
+          btnAnims[1][i] = String(request->getParam(String(i+1+20))->value());
+      }
+      if(request->hasParam(String(i+1+30)))
+        if(String(request->getParam(String(i+1+30))->value()) != "") {
+          btnAnims[2][i] = String(request->getParam(String(i+1+30))->value());
+      }
+    }
+    if(request->hasParam("functionBtn")) {
+      int temp = request->getParam("functionBtn")->value().toInt();
+      if(temp < 8 && temp > 0) {
+        functionBtn = temp-1;
+      } else {
+        functionBtn = -1;
+      }
     }
     //wifi/ble
     if(request->hasParam("BLE"))
@@ -297,20 +321,30 @@ void loop() {
   }
 
   //check & send button press
-  if (connected) {
-    for (int i = 0; i < BUTTONS; i++) {
-      if(buttonArray[i].isPressed() && connected) { //detect press
+  if(connected) {
+    for(int i = 0; i < BUTTONS; i++) {
+      if(buttonArray[i].isPressed()) { //detect press
         btnPressTime[i] = millis();
       }
-      if(buttonArray[i].isReleased() && connected) { //short press
+      if(buttonArray[i].isReleased()) { //short press
         long pressDuration = millis() - btnPressTime[i];
         if(pressDuration < BTNTIME) {
-          if (pRemoteCharacteristic->canWrite()) {
-            pRemoteCharacteristic->writeValue(btnAnims[i]);
-            Serial.print("[I] BT: Sent: ");
-            Serial.println(btnAnims[i]);
+          if(i == functionBtn) {
+            pRemoteCharacteristic->writeValue(";rgb");
+            Serial.println("[I] BT: Sent: ;rgb");
+          } else {
+            if (pRemoteCharacteristic->canWrite()) {
+              pRemoteCharacteristic->writeValue(btnAnims[animSet][i]);
+              Serial.print("[I] BT: Sent: ");
+              Serial.println(btnAnims[animSet][i]);
+            }
           }
-          btnPressTime[i] = 20000000;
+          //btnPressTime[i] = 20000000;
+        } else if (pressDuration > BTNTIME && pressDuration < BTNTIME+5000) {
+          if(animSet==2) {animSet=0;} else {animSet++;}
+          Serial.println("[I] Animation set to: "+String(animSet));
+          pRemoteCharacteristic->writeValue(";set"+String(animSet));
+          Serial.println("[I] BT: Sent: ;set"+String(animSet));
         }
       }
     }

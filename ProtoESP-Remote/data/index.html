@@ -12,25 +12,44 @@
         <div class="config">
           <div style="color:lightgray">
             <p>Animations for buttons show only when connected to ProtoESP BLE.</p>
-            <p>Available BLE devices and animations show after 5s after page load.</p>
+            <p>Available BLE devices (+animations) show after 6s after page load.</p>
           </div>
           <form action="./saveconfig" method="get">
-            <i><label>Name</label></i>
-            <i><span>value</span></i>
-            <label for="1">1. Button</label>
-            <select id="1" name="1"></select>
-            <label for="2">2. Button</label>
-            <select id="2" name="2"></select>
-            <label for="3">3. Button</label>
-            <select id="3" name="3"></select>
-            <label for="4">4. Button</label>
-            <select id="4" name="4"></select>
-            <label for="5">5. Button</label>
-            <select id="5" name="5"></select>
-            <label for="6">6. Button</label>
-            <select id="6" name="6"></select>
-            <label for="7">7. Button</label>
-            <select id="7" name="7"></select>
+            <i><label>Button</label></i>
+            <i><span>1. set</span></i>
+            <i><span>2. set</span></i>
+            <i><span>3. set</span></i>
+            <label>1.</label>
+            <select id="11" name="11"></select>
+            <select id="21" name="21"></select>
+            <select id="31" name="31"></select>
+            <label>2.</label>
+            <select id="12" name="12"></select>
+            <select id="22" name="22"></select>
+            <select id="32" name="32"></select>
+            <label>3.</label>
+            <select id="13" name="13"></select>
+            <select id="23" name="23"></select>
+            <select id="33" name="33"></select>
+            <label>4.</label>
+            <select id="14" name="14"></select>
+            <select id="24" name="24"></select>
+            <select id="34" name="34"></select>
+            <label>5.</label>
+            <select id="15" name="15"></select>
+            <select id="25" name="25"></select>
+            <select id="35" name="35"></select>
+            <label>6.</label>
+            <select id="16" name="16"></select>
+            <select id="26" name="26"></select>
+            <select id="36" name="36"></select>
+            <label>7.</label>
+            <select id="17" name="17"></select>
+            <select id="27" name="27"></select>
+            <select id="37" name="37"></select>
+            
+            <label for="functionBtn">Function button<sup onclick="alert('Select a button which will change RGB modes with short press and animation sets with long press.')">&#9432;</sup></label>
+            <select id="functionBtn" name="functionBtn"><option>None</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
             
             <label for="BLE" onclick="alert('Values show after 6s of the page being loaded')">Proto BLE name</label>
             <select id="BLE" name="BLE"></select>
@@ -54,7 +73,7 @@
   }
   .config form {
     display:grid;
-    grid-template-columns: max-content max-content;
+    grid-template-columns: max-content max-content max-content max-content;
     grid-gap:5px;
     justify-content: center;
   }
@@ -127,7 +146,6 @@
   }
 </style>
 
-<script src="jquerymin.js"></script>
 <script>
 	function fillSelect(id,val) {
 		var select, option;
@@ -186,13 +204,11 @@
 				partsArray.pop();
 				var arrayLength = partsArray.length;
 				for (var i = 0; i < arrayLength; i++) {
-					fillSelect("1",partsArray[i]);
-					fillSelect("2",partsArray[i]);
-					fillSelect("3",partsArray[i]);
-					fillSelect("4",partsArray[i]);
-					fillSelect("5",partsArray[i]);
-					fillSelect("6",partsArray[i]);
-					fillSelect("7",partsArray[i]);
+          for (var x = 1; x < 8; x++) {
+            fillSelect(x+10,partsArray[i]);
+            fillSelect(x+20,partsArray[i]);
+            fillSelect(x+30,partsArray[i]);
+          }
           console.log("set true");
           animLoaded = true;
 				}
@@ -213,19 +229,25 @@
 			if (xmlhttp.readyState==4 && xmlhttp.status==200)
 			{
 				var obj = JSON.parse(xmlhttp.responseText);
-        document.getElementsByName("1")[0].value = obj["1"];
-        document.getElementsByName("2")[0].value = obj["2"];
-        document.getElementsByName("3")[0].value = obj["3"];
-        document.getElementsByName("4")[0].value = obj["4"];
-        document.getElementsByName("5")[0].value = obj["5"];
-        document.getElementsByName("6")[0].value = obj["6"];
-        document.getElementsByName("7")[0].value = obj["7"];
+        for (var x = 1; x < 8; x++) {
+          document.getElementById(x+10).value = obj[x+10];
+          document.getElementById(x+20).value = obj[x+20];
+          document.getElementById(x+30).value = obj[x+30];
+        }
+        if(obj.functionBtn == -1) {
+          document.getElementsByName("functionBtn")[0].value = "None";
+        } else {
+          document.getElementsByName("functionBtn")[0].value = obj.functionBtn+1;
+        }
         document.getElementsByName("wifiName")[0].value = obj.wifiName;
         document.getElementsByName("wifiPass")[0].value = obj.wifiPass;
         BLEnameload = obj.BLE;
 			}
 		}
-		xmlhttp.open("GET", "/config.json", false );
+		xmlhttp.open("GET", "/config.json", false);
+    xmlhttp.setRequestHeader('Cache-Control', 'no-cache, no-store, max-age=0');
+    xmlhttp.setRequestHeader('Expires', 'Thu, 1 Jan 1970 00:00:00 GMT');
+    xmlhttp.setRequestHeader('Pragma', 'no-cache');
 		xmlhttp.send();
 	}
 	loadConfig();

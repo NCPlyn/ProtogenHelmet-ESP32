@@ -26,27 +26,27 @@
 - [x] GPIO0 hold when boot = factory (after 10s of runtine, hold boot button for 10s)
 - [x] Ledc PWM fan control (should work)
 - [x] Remote: GPIO0 hold when boot = factory (not tested but should)
+- [x] Remote: Different modes of using the buttons (7 anims/6anims+modifier-long change sets-short change rgb mode)
+- [x] Remote: Button on remote changes RGB modes of visor and anim sets
+- [x] Remote: v2 PCB (hole for antenna cable or internal antenna, different batt placement, rename)
+- [x] Make uptodate parts list for most options (**add apds later on if works**)
 
 - ToDo: Helmet
+- [ ] Mic takes too long -> faster analogRead() / RGB animation is buggy
+- [ ] esp32 spi defines ok??? 2x 18pin? 23 pin? 2x 5 pin esp board, does max really work?
+- [ ] Completely redo OLED (think of new way of showing info) - V/A/animation/remote set/speaking/rgb mode/OLED sizes/takes too long...
 - [ ] VL6180 nope, try APDS9960 -Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
 - [ ] Better custom WS28xx display (**waiting for v3, taking preorders** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
-- [ ] Support different sized OLED, setups with INA or not (define addreses, brightness done)
-- [ ] Proper enable/disable of features (code wise or reset)
+- [ ] Proper enable/disable of features (code wise or reset) - bug/missed comments code check
 - [ ] More RGB anims/modes (Rainbow from boop/front, etc)
-- [ ] Button from remote to change the RGB modes + show on OLED
-- [ ] Put into functions/files
-- [ ] OLED & Microphone check takes too long - RGB animation is buggy
-- [ ] esp32 spi defines ok??? 2x 18pin? 23 pin? 2x 5 pin esp board, does max really work?
+- [ ] Put into classes/seperate files (slowly doing it)
 
 - ToDo: Remote
-- [ ] v2 PCB (hole for antenna cable or internal antenna, different batt placement) + status led
+- [ ] Create/finish .MD file with: What is it, how to wire, how to connect/edit, photos + sponsor, how to flash
 - [ ] Power draw, deep sleep?
 - [ ] Flex sensors
-- [ ] Different modes of using the buttons (7 anims,6anims+modifier-long change sets-short change rgb mode)
-(set control button - overrides anim button, does whats said before)
+
 
 - ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune proximity sensor" for boop (do not need SW fixing, all is about proper placement and tuning sensor)
 - [ ] Make wiring and flashing tutorial (including fs things)
-- [ ] Make uptodate parts list for most options
-- [ ] Make how to do the remote

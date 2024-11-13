@@ -46,8 +46,8 @@
           <form action="./saveconfig" method="get">
             <i><label>Name (limits|default)</label></i>
             <i><span>value</span></i>
-            <label for="visColor">Visor color</label>
-            <input type="color" name="visColor">
+            <label for="visColor" id="visColorLabel">Visor color</label>
+            <input type="color" name="visColor" id="visColor">
             <label for="bEar">Brightness ears (0-255|64)</label>
             <input type="number" name="bEar" min="0">
             <label for="bVisor">Brightness visor (WS:0-255|MAX:0-15)</label>
@@ -218,7 +218,6 @@
 	}
 
   $("#fanspeed").change(function() {
-    console.log();
     var xhr = new XMLHttpRequest();
 		xhr.open("GET", "/fanpwm?duty="+$("#fanspeed").val(), true);
     xhr.onload = function() {
@@ -231,6 +230,16 @@
       }
     }
 	  xhr.send(null);
+  });
+
+  $("#ledType").change(function() {
+    if($("#ledType").val() == "WS2812") {
+      $("#visColor").show();
+      $("#visColorLabel").show();
+    } else {
+      $("#visColor").hide();
+      $("#visColorLabel").hide();
+    }
   });
 
 	function loadFiles() {
