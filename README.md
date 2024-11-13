@@ -4,7 +4,7 @@
 *Not 100% complete, might be buggy, refer to  [Legacy](../Legacy) branch.*
 
 ##### Main features
-- Utilizes **MAX7219** matrixes using SPI or **[WS2812B RGB Matrixes]()** to show faces/animations
+- Utilizes **MAX7219** matrixes using SPI or **[WS2812B RGB Matrixes](https://foxxo.cz/proto/matrix/)** to show faces/animations
 - Has two additional WS2812 outputs:
 	1. for ring LEDs in the ears (animated or coded);
 	2. for leds under the eyes (can be repurposed for something else)
@@ -25,7 +25,7 @@
 - **XIAO ESP32**: Change animations remotely without wiring a single cable from the helmet
 - **PWM fan**: Connect speed signal to a 4 pin fan and control its speed
 
-Sponsored by: <a href="https://pcbway.com/g/77jC58"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png"  height="40"></a>
+Sponsored by: <a href="https://pcbway.com/g/77jC58"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png" height="40"></a>
 
 ![espprotopromo](https://github.com/user-attachments/assets/c8a63f7a-2e5f-45b6-80ef-6bb01c3a7538)
 
@@ -44,7 +44,7 @@ Sponsored by: <a href="https://pcbway.com/g/77jC58"><img src="https://www.electr
 - Program/flash manual: TBD
 - Remote how to: TBD
 - IR Sensor setup: TBD
-- Alive ProtoESP protogens: 
+- Alive ProtoESP protogens / creators: [Furo](https://instagram.com/proto_furo), [Arkoss](https://www.instagram.com/snowkatark/), [Jura](https://www.instagram.com/jura_furr/), [BFoxCZ](https://www.instagram.com/bfoxcz/), & more...
 
 ### Feature request / issues
 - If you have found an issue with this code (crashes, something not working like it should), please open a issue in this repository!
