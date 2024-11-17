@@ -1,9 +1,9 @@
 # ProtoESP - Remote
 ### Wirelessly control your protogen!
 Powered with Seeeduino **XIAO ESP32-S3** over BLE!  
-*If using Legacy code, this remote won't work, use [this](../Legacy/BLE-Remote) one.*<br><br>
+*If using Legacy code, this remote won't work, use [this](../../Legacy/BLE-Remote) one.*<br><br>
 ![remote_banner](https://github.com/user-attachments/assets/e69433f9-51b3-4ee4-9bc1-57ae101f678d)
-Sponsored by: <a href="https://pcbway.com/g/77jC58"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png" height="40"></a> Who have supplied these PCBs for prototyping! Go check out their cheap and fast PCB / CNC manufacturing!
+Sponsored by: <a href="https://www.pcbway.com/project/share/ProtoESP_Remote_66722ab2.html"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png" height="40"></a> Who have supplied these PCBs for prototyping! Go check out their cheap and fast PCB / CNC manufacturing!
 ### Main features
 - Automatically tries to connect and reconnect
 - 7 inputs for buttons (in future flex sensors?), can be set as:
