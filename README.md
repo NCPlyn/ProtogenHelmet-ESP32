@@ -30,8 +30,8 @@ Sponsored by: <a href="https://pcbway.com/g/77jC58"><img src="https://www.electr
 ![espprotopromo](https://github.com/user-attachments/assets/c8a63f7a-2e5f-45b6-80ef-6bb01c3a7538)
 
 ## Navigation
-- [**Controller**](ProtoESP-Controller) .md: ProtoESP controller code with all features
-- [**Remote**](ProtoESP-Remote) .md: ProtoESP *(Not legacy)*  Wireless control remote
+- [**Controller**](ProtoESP-Controller) folder: ProtoESP controller code with all features
+- [**Remote**](ProtoESP-Remote) folder: ProtoESP *(Not legacy)*  Wireless control remote
 - [**Legacy**](../Legacy) branch: Legacy controller&remote&WS2812 matrix <- all three not supported anymore but **stable&working**
 - [**Matrix**](https://foxxo.cz/proto/matrix/) site: WS2812B 8x8 RGB Matrix replacement for single color MAX7219 Matrixes
 - [**Animator**](https://foxxo.cz/proto/animator.html) site: Program to make animations for the controller
@@ -40,9 +40,8 @@ Sponsored by: <a href="https://pcbway.com/g/77jC58"><img src="https://www.electr
 ## Documentation
 - How to DIY protogen: [Imgur](https://imgur.com/a/jYpSbuZ)
 - Parts list: [Pastebin](https://pastebin.com/7z4fnVfQ)
-- Connection diagram: TBD
-- Program/flash manual: TBD
-- Remote how to: TBD
+- Program/flash manual + connection diagrams: TBD
+- Remote how to: [**MD**](ProtoESP-Remote/readme.md)
 - IR Sensor setup: TBD
 - Alive ProtoESP protogens / creators: [Furo](https://instagram.com/proto_furo), [Arkoss](https://www.instagram.com/snowkatark/), [Jura](https://www.instagram.com/jura_furr/), [BFoxCZ](https://www.instagram.com/bfoxcz/), & more...
 
