@@ -3,13 +3,14 @@
 Powered with Seeeduino **XIAO ESP32-S3** over BLE!  
 *If using Legacy code, this remote won't work, use [this](../../Legacy/BLE-Remote) one.*<br><br>
 ![remote_banner](https://github.com/user-attachments/assets/e69433f9-51b3-4ee4-9bc1-57ae101f678d)
-Sponsored by: <a href="https://www.pcbway.com/project/share/ProtoESP_Remote_66722ab2.html"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png" height="40"></a> Who have supplied these PCBs for prototyping! Go check out their cheap and fast PCB / CNC manufacturing!
+- Thanks to <a href="https://www.pcbway.com/project/share/ProtoESP_Remote_66722ab2.html"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png" height="40"></a> for supplying these PCBs for my project! Quick and efficient, with an easy instant quote and ordering system. They offer PCBs with 1-14 layers, silkscreen colors, thicknesses & more. The manufacturing and shipping times are fast (7 days total for me). Reliable choice for prototyping, small production, and even large-batch manufacturing with PCB assembly and stencil services.
 ### Main features
 - Automatically tries to connect and reconnect
 - 7 inputs for buttons (in future flex sensors?), can be set as:
   - 7 animations, one per input
   - **18** animations, one control input (**short press** changes RGB mode for WS2812 Matrixes, **long press** switches between sets), six inputs for animations
 - PCB offers to use XIAO **battery support** for 3.7(4.2v) LiPo batteries with connector and power switch
+  - Powered On: 110mA; DeepSleep: 15.5 uA (0.015mA) == 4.5h with 500mAh battery
 - WiFi AP with configuration site
   - Set WiFi password and name
   - Choose to which BLE server (ProtoESP controller) should remote connect to
@@ -28,6 +29,7 @@ The Gerber file (ProtoESP-Remote_Gerber_2024-11-13.zip) for manufacturing the PC
 ### Upload
 - Open VS Code (Install if not present on your computer, afterwards install PlatformIO extension)
 - Clone this repository and open this folder and let PIO download needed files
+- *Optional if changed HW: Edit line 1-15: times and pins*
 - Connect the MCU and in the PIO tab open either XIAO if you're using XIAO ESP32S3 or 4d_systems if using any different/dev board
 - Click on 'Upload' and after successful operation expand 'Platform' dropdown and click on 'Upload filesystem image'
 - The builtin LED should now start blinking

@@ -25,9 +25,9 @@
 - **XIAO ESP32**: Change animations remotely without wiring a single cable from the helmet
 - **PWM fan**: Connect speed signal to a 4 pin fan and control its speed
 
-Sponsored by: <a href="https://pcbway.com/g/77jC58"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png" height="40"></a>
-
 ![espprotopromo](https://github.com/user-attachments/assets/c8a63f7a-2e5f-45b6-80ef-6bb01c3a7538)
+
+- Thanks to <a href="https://www.pcbway.com/project/share/ProtoESP_Remote_66722ab2.html"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png" height="40"></a> for supplying these PCBs for my project! Quick and efficient, with an easy instant quote and ordering system. They offer PCBs with 1-14 layers, silkscreen colors, thicknesses & more. The manufacturing and shipping times are fast (7 days total for me). Reliable choice for prototyping, small production, and even large-batch manufacturing with PCB assembly and stencil services.
 
 ## Navigation
 - [**Controller**](ProtoESP-Controller) folder: ProtoESP controller code with all features

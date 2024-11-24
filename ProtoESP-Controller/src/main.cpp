@@ -90,8 +90,6 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0,/* reset=*/ U8X8_PIN_NONE);
 #include <Adafruit_INA219.h> //edited library in this sketch (replace 0.1R with 0.03R resistor on the board)
 Adafruit_INA219 ina219;
 
-bool loadAnim(String anim, String temp);
-
 //--------------------------------//web / wifi
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
@@ -628,10 +626,11 @@ void setup() {
     cfg.setDefault();
   }
 
-  //ledcAttach(fanPWM, 25000, 8); //suport Arduino 3.x in future
-  ledcSetup(0, 25000, 8); //For Arduino 2.x
-  ledcAttachPin(fanPWM, 0);
-  ledcWrite(0, cfg.fanDuty); //ledcWrite(fanPWM, duty); //Arduino 3.x core
+  ledcAttach(fanPWM, 25000, 8); //suport Arduino 3.x
+  ledcWrite(fanPWM, cfg.fanDuty); //Arduino 3.x core
+  //ledcSetup(0, 25000, 8); //For Arduino 2.x
+  //ledcAttachPin(fanPWM, 0); //For Arduino 2.x
+  //ledcWrite(0, cfg.fanDuty); //for Arduino 2.x
 
   ledController[0] = &FastLED.addLeds<WS2812B, DATA_PIN_EARS, GRB>(earLeds, EarLedsNum);
   ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, blushLedsNum);

@@ -1,5 +1,6 @@
 # An *universal* controller for your protogen!
-- Beta version
+# Beta version
+### Done
 - [x] PlatformIO based for ease of use (no longer Arduino IDE)
 - [x] Use of ESP32-S3 with PSRAM
 - [x] Dynamic anim selector instead of dropdown
@@ -10,10 +11,9 @@
 - [x] Fix current animations
 - [x] Add function to change anims with button
 - [x] Proper partition tables for current microcontrollers
-- [x] Proper definitions, buggy platformio with defines (should work)
-- [x] Auto gen CRC before filesystem upload (platformio is unpredictable)
+- [x] Auto gen CRC before filesystem upload
 - [x] Make sure ifdef for definitons work (should), add definition for wifiena (done), RGB orders def (wrote comment)
-- [x] Support for ESP32 with PSRAM soldered on / without (**soldered works, without might never be...**)
+- [x] Support for ESP32 with PSRAM soldered on
 - [x] Supported both MAX and WS28xx displays in the same codebase (**should work but needs to be kept under supervision**)
 - [x] Custom amount of displays and their placement (**same as above**)
 - [x] Redo tilt calibration code (**same as above**)
@@ -30,8 +30,11 @@
 - [x] Remote: Button on remote changes RGB modes of visor and anim sets
 - [x] Remote: v2 PCB (hole for antenna cable or internal antenna, different batt placement, rename)
 - [x] Make uptodate parts list for most options (**add apds later on if works**)
+- [x] Remote: Create/finish .MD file with: What is it, how to wire, how to connect/edit, photos + sponsor, how to flash
+- [x] Remote: Deep sleep after 10 minutes & no Wifi clients (devided by double when disconnected from server)
+- [x] Remote: Current from batt: Powered On: 110mA; DeepSleep: 15.5 uA (0.015mA) == 4.5h with 500mAh battery
 
-- ToDo: Helmet
+### ToDo: Helmet
 - [ ] Mic takes too long -> faster analogRead() / RGB animation is buggy
 - [ ] esp32 spi defines ok??? 2x 18pin? 23 pin? 2x 5 pin esp board, does max really work?
 - [ ] Completely redo OLED (think of new way of showing info) - V/A/animation/remote set/speaking/rgb mode/OLED sizes/takes too long...
@@ -41,12 +44,6 @@
 - [ ] More RGB anims/modes (Rainbow from boop/front, etc)
 - [ ] Put into classes/seperate files (slowly doing it)
 
-- ToDo: Remote
-- [ ] Create/finish .MD file with: What is it, how to wire, how to connect/edit, photos + sponsor, how to flash
-- [ ] Power draw, deep sleep?
-- [ ] Flex sensors
-
-
-- ToDo: Manuals etc.
+### ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune proximity sensor" for boop (do not need SW fixing, all is about proper placement and tuning sensor)
 - [ ] Make wiring and flashing tutorial (including fs things)

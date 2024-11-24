@@ -1,10 +1,12 @@
-#include <ezButton.h>
-#define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
-#include <LittleFS.h>
+#define SLEEPTIME 10 //go to deep sleep after x minutes (when disconnected, will go in half this time)
+#define WAKEBTN GPIO_NUM_8 //button to wakeup
 
-#define BTNTIME 800
+#include <driver/rtc_io.h>
+
+#define BTNTIME 800 //under this time in ms is considered short press, over is long press
 #define BUTTONS 7
-ezButton buttonArray[BUTTONS] = { //1.. left to right, row by row
+#include <ezButton.h>
+ezButton buttonArray[BUTTONS] = { //1... left to right, row by row, pins of buttons
   ezButton(8), //up left
   ezButton(2), //up right
   ezButton(3), //up
@@ -16,6 +18,8 @@ ezButton buttonArray[BUTTONS] = { //1.. left to right, row by row
 unsigned long btnPressTime[BUTTONS];
 String btnAnims[3][BUTTONS];
 
+#define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
+#include <LittleFS.h>
 #define ELEGANTOTA_USE_ASYNC_WEBSERVER 1
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
@@ -24,6 +28,9 @@ String btnAnims[3][BUTTONS];
 AsyncWebServer server(80);
 
 String wifiName = "ProtoRemote", wifiPass = "Proto123";
+
+#define LEDOFF HIGH
+#define LEDON LOW
 
 //--------------------------------//BLE
 #define CONFIG_BT_NIMBLE_MAX_CONNECTIONS 1
@@ -42,7 +49,7 @@ NimBLEClient* pClient;
 bool doConnect = false,connected = false,buttonPressed = false;
 String foundDevices = "", BLE = "ProtoESP";
 int connectTry = 0, functionBtn = -1, animSet = 0;
-unsigned long check0button = 0;
+unsigned long check0button = 0, lastBlink = 0, wifiblechk = 0, toSleep = 0;
 
 // BLE Scan callback, get a comma-separated list of found devices and check for valid one to connect to
 class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
@@ -261,6 +268,10 @@ void startWiFiWeb() {
   ElegantOTA.setAutoReboot(true);
 }
 
+void onWifiConnect(WiFiEvent_t event, WiFiEventInfo_t info) {
+  NimBLEDevice::getScan()->stop();
+}
+
 //--------------------------------//Setup
 void setup() {
   Serial.begin(115200);
@@ -286,8 +297,10 @@ void setup() {
 
   startWiFiWeb();
 
+  WiFi.onEvent(onWifiConnect, WiFiEvent_t::ARDUINO_EVENT_WIFI_AP_STACONNECTED);
+
   NimBLEDevice::init("");
-  scanBLE(0);
+  scanBLE(5);
 
   Serial.println("[I] Free heap: "+String(ESP.getFreeHeap()));
 }
@@ -316,8 +329,17 @@ void loop() {
   }
   if (connected && !pClient->isConnected()) {
     Serial.println("[I] BT: Disconnected from server. Reconnecting...");
+    toSleep = millis()-(SLEEPTIME*30000);
     connected = false;
-    NimBLEDevice::getScan()->start(0,nullptr, false);
+    NimBLEDevice::getScan()->start(5,nullptr, false);
+  }
+
+  //get number of connected wificlients/attempted connect and stop scanning, start scanning once none
+  if(!connected && wifiblechk+6000<millis()) {
+    if(!NimBLEDevice::getScan()->isScanning() && WiFi.softAPgetStationNum() == 0) {
+      scanBLE(3);
+    }
+    wifiblechk = millis();
   }
 
   //check & send button press
@@ -325,6 +347,7 @@ void loop() {
     for(int i = 0; i < BUTTONS; i++) {
       if(buttonArray[i].isPressed()) { //detect press
         btnPressTime[i] = millis();
+        toSleep = millis();
       }
       if(buttonArray[i].isReleased()) { //short press
         long pressDuration = millis() - btnPressTime[i];
@@ -351,10 +374,21 @@ void loop() {
   }
 
   //status LED
-  if(connected && digitalRead(LED_BUILTIN) == HIGH) {
-    digitalWrite(LED_BUILTIN,LOW);
-  } else if (!connected && digitalRead(LED_BUILTIN) == LOW) {
-    digitalWrite(LED_BUILTIN, HIGH);
+  if(connected && digitalRead(LED_BUILTIN) == LEDOFF) {
+    digitalWrite(LED_BUILTIN,LEDON);
+  } else if (!connected && lastBlink+1000<millis()) {
+    digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
+    lastBlink = millis();
+  }
+
+  //sleep
+  if((toSleep+SLEEPTIME*60000)<millis() && WiFi.softAPgetStationNum() == 0) {
+    Serial.println("[I] Going eep");
+    rtc_gpio_set_direction((gpio_num_t)WAKEBTN, RTC_GPIO_MODE_INPUT_ONLY);
+	  rtc_gpio_pullup_en((gpio_num_t)WAKEBTN);
+    rtc_gpio_pulldown_dis((gpio_num_t)WAKEBTN);
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)WAKEBTN, 0);
+    esp_deep_sleep_start();
   }
   
   //press boot button for 10sec to reset
