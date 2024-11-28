@@ -25,6 +25,7 @@ The Gerber file (ProtoESP-Remote_Gerber_2024-11-13.zip) for manufacturing the PC
   - Buttons are soldered to pins 0,1,2,3,8,9,10 of the XIAO, according GPIO pins are written in the code.
 - Bridge the middle pad and GND pad together to ground the buttons, (3.3V pad would supply voltage, not used for now)
 - Make sure the battery connector has proper polarity, otherwise swap cables in the battery connector and connect battery.
+  - Also make sure you fill the backside battery holes under the XIAO to make proper connection to the pads!
 - Connect antenna supplied with the XIAO and stick it to the back of the PCB, to the same with battery.
 ### Upload
 - Open VS Code (Install if not present on your computer, afterwards install PlatformIO extension)
