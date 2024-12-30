@@ -26,8 +26,8 @@
   "upZ":0.11,
   "tiltTol":0.1,
   "visColor":"#ff0000",
-  "wifiName":"Proto",
-  "wifiPass":"Proto123",
+  "wifiName":"ProtoWiFi",
+  "wifiPass":"Proto1234",
   "ledType":"WS2812",
   "fanDuty": 255
 }
