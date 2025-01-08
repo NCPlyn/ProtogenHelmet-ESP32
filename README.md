@@ -56,6 +56,7 @@ Any amount is more than welcome! Don't forget to add contact info or DM me, so I
 - **<a href="https://pcbway.com/g/77jC58">PCBWay</a>** has sponsored this project by providing prototype PCBs!
 - [**Arkoss**](https://www.instagram.com/snowkatark/), Thank you for your donation!
 - [**Alellv**](https://github.com/Alellv), Thank you for your donation!
+- [**Jura**](https://www.instagram.com/jura_furr/), Thank you for your donation!
 
 ## Use / license
 - GPL 3.0 code license applies

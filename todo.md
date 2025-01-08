@@ -36,7 +36,6 @@
 
 ### ToDo: Helmet
 - [ ] Mic takes too long -> faster analogRead() / RGB animation is buggy
-- [ ] esp32 spi defines ok??? 2x 18pin? 23 pin? 2x 5 pin esp board, does max really work?
 - [ ] Completely redo OLED (think of new way of showing info) - V/A/animation/remote set/speaking/rgb mode/OLED sizes/takes too long...
 - [ ] VL6180 nope, try APDS9960 -Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
 - [ ] Better custom WS28xx display (**waiting for v3, taking preorders** [RGB-Matrix](https://foxxo.cz/proto/matrix/))

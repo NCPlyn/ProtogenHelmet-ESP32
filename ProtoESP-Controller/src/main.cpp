@@ -19,7 +19,8 @@
   #define MAX_CS 10 //ChipSelect for MAX72xx matrixes if used
   #define animBtn 4 //Pulling this pin LOW cycles trough animations
   #define fanPWM 13 //PWM pin to control 4pin fan
-#elif defined(ARDUINO_ESP32_DEV) //Normal ESP32 pins
+  #define wifi_en 14 //Pulling this pin LOW disables WiFi  //ADC2?? maybe problem?
+#elif defined(ARDUINO_ESP32_DEV) //Normal ESP32 pins (OK?)
   #define BUILTFOR "ESP32DEV"
   #define MICpin 35 //Microphone
   #define T_in 33 //Output from Touch Sensor
@@ -29,14 +30,13 @@
   #define DATA_PIN_VISOR 19 //Face (right cheek, left segment of eye first)
   #define I2C_SDA 21 //SDA for Gyro, OLED, INA219
   #define I2C_SCL 22 //SCL for Gyro, OLED, INA219
-  #define MAX_CLK 18 //Clock for MAX72xx matrixes if used
-  #define MAX_MOSI 23 //Data for MAX72xx matrixes if used
-  #define MAX_CS 5 //ChipSelect for MAX72xx matrixes if used
+  #define MAX_CLK 14 //Clock for MAX72xx matrixes if used (HSPI)
+  #define MAX_MOSI 13 //Data for MAX72xx matrixes if used
+  #define MAX_CS 15 //ChipSelect for MAX72xx matrixes if used
   #define animBtn 32 //Pulling this pin LOW cycles trough animations
   #define fanPWM 25 //PWM pin to control 4pin fan
+  #define wifi_en 27 //Pulling this pin LOW disables WiFi (ADC2)
 #endif
-
-#define wifi_en 13 //Pulling this pin LOW disables WiFi
 
 //LEDs amount
 #define MAX72xx_DEVICES 11
@@ -286,8 +286,7 @@ void displayCenter(String text, uint16_t h) {
 }
 
 //--------------------------------//Config vars
-bool instantReload = false;
-bool oledInitDone = false, tiltInitDone = false;
+bool instantReload = false, oledInitDone = false, tiltInitDone = false, needRestart = false;
 int currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush;
 String currentAnim = "";
 
@@ -479,10 +478,15 @@ void startWiFiWeb() {
     if(request->hasParam("wifiPass"))
       cfg.wifiPass = String(request->getParam("wifiPass")->value());
     //led type
-    if(request->hasParam("ledType"))
+    if(request->hasParam("ledType") && String(request->getParam("ledType")->value()) != cfg.ledType) {
+      needRestart = true;
       cfg.ledType = String(request->getParam("ledType")->value());
+    }
     if(cfg.save()) {
       request->redirect("/saved.html?main");
+      if(needRestart) {
+        ESP.restart();//happens before it manages to redirect??
+      }
     } else {
       request->send(200, "text/plain", "Saving config failed!");
     }
@@ -562,6 +566,16 @@ void startWiFiWeb() {
     }
   });
   
+  server.on("/rgb", HTTP_GET, [](AsyncWebServerRequest *request){
+    if(cfg.ledType == "WS2812") {
+      visorNow->type++;
+      if(visorNow->type == visTypeSize)
+        visorNow->type = 0;
+      //do OLED stuff
+    }
+    request->redirect("/saved.html?main");
+  });
+
   server.on("/gyro", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(floor(myIMU.readFloatAccelX()*100)/100)+";"+String(floor(myIMU.readFloatAccelY()*100)/100)+";"+String(floor(myIMU.readFloatAccelZ()*100)/100));
   });
@@ -697,13 +711,13 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
     for (int i = 0; i < 8; i++) {
       row = (tempSegment >> i * 8) & 0xFF;
       for (int j = 0; j < 8; j++) {
-        if(cfg.ledType == "WS2812") {
+        if(cfg.ledType == "WS2812" && !needRestart) {
           if(oldMatrixFix) {
             ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?ledColor:CRGB::Black; //includes fix for bad rgbmatrix, to be fixed with new matrixes
           } else {
             ledArray[(y*64)+(i*8)+j] = (bitRead(row,j))?ledColor:CRGB::Black;
           }
-        } else if (cfg.ledType == "MAX72XX") {
+        } else if (cfg.ledType == "MAX72XX" && !needRestart) {
           mx.setPoint(i, j+(y*8), bitRead(row, j)); //MAXstuff
         }
       }
@@ -971,21 +985,21 @@ void loop() {
   //Serial.println(">OLED:"+String(micros()-looptime));
   //looptime = micros();
 
-  if(FdisplayEar || FdisplayBlush || FdisplayVisor) {
-    if(FdisplayEar) {
+  if((FdisplayEar || FdisplayBlush || FdisplayVisor) && !needRestart) {
+    if(FdisplayEar && !needRestart) {
       ledController[0]->showLeds(cfg.bEar); //ears
       FdisplayEar = false;
     }
-    if(FdisplayBlush) {
+    if(FdisplayBlush && !needRestart) {
       ledController[1]->showLeds(cfg.bBlush); //blush
       FdisplayBlush = false;
     }
-    if(cfg.ledType == "WS2812") {
+    if(cfg.ledType == "WS2812" && !needRestart) {
       if(FdisplayVisor) {
         ledController[2]->showLeds(cfg.bVisor); //visor
         FdisplayVisor = false;
       }
-    } else if (cfg.ledType == "MAX72XX") {
+    } else if (cfg.ledType == "MAX72XX" && !needRestart) {
       if(cfg.bVisor > 15) { cfg.bVisor = 15;}
       mx.control(MD_MAX72XX::INTENSITY, cfg.bVisor);
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
