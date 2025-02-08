@@ -1,5 +1,5 @@
 #define SLEEPTIME 10 //go to deep sleep after x minutes (when disconnected, will go in half this time)
-#define WAKEBTN GPIO_NUM_8 //button to wakeup
+int sleepArray[] = {1,2,3,4,7,8,9};
 
 #include <driver/rtc_io.h>
 
@@ -17,6 +17,10 @@ ezButton buttonArray[BUTTONS] = { //1... left to right, row by row, pins of butt
 };
 unsigned long btnPressTime[BUTTONS];
 String btnAnims[3][BUTTONS];
+
+#ifndef LED_BUILTIN
+#define LED_BUILTIN 21
+#endif
 
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
 #include <LittleFS.h>
@@ -280,6 +284,13 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 
+  for(int x = 0; x<(sizeof(sleepArray)/sizeof(int)); x++) {
+    gpio_pullup_en((gpio_num_t)sleepArray[x]);
+    gpio_set_direction((gpio_num_t)sleepArray[x], GPIO_MODE_INPUT);
+    gpio_wakeup_enable((gpio_num_t)sleepArray[x], GPIO_INTR_LOW_LEVEL);
+  }
+  esp_sleep_enable_gpio_wakeup();
+
   if(!LittleFS.begin(true)) {
     Serial.println("[E] An Error has occurred while mounting LittleFS! Halting");
     while(1){};
@@ -384,11 +395,8 @@ void loop() {
   //sleep
   if((toSleep+SLEEPTIME*60000)<millis() && WiFi.softAPgetStationNum() == 0) {
     Serial.println("[I] Going eep");
-    rtc_gpio_set_direction((gpio_num_t)WAKEBTN, RTC_GPIO_MODE_INPUT_ONLY);
-	  rtc_gpio_pullup_en((gpio_num_t)WAKEBTN);
-    rtc_gpio_pulldown_dis((gpio_num_t)WAKEBTN);
-    esp_sleep_enable_ext0_wakeup((gpio_num_t)WAKEBTN, 0);
-    esp_deep_sleep_start();
+    esp_light_sleep_start();
+    ESP.restart();
   }
   
   //press boot button for 10sec to reset

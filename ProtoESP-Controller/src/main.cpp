@@ -44,6 +44,8 @@
 #define VisorLedsNum 704
 #define blushLedsNum 8
 
+#define visorType "WS2812" // WS2812 or MAX72XX so far available for visor displays
+
 #define MaxFEars 30 //Max amount of Ear frames (hardcoded to assign memory)
 #define MaxFVisor 30 //Max amount of Visor frames
 
@@ -158,7 +160,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
         pCharacteristic->setValue(animtemp);
         pCharacteristic->notify(true);
       } else if (temp.charAt(0) == ';') { //command
-        if (temp.indexOf("rgb") > 0 && cfg.ledType == "WS2812") {
+        if (temp.indexOf("rgb") > 0 && visorType == "WS2812") {
           visorNow->type++;
           if(visorNow->type == visTypeSize)
             visorNow->type = 0;
@@ -286,7 +288,7 @@ void displayCenter(String text, uint16_t h) {
 }
 
 //--------------------------------//Config vars
-bool instantReload = false, oledInitDone = false, tiltInitDone = false, needRestart = false;
+bool instantReload = false, oledInitDone = false, tiltInitDone = false;
 int currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush;
 String currentAnim = "";
 
@@ -444,6 +446,8 @@ void startWiFiWeb() {
       cfg.aTilt = String(request->getParam("aTilt")->value());
     if(request->hasParam("aUp"))
       cfg.aUp = String(request->getParam("aUp")->value());
+    if(request->hasParam("aBoop"))
+      cfg.aBoop = String(request->getParam("aBoop")->value());
     //neutral tilt
     if(request->hasParam("neutralX"))
       cfg.neutralX = request->getParam("neutralX")->value().toFloat();
@@ -477,16 +481,8 @@ void startWiFiWeb() {
       cfg.wifiName = String(request->getParam("wifiName")->value());
     if(request->hasParam("wifiPass"))
       cfg.wifiPass = String(request->getParam("wifiPass")->value());
-    //led type
-    if(request->hasParam("ledType") && String(request->getParam("ledType")->value()) != cfg.ledType) {
-      needRestart = true;
-      cfg.ledType = String(request->getParam("ledType")->value());
-    }
     if(cfg.save()) {
       request->redirect("/saved.html?main");
-      if(needRestart) {
-        ESP.restart();//happens before it manages to redirect??
-      }
     } else {
       request->send(200, "text/plain", "Saving config failed!");
     }
@@ -567,7 +563,7 @@ void startWiFiWeb() {
   });
   
   server.on("/rgb", HTTP_GET, [](AsyncWebServerRequest *request){
-    if(cfg.ledType == "WS2812") {
+    if(visorType == "WS2812") {
       visorNow->type++;
       if(visorNow->type == visTypeSize)
         visorNow->type = 0;
@@ -651,11 +647,11 @@ void setup() {
 
   ledController[0] = &FastLED.addLeds<WS2812B, DATA_PIN_EARS, GRB>(earLeds, EarLedsNum);
   ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, blushLedsNum);
-  if(cfg.ledType == "WS2812") { //atm doing only visor, blush & ears stays on
+  if(visorType == "WS2812") { //atm doing only visor, blush & ears stays on
     ledController[2] = &FastLED.addLeds<WS2812B, DATA_PIN_VISOR, GRB>(visorLeds, VisorLedsNum);
     FastLED.setCorrection(TypicalPixelString);
     FastLED.setDither(0);
-  } else if (cfg.ledType == "MAX72XX") {
+  } else if (visorType == "MAX72XX") {
     mx.begin();
   }
 
@@ -711,13 +707,13 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
     for (int i = 0; i < 8; i++) {
       row = (tempSegment >> i * 8) & 0xFF;
       for (int j = 0; j < 8; j++) {
-        if(cfg.ledType == "WS2812" && !needRestart) {
+        if(visorType == "WS2812") {
           if(oldMatrixFix) {
             ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?ledColor:CRGB::Black; //includes fix for bad rgbmatrix, to be fixed with new matrixes
           } else {
             ledArray[(y*64)+(i*8)+j] = (bitRead(row,j))?ledColor:CRGB::Black;
           }
-        } else if (cfg.ledType == "MAX72XX" && !needRestart) {
+        } else if (visorType == "MAX72XX") {
           mx.setPoint(i, j+(y*8), bitRead(row, j)); //MAXstuff
         }
       }
@@ -792,7 +788,7 @@ void loop() {
   }
 
   //--------------------------------//VISOR+BLUSH Leds render
-  if(visorNow->type == 0 || (visorNow->type == 1 && cfg.ledType == "MAX72XX")) { //custom
+  if(visorNow->type == 0 || (visorNow->type == 1 && visorType == "MAX72XX")) { //custom
     if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
@@ -802,7 +798,7 @@ void loop() {
       currentVisorFrame++;
       instantReload = false;
     }
-  } else if (visorNow->type == 1 && cfg.ledType == "WS2812") { //all_rainbow
+  } else if (visorNow->type == 1 && visorType == "WS2812") { //all_rainbow
     if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
@@ -985,21 +981,21 @@ void loop() {
   //Serial.println(">OLED:"+String(micros()-looptime));
   //looptime = micros();
 
-  if((FdisplayEar || FdisplayBlush || FdisplayVisor) && !needRestart) {
-    if(FdisplayEar && !needRestart) {
+  if((FdisplayEar || FdisplayBlush || FdisplayVisor)) {
+    if(FdisplayEar) {
       ledController[0]->showLeds(cfg.bEar); //ears
       FdisplayEar = false;
     }
-    if(FdisplayBlush && !needRestart) {
+    if(FdisplayBlush) {
       ledController[1]->showLeds(cfg.bBlush); //blush
       FdisplayBlush = false;
     }
-    if(cfg.ledType == "WS2812" && !needRestart) {
+    if(visorType == "WS2812") {
       if(FdisplayVisor) {
         ledController[2]->showLeds(cfg.bVisor); //visor
         FdisplayVisor = false;
       }
-    } else if (cfg.ledType == "MAX72XX" && !needRestart) {
+    } else if (visorType == "MAX72XX") {
       if(cfg.bVisor > 15) { cfg.bVisor = 15;}
       mx.control(MD_MAX72XX::INTENSITY, cfg.bVisor);
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);

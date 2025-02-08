@@ -15,6 +15,7 @@
   "spTrig":1500,
   "aTilt":"confused.json",
   "aUp":"upset.json",
+  "aBoop":"boop.json",
   "neutralX":0.3,
   "neutralY":0.92,
   "neutralZ":0.33,
@@ -28,6 +29,5 @@
   "visColor":"#ff0000",
   "wifiName":"ProtoWiFi",
   "wifiPass":"Proto1234",
-  "ledType":"WS2812",
   "fanDuty": 255
 }

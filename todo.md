@@ -31,14 +31,15 @@
 - [x] Remote: v2 PCB (hole for antenna cable or internal antenna, different batt placement, rename)
 - [x] Make uptodate parts list for most options (**add apds later on if works**)
 - [x] Remote: Create/finish .MD file with: What is it, how to wire, how to connect/edit, photos + sponsor, how to flash
-- [x] Remote: Deep sleep after 10 minutes & no Wifi clients (devided by double when disconnected from server)
+- [x] Remote: ~~Deep~~Light sleep after 10 minutes & no Wifi clients (devided by double when disconnected from server)
 - [x] Remote: Current from batt: Powered On: 110mA; DeepSleep: 15.5 uA (0.015mA) == 4.5h with 500mAh battery
+- [x] Better custom WS28xx display (**In stock** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
 
 ### ToDo: Helmet
 - [ ] Mic takes too long -> faster analogRead() / RGB animation is buggy
 - [ ] Completely redo OLED (think of new way of showing info) - V/A/animation/remote set/speaking/rgb mode/OLED sizes/takes too long...
 - [ ] VL6180 nope, try APDS9960 -Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
-- [ ] Better custom WS28xx display (**waiting for v3, taking preorders** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
+- [ ] Apa102 style led matrix? (With clock and 20x20 IC size)
 - [ ] Proper enable/disable of features (code wise or reset) - bug/missed comments code check
 - [ ] More RGB anims/modes (Rainbow from boop/front, etc)
 - [ ] Put into classes/seperate files (slowly doing it)

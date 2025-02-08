@@ -37,6 +37,7 @@ void Config::setDefault() {
   spTrig = 1500;
   aTilt = "confused.json";
   aUp = "sad.json";
+  aBoop = "boop.json",
   neutralX = 0.3;
   neutralY = 0.92;
   neutralZ = 0.33;
@@ -51,7 +52,6 @@ void Config::setDefault() {
   visColor = strtol(visColorStr.c_str()+1, NULL, 16);
   wifiName = "Proto";
   wifiPass = "Proto123";
-  ledType = "WS2812";
   fanDuty = 255;
   save();
 }
@@ -83,6 +83,7 @@ bool Config::save() {
   doc["spTrig"] = spTrig;
   doc["aTilt"] = aTilt;
   doc["aUp"] = aUp;
+  doc["aBoop"] = aBoop;
   doc["neutralX"] = neutralX;
   doc["neutralY"] = neutralY;
   doc["neutralZ"] = neutralZ;
@@ -96,7 +97,6 @@ bool Config::save() {
   doc["visColor"] = visColorStr;
   doc["wifiName"] = wifiName;
   doc["wifiPass"] = wifiPass;
-  doc["ledType"] = ledType;
   doc["fanDuty"] = fanDuty;
   
   CrcWriter CRCchk;
@@ -180,6 +180,7 @@ bool Config::load() {
   spTrig = doc["spTrig"].as<int>();
   aTilt = doc["aTilt"].as<String>();
   aUp = doc["aUp"].as<String>();
+  aBoop = doc["aBoop"].as<String>();
   neutralX = doc["neutralX"].as<float>();
   neutralY = doc["neutralY"].as<float>();
   neutralZ = doc["neutralZ"].as<float>();
@@ -194,7 +195,6 @@ bool Config::load() {
   visColor = strtol(visColorStr.c_str()+1, NULL, 16);
   wifiName = doc["wifiName"].as<String>();
   wifiPass = doc["wifiPass"].as<String>();
-  ledType = doc["ledType"].as<String>();
   fanDuty = doc["fanDuty"].as<int>();
 
   return true;

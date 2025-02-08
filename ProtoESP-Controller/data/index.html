@@ -72,15 +72,13 @@
             <select id="aTilt" name="aTilt"></select>
             <label for="aUp">Animation for up (upset.json)</label>
             <select id="aUp" name="aUp"></select>
+            <label for="aBoop">Animation for boop (boop.json)</label>
+            <select id="aBoop" name="aBoop"></select>
             <label for="wifiName">WiFi AP SSID (Proto)</label>
             <input type="text" name="wifiName">
             <label for="wifiPass">WiFi Password (Proto123)</label>
             <input type="text" name="wifiPass">
-            <label for="ledType">Type of visor LEDs</label>
-            <select id="ledType" name="ledType">
-              <option value="WS2812">WS2812</option>
-              <option value="MAX72XX">MAX72XX</option>
-            </select><br>
+            <label for="ledType">Type of visor LEDs</label><br>
             <button type="submit">Save config</button>
           </form>
         </div>
@@ -262,6 +260,7 @@
           }
 					fillSelect("aTilt",partsArray[i]);
 					fillSelect("aUp",partsArray[i]);
+          fillSelect("aBoop",partsArray[i]);
 				}
 			}
 		}
@@ -319,6 +318,7 @@
 				document.getElementsByName("spTrig")[0].value = obj.spTrig;
 				document.getElementsByName("aTilt")[0].value = obj.aTilt;
 				document.getElementsByName("aUp")[0].value = obj.aUp;
+        document.getElementsByName("aBoop")[0].value = obj.aBoop;
         document.getElementsByName("visColor")[0].value = obj.visColor;
         document.getElementsByName("neutralX")[0].value = obj.neutralX;
         document.getElementsByName("neutralY")[0].value = obj.neutralY;
