@@ -35,15 +35,27 @@
 - [x] Remote: Current from batt: Powered On: 110mA; DeepSleep: 15.5 uA (0.015mA) == 4.5h with 500mAh battery
 - [x] Better custom WS28xx display (**In stock** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
 
-### ToDo: Helmet
-- [ ] Mic takes too long -> faster analogRead() / RGB animation is buggy
-- [ ] Completely redo OLED (think of new way of showing info) - V/A/animation/remote set/speaking/rgb mode/OLED sizes/takes too long...
-- [ ] VL6180 nope, try APDS9960 -Support for ToF sensor besides the ([IR](http://irsensor.wizecode.com/)) sensor
-- [ ] Apa102 style led matrix? (With clock and 20x20 IC size)
+### ToDo: Controller
+- [ ] Optimize execution speed: xTask?, Replace mic analogRead with faster...
+- [ ] Completely redo OLED: INA V/A;remote connect/set;animation current/speaking/rgb mode;OLED sizes/takes too long...
+- [ ] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
 - [ ] Proper enable/disable of features (code wise or reset) - bug/missed comments code check
-- [ ] More RGB anims/modes (Rainbow from boop/front, etc)
+- [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
 - [ ] Put into classes/seperate files (slowly doing it)
+- [ ] Update NimBLE https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md, proper platform link?
+- [ ] Debug and get FastLED 3.9.13+ working (glitching AF)
+- [ ] Apa102 style led matrix? (With clock and 20x20 IC size)
+- [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
+- [ ] Fade between frames, add frame color?
+- [ ] Ear/blush disable?
+
+### ToDo: Remote
+- [ ] Update NimBLE, proper platform link?
+- [ ] Better settings page, add sleep time?
+- [ ] Lower freq. for lower power usage - implement+test
 
 ### ToDo: Manuals etc.
-- [ ] Make "How to properly place and tune proximity sensor" for boop (do not need SW fixing, all is about proper placement and tuning sensor)
-- [ ] Make wiring and flashing tutorial (including fs things)
+- [ ] Make "How to properly place and tune IR proximity sensor" for boop
+- [ ] Controller readme.md including capabilities, how to flash, explain head definiton for animation/upgrade, etc...
+- [ ] Is Remote readme.md uptodate? Sleep, OTA, long 0 reset etc....
+- [ ] Update matrix web with new pictures etc...

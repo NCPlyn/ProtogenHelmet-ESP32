@@ -40,7 +40,7 @@
 ## Documentation
 - How to DIY protogen: [Imgur](https://imgur.com/a/jYpSbuZ)
 - Parts list: [Pastebin](https://pastebin.com/7z4fnVfQ)
-- Program/flash manual + connection diagrams: TBD
+- Controller how to: TBD (Schematic already done)
 - Remote how to: [**MD**](ProtoESP-Remote/readme.md)
 - IR Sensor setup: TBD
 - Alive ProtoESP protogens / creators: [Furo](https://instagram.com/proto_furo), [Arkoss](https://www.instagram.com/snowkatark/), [Jura](https://www.instagram.com/jura_furr/), [BFoxCZ](https://www.instagram.com/bfoxcz/), & more...
@@ -50,7 +50,7 @@
 - If you have thought of a new feature or QoL improvement you would like to see being implemented, please contact me directly on Discord or Telegram: @NCPlyn.
 
 ## Support
-If you have found this project helpful / used it / want to support and encourage me into working more, you can do so here: [PayPal](https://paypal.me/NCPlyn) or [Revolut](https://revolut.me/ncplyn).
+If you have found this project helpful / used it / want to support and encourage me into working more, you can do so here: [Revolut](https://revolut.me/ncplyn) (I'm getting 100%) or [PayPal](https://paypal.me/NCPlyn) (I'm getting only 79%) or Crypto (DM me).
 Any amount is more than welcome! Don't forget to add contact info or DM me, so I can add you here:
 
 - **<a href="https://pcbway.com/g/77jC58">PCBWay</a>** has sponsored this project by providing prototype PCBs!

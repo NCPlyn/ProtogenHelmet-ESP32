@@ -20,7 +20,7 @@
   #define animBtn 4 //Pulling this pin LOW cycles trough animations
   #define fanPWM 13 //PWM pin to control 4pin fan
   #define wifi_en 14 //Pulling this pin LOW disables WiFi  //ADC2?? maybe problem?
-#elif defined(ARDUINO_ESP32_DEV) //Normal ESP32 pins (OK?)
+#elif defined(ARDUINO_ESP32_DEV) //Normal ESP32 pins
   #define BUILTFOR "ESP32DEV"
   #define MICpin 35 //Microphone
   #define T_in 33 //Output from Touch Sensor
