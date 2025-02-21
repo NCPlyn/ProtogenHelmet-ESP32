@@ -16,7 +16,7 @@
 - [x] Support for ESP32 with PSRAM soldered on
 - [x] Supported both MAX and WS28xx displays in the same codebase (**should work but needs to be kept under supervision**)
 - [x] Custom amount of displays and their placement (**same as above**)
-- [x] Redo tilt calibration code (**same as above**)
+- [x] Redo tilt calibration code
 - [x] OLED init bug fix at runtime (now fixed fr)
 - [x] ElegantOTA (**192.168.4.1/update**)
 - [x] visor / blush brightness fix (ws 0-255, max 0-16)
@@ -34,28 +34,32 @@
 - [x] Remote: ~~Deep~~Light sleep after 10 minutes & no Wifi clients (devided by double when disconnected from server)
 - [x] Remote: Current from batt: Powered On: 110mA; DeepSleep: 15.5 uA (0.015mA) == 4.5h with 500mAh battery
 - [x] Better custom WS28xx display (**In stock** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
+- [x] Slightly faster analog read & oled (8.8->2.5/1.3ms ; 10ms -> 1-3ms)
+- [x] Proper platform link, board defines, partitions
+- [x] Update NimBLE https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md (should work)
+- [x] Completely redo OLED: INA V/A;remote connect/set;animation current/speaking/rgb mode
 
 ### ToDo: Controller
-- [ ] Optimize execution speed: xTask?, Replace mic analogRead with faster...
-- [ ] Completely redo OLED: INA V/A;remote connect/set;animation current/speaking/rgb mode;OLED sizes/takes too long...
-- [ ] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
-- [ ] Proper enable/disable of features (code wise or reset) - bug/missed comments code check
+- [ ] Debug and get FastLED 3.9.13+ working (glitching AF, test on ESP32 + ESP32S3)
+- [ ] Fade between frames, add frame color/per matrix color
 - [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
+
+- [ ] Optimize execution speed: xTask?
+- [ ] Serial.println() ->> ESP_LOG(I/V/W/D) https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32/api-reference/system/log.html ????
+- [ ] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
+- [ ] Ear/blush disable?
+- [ ] Proper enable/disable of features (code wise or reset) - bug/missed comments code check
 - [ ] Put into classes/seperate files (slowly doing it)
-- [ ] Update NimBLE https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md, proper platform link?
-- [ ] Debug and get FastLED 3.9.13+ working (glitching AF)
 - [ ] Apa102 style led matrix? (With clock and 20x20 IC size)
 - [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
-- [ ] Fade between frames, add frame color?
-- [ ] Ear/blush disable?
 
 ### ToDo: Remote
 - [ ] Update NimBLE, proper platform link?
 - [ ] Better settings page, add sleep time?
 - [ ] Lower freq. for lower power usage - implement+test
+- [ ] ESP-C3 support, proper platform link, proper board def
 
 ### ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune IR proximity sensor" for boop
 - [ ] Controller readme.md including capabilities, how to flash, explain head definiton for animation/upgrade, etc...
 - [ ] Is Remote readme.md uptodate? Sleep, OTA, long 0 reset etc....
-- [ ] Update matrix web with new pictures etc...

@@ -1,12 +1,12 @@
 //ESP32(Vin), all LEDs and fan is wired with 5V
-//Gyro,OLED,Microphone,INA219 and touch is wired with 3.3V (gyro and mic needs RC filter)
+//Gyro,OLED,Microphone,INA219 and touch is wired with 3.3V (gyro and mic needs RC filter + 100nF ceramic capacitor on MIC output)
 //IF "configCRC.txt" doesn't get automaticaly generated before building filesystem, run "genCRC_manual.py" by hand and then build filesystem etc... again. (needs python installed)
 //IF your WS leds do not correspond to set color, check color order for each strip in setup():FastLED.addLeds...
 //Replace 0.1R with 0.03R resistor on INA219 board
 
-#if defined(ARDUINO_ESP32_S3R8N16) //ESP32-S3
+#if defined(ARDUINO_ESP32S3_DEV) //ESP32-S3
   #define BUILTFOR "ESP32S3"
-  #define MICpin 1 //Microphone
+  #define MICpin ADC_CHANNEL_0 //Microphone, pin 1
   #define T_in 2 //Output from Touch Sensor
   #define T_en 42 //Enable pin to Touch Sensor
   #define DATA_PIN_EARS 5  //Ears (from outer to inner, right cheek first)
@@ -22,7 +22,7 @@
   #define wifi_en 14 //Pulling this pin LOW disables WiFi  //ADC2?? maybe problem?
 #elif defined(ARDUINO_ESP32_DEV) //Normal ESP32 pins
   #define BUILTFOR "ESP32DEV"
-  #define MICpin 35 //Microphone
+  #define MICpin ADC_CHANNEL_7 ////Microphone, pin 35
   #define T_in 33 //Output from Touch Sensor
   #define T_en 23 //Enable pin to Touch Sensor
   #define DATA_PIN_EARS 5  //Ears (from outer to inner, right cheek first)
@@ -55,14 +55,20 @@
 
 #define oledAddr 60 //define oled on address 0x3c
 
+bool INApresent = true; //is INA219 used?
+
 //--------------------------------//No touching after this
 
 #include <Arduino.h>
+
+#include "esp_adc/adc_oneshot.h"
+adc_oneshot_unit_handle_t adc_handle;
 
 #define earTypeSize 5
 #define visTypeSize 2
 String earTypes[earTypeSize] = {"custom","rainbow","white_noise","corner_sabers","custom_glow"};
 String visorTypes[visTypeSize] = {"custom","all_rainbow"};
+String vTAcro[visTypeSize] = {"cust","rnbw"};
 
 #include <ezButton.h>
 ezButton hwBtn(animBtn);
@@ -84,12 +90,12 @@ Config cfg;
 #include "Misc.h" //Misc/helping functions
 Misc misc;
 
+#include "oled.h"
+SSDOLED oled;
+
 #include "SparkFunLSM6DS3.h"
 #include <Wire.h>
 LSM6DS3 myIMU;
-
-#include <U8g2lib.h>
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0,/* reset=*/ U8X8_PIN_NONE);
 
 #include <Adafruit_INA219.h> //edited library in this sketch (replace 0.1R with 0.03R resistor on the board)
 Adafruit_INA219 ina219;
@@ -102,6 +108,11 @@ Adafruit_INA219 ina219;
 AsyncWebServer server(80);
 
 String wifiName = "ProtoWiFi", wifiPass = "Proto1234";
+
+//--------------------------------//Config vars
+bool instantReload = false, oledInitDone = false, tiltInitDone = false;
+int currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush;
+String currentAnim = "";
 
 //--------------------------------//Structs for anims in psram
 struct FramesEars {
@@ -144,13 +155,14 @@ uint8_t BLEnum;
 
 BLEServer *pServer = NULL;
 BLECharacteristic * pCharacteristic;
+BLEAdvertising* pAdvertising;
 
-class MyCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic* pCharacteristic) {
+class MyCallbacks: public NimBLECharacteristicCallbacks {
+    void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
       String temp = String(pCharacteristic->getValue().c_str());
       if(temp.charAt(0) == 'g') { //legacy remote reasons
         pCharacteristic->setValue("i"+String(BLEnum));
-        pCharacteristic->notify(true);
+        pCharacteristic->notify();
       } else if (temp.charAt(0) == '?') {
         String animtemp;
         for(int i = 0; i < BLEnum; i++) {
@@ -164,11 +176,12 @@ class MyCallbacks: public BLECharacteristicCallbacks {
           visorNow->type++;
           if(visorNow->type == visTypeSize)
             visorNow->type = 0;
-          //do OLED stuff
+          if(cfg.oledEna && oledInitDone)
+            oled.writeRGB(vTAcro[visorNow->type]);
         } else if (temp.indexOf("set") > 0) {
           temp.remove(0,4);
-          int test = temp.toInt();
-          //change set variable and do OLED stuff
+          if(cfg.oledEna && oledInitDone)
+            oled.writeSet(temp.toInt()+1);
         }
       } else if (temp.toInt() > 0 && temp.toInt() <= BLEnum){ //legacy remote reasons
         animToLoad = BLEfiles[temp.toInt()-1];
@@ -181,7 +194,13 @@ class MyCallbacks: public BLECharacteristicCallbacks {
       }
       Serial.println(temp);
     };
-};
+} chrCallbacks;
+
+class ServerCallbacks : public NimBLEServerCallbacks {
+  void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
+      NimBLEDevice::startAdvertising();
+  }
+} serverCallbacks;
 
 bool startBLE() {
   std::string stdStr(wifiName.c_str(), wifiName.length());
@@ -189,6 +208,7 @@ bool startBLE() {
   NimBLEDevice::setPower(ESP_PWR_LVL_P9);
 
   pServer = BLEDevice::createServer();
+  pServer->setCallbacks(&serverCallbacks);
 
   BLEService *pService = pServer->createService("ffe0");
 
@@ -197,16 +217,17 @@ bool startBLE() {
       NIMBLE_PROPERTY::NOTIFY    | NIMBLE_PROPERTY::WRITE |
       NIMBLE_PROPERTY::INDICATE
   );
-
   pCharacteristic->setValue(BLEnum);
-  pCharacteristic->setCallbacks(new MyCallbacks());
+  pCharacteristic->setCallbacks(&chrCallbacks);
 
   if(!pService->start()) {
     return false;
   }
 
-  BLEAdvertising* pAdvertising = pServer->getAdvertising();
+  pAdvertising = NimBLEDevice::getAdvertising();
+  pAdvertising->setName(stdStr);
   pAdvertising->addServiceUUID(BLEUUID(pService->getUUID()));
+  pAdvertising->enableScanResponse(true);
   if(!pAdvertising->start(0)) {
     return false;
   }
@@ -280,17 +301,6 @@ const std::vector<std::vector<int>> lookupDiag2 =
  {14,26,34,23,8},
  {13,25,24,9},
  {12,11,10}};
-
-//--------------------------------//Print centered text to oled buffer
-void displayCenter(String text, uint16_t h) {
-  float width = u8g2.getStrWidth(text.c_str());
-  u8g2.drawStr((128 - width) / 2, h, text.c_str());
-}
-
-//--------------------------------//Config vars
-bool instantReload = false, oledInitDone = false, tiltInitDone = false;
-int currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush;
-String currentAnim = "";
 
 //--------------------------------//Load functions
 bool loadAnim(String anim, String temp) {
@@ -368,36 +378,16 @@ bool loadAnim(String anim, String temp) {
     currentEarsFrame = 0;
 
     if(cfg.oledEna && oledInitDone) {
-      u8g2.setDrawColor(0);
-      u8g2.drawBox(0, 0, 128, 17);
-      u8g2.setDrawColor(1);
-      displayCenter(anim.substring(0,anim.length()-5),14);
-      u8g2.updateDisplayArea(0,0,16,2);
+      oled.writeAnim(anim.substring(0,anim.length()-5));
+      oled.writeRGB(vTAcro[visorNow->type]);
     }
     return true;
   }
   return false;
 }
 
-//--------------------------------//OLED Brightness
-void oledBright(int level) {
-  if(cfg.oledEna && oledInitDone) {
-    if(level == 0) { //dim
-      u8g2.sendF("ca", 0x0d9, (15 << 4) | 0 );
-      u8g2.sendF("ca", 0x0db, 0 << 4);
-    } else if (level == 1) { //mid
-      u8g2.sendF("ca", 0x0d9, (15 << 4) | 15 );
-      u8g2.sendF("ca", 0x0db, 0 << 4);
-    } else if (level == 2) { //normal
-      u8g2.sendF("ca", 0x0d9, (15 << 4) | 15 );
-      u8g2.sendF("ca", 0x0db, 7 << 4);
-    }
-  }
-}
-
 //--------------------------------//WiFi server setup
 void startWiFiWeb() {
-  WiFi.softAPdisconnect(true);
   WiFi.softAP(wifiName, wifiPass);
 
   server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
@@ -430,7 +420,9 @@ void startWiFiWeb() {
       cfg.bBlush = request->getParam("bBlush")->value().toInt();
     if(request->hasParam("bOled"))
       cfg.bOled = request->getParam("bOled")->value().toInt();
-      oledBright(cfg.bOled);
+      if(cfg.oledEna && oledInitDone) {
+        oled.oledBright(cfg.bOled);
+      }
     //anims configs
     if(request->hasParam("rbSpeed"))
       cfg.rbSpeed = request->getParam("rbSpeed")->value().toInt();
@@ -567,7 +559,8 @@ void startWiFiWeb() {
       visorNow->type++;
       if(visorNow->type == visTypeSize)
         visorNow->type = 0;
-      //do OLED stuff
+      if(cfg.oledEna && oledInitDone)
+        oled.writeRGB(vTAcro[visorNow->type]);
     }
     request->redirect("/saved.html?main");
   });
@@ -583,35 +576,10 @@ void startWiFiWeb() {
   ElegantOTA.setAutoReboot(true);
 }
 
-//--------------------------------//OLED Init
-void initOled() {
-  Wire.begin();
-  Wire.beginTransmission(oledAddr); //check for oled on address 0x3c
-  byte error = Wire.endTransmission();
-  if(error == 0) {
-    u8g2.setBusClock(1500000);
-    u8g2.begin();
-    u8g2.setFlipMode(2);
-    u8g2.setFont(u8g2_font_t0_22b_tf);
-    u8g2.drawFrame(14, 36, 100, 9);
-    if (!ina219.begin()) {
-      Serial.println("[E] An Error has occurred while finding INA219 chip!");
-    } else {
-      ina219.setCalibration_16V_8A();
-    }
-    oledBright(cfg.bOled);
-    oledInitDone = true;
-  } else {
-    Serial.println("[E] An Error has occurred while initializing SSD1306.");
-    cfg.oledEna = false;
-  }
-}
-
 //--------------------------------//Setup
 void setup() {
   Serial.begin(115200);
 
-  pinMode(MICpin, INPUT);
   pinMode(T_in, INPUT_PULLUP);
   pinMode(T_en, OUTPUT);
   pinMode(wifi_en, INPUT_PULLUP);
@@ -639,6 +607,17 @@ void setup() {
     cfg.setDefault();
   }
 
+  adc_oneshot_unit_init_cfg_t init_config = {
+    .unit_id = ADC_UNIT_1,
+    .ulp_mode = ADC_ULP_MODE_DISABLE,
+  };
+  ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config, &adc_handle));
+  adc_oneshot_chan_cfg_t channel_config = {
+      .atten = ADC_ATTEN_DB_12,
+      .bitwidth = ADC_BITWIDTH_12,
+  };
+  ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, MICpin, &channel_config));
+
   ledcAttach(fanPWM, 25000, 8); //suport Arduino 3.x
   ledcWrite(fanPWM, cfg.fanDuty); //Arduino 3.x core
   //ledcSetup(0, 25000, 8); //For Arduino 2.x
@@ -655,17 +634,6 @@ void setup() {
     mx.begin();
   }
 
-  Wire.setPins(I2C_SDA, I2C_SCL);
-
-  if(cfg.tiltEna) {
-    if(myIMU.begin()) {
-      Serial.println("[E] An Error has occurred while connecting to LSM!");
-      cfg.tiltEna = false;
-    } else {
-      tiltInitDone = true;
-    }
-  }
-
   if(digitalRead(wifi_en) == HIGH) { //Pulling pin 13 LOW disables WiFi
     startWiFiWeb();
   }
@@ -677,8 +645,36 @@ void setup() {
     }
   }
 
+  //I2C things
+  Wire.setPins(I2C_SDA, I2C_SCL);
+
+  if(cfg.tiltEna) {
+    if(myIMU.begin()) {
+      Serial.println("[E] An Error has occurred while connecting to LSM!");
+      cfg.tiltEna = false;
+    } else {
+      tiltInitDone = true;
+    }
+  }
+
   if(cfg.oledEna) {
-    initOled();
+    if(!oled.init(oledAddr,cfg.bOled,INApresent)) {
+      Serial.println("[E] An Error has occurred while initializing SSD1306.");
+      cfg.oledEna = false;
+    } else {
+      oledInitDone = true;
+      oled.speak(false);
+      oled.writeSet(1);
+    }
+  }
+
+  if(INApresent && oledInitDone) {
+    if(!ina219.begin()) {
+      Serial.println("[E] An Error has occurred while finding INA219 chip!");
+      INApresent = false;
+    } else {
+      ina219.setCalibration_16V_8A();
+    }
   }
 
   Serial.println("[I] Free heap: "+String(ESP.getFreeHeap()));
@@ -690,8 +686,8 @@ void setup() {
 
 //--------------------------------//Loop vars
 String oldanim, boopoldanim;
-bool FdisplayVisor = false, FdisplayBlush = false, FdisplayEar = false, booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false;
-float zAx,yAx,finalMicAvg,micline,avgMicArr[10];
+bool FdisplayVisor = false, FdisplayBlush = false, FdisplayEar = false, booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false, remoteSign = false;;
+float zAx,yAx,finalMicAvg,avgMicArr[10];
 int randomNum, boopRead, randomTimespan = 0, startIndex = 1, speaking = 0, currentMicAvg = 0, btnNum = 0;
 unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0, looptime = 0;
 byte row = 0;
@@ -842,10 +838,11 @@ void loop() {
 
   //looptime = micros();
   //--------------------------------//SPEECH Detection
-  if(cfg.speechEna) { //8.8ms qwq
-    float nvol = 0;
-    for (int i = 0; i<64; i++){
-      micline = abs(analogRead(MICpin) - 512);
+  if(cfg.speechEna) { //~~8.8ms qwq~~ nuuh 1.2 with 32samples
+    int nvol = 0, micline = 0, rawInput = 0;
+    for (int i = 0; i<32; i++){
+      adc_oneshot_read(adc_handle, MICpin, &rawInput);
+      micline = abs(rawInput - 512);
       nvol = max(micline, nvol);
     }
     if(currentMicAvg == 9) {
@@ -870,8 +867,7 @@ void loop() {
       speak = true;
       speechResetDone = false;
       if(cfg.oledEna && oledInitDone) {
-        u8g2.drawStr(8, 62, "speak");
-        u8g2.updateDisplayArea(0,6,8,2);
+        oled.speak(true);
       }
       Serial.println("Speak");
     }
@@ -879,10 +875,7 @@ void loop() {
       speak = false;
       speechFirst = true;
       if(cfg.oledEna && oledInitDone) {
-        u8g2.setDrawColor(0);
-        u8g2.drawBox(8, 48, 56, 16);
-        u8g2.updateDisplayArea(0,6,8,2);
-        u8g2.setDrawColor(1);
+        oled.speak(false);
       }
       Serial.println("unSpeak");
       speaking = 0;
@@ -954,32 +947,35 @@ void loop() {
     }
   }
 
-  //looptime = micros();
-  //--------------------------------//OLED routine, make for multiple sizes, 10ms qwq
-  if(cfg.oledEna && vaStatLast+500<millis() && oledInitDone) {
-    float BusV = ina219.getBusVoltage_V();
-    int barStatus = misc.mapfloat(BusV,5.5,8.42,0,100);
-    if(barStatus > 100) {
-      barStatus = 100;
-    } else if (barStatus < 0) {
-      barStatus = 0;
+  //--------------------------------//OLED routine, ~~10ms qwq~~, 1-5ms.. eh better
+  if(cfg.oledEna && oledInitDone && vaStatLast+1000<millis()) {
+    //looptime = micros();
+    if(INApresent) {
+      oled.writeINA(ina219.getBusVoltage_V(),ina219.getCurrent_mA());
     }
-    u8g2.setDrawColor(0);
-    u8g2.drawBox(0, 14, 128, 17);
-    u8g2.setDrawColor(1);
-    displayCenter(String(BusV)+"V "+String(ina219.getCurrent_mA()/1000)+"A",31);
-    u8g2.updateDisplayArea(0,2,16,2);
-    u8g2.setDrawColor(0);
-    u8g2.drawBox(15, 37, 98, 7);
-    u8g2.setDrawColor(1);
-    u8g2.drawBox(14, 36, barStatus, 9);
-    u8g2.updateDisplayArea(1,4,14,2);
+    if(cfg.bleEna) {
+      if(pServer->getConnectedCount() == 0) {
+        remoteSign = !remoteSign;
+        oled.remote(remoteSign);
+      } else if (pServer->getConnectedCount() > 0 && remoteSign == false) {
+        oled.remote(true);
+        remoteSign = true;
+      }
+    } else if (!cfg.bleEna && remoteSign) {
+      oled.remote(false);
+      remoteSign = false;
+    }
     vaStatLast = millis();
-  } else if (!oledInitDone && cfg.oledEna) {
-    initOled();
+    //Serial.println(">OLED:"+String(micros()-looptime));
   }
-  //Serial.println(">OLED:"+String(micros()-looptime));
-  //looptime = micros();
+  if (!oledInitDone && cfg.oledEna) {
+    if(!oled.init(oledAddr,cfg.bOled,INApresent)) {
+      Serial.println("[E] An Error has occurred while initializing SSD1306.");
+      cfg.oledEna = false;
+    } else {
+      oledInitDone = true;
+    }
+  }
 
   if((FdisplayEar || FdisplayBlush || FdisplayVisor)) {
     if(FdisplayEar) {

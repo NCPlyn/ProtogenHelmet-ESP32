@@ -34,7 +34,7 @@ void Config::setDefault() {
   rbWidth = 8;
   spMin = 90;
   spMax = 110;
-  spTrig = 1500;
+  spTrig = 1400;
   aTilt = "confused.json";
   aUp = "sad.json";
   aBoop = "boop.json",
