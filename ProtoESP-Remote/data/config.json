@@ -21,6 +21,7 @@
   "36": "upset",
   "37": "sad",
   "functionBtn": -1,
+  "sleepTime": 600,
   "wifiName":"ProtoRemote",
   "wifiPass":"Proto123",
   "BLE":"Proto"

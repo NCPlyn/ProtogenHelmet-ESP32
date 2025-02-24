@@ -15,7 +15,7 @@
             <p>Available BLE devices (+animations) show after 6s after page load.</p>
           </div>
           <form action="./saveconfig" method="get">
-            <i><label>Button</label></i>
+            <i><label>Button <sup onclick="alert('1st left top, 2nd top right, 3rd Dpad top... etc')">&#9432;</sup></label></i>
             <i><span>1. set</span></i>
             <i><span>2. set</span></i>
             <i><span>3. set</span></i>
@@ -48,7 +48,7 @@
             <select id="27" name="27"></select>
             <select id="37" name="37"></select>
             
-            <label for="functionBtn">Function button<sup onclick="alert('Select a button which will change RGB modes with short press and animation sets with long press.')">&#9432;</sup></label>
+            <label for="functionBtn">Function button <sup onclick="alert('Select a button which will change RGB modes with short press and animation sets with long press.')">&#9432;</sup></label>
             <select id="functionBtn" name="functionBtn"><option>None</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
             
             <label for="BLE" onclick="alert('Values show after 6s of the page being loaded')">Proto BLE name</label>
@@ -57,7 +57,9 @@
             <label for="wifiName">WiFi AP SSID (Proto)</label>
             <input type="text" name="wifiName">
             <label for="wifiPass">WiFi Password (Proto123)</label>
-            <input type="text" name="wifiPass"><br>
+            <input type="text" name="wifiPass">
+            <label for="sleepTime">Sleep timer <sup onclick="alert('Time in seconds after the remote goes to sleep, halfed if no connections. Wake up with any button.')">&#9432;</sup></label>
+            <input type="number" name="sleepTime" min="60" value="600"><br>
             <button type="submit">Save config</button>
           </form>
         </div>
@@ -239,6 +241,7 @@
         } else {
           document.getElementsByName("functionBtn")[0].value = obj.functionBtn+1;
         }
+        document.getElementsByName("sleepTime")[0].value = obj.sleepTime;
         document.getElementsByName("wifiName")[0].value = obj.wifiName;
         document.getElementsByName("wifiPass")[0].value = obj.wifiPass;
         BLEnameload = obj.BLE;

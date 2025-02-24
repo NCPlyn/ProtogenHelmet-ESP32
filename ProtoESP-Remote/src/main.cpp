@@ -52,7 +52,7 @@ NimBLEClient* pClient;
 
 bool doConnect = false,connected = false,buttonPressed = false;
 String foundDevices = "", BLE = "ProtoESP";
-int connectTry = 0, functionBtn = -1, animSet = 0;
+int connectTry = 0, functionBtn = -1, animSet = 0, sleepTime = 600;
 unsigned long check0button = 0, lastBlink = 0, wifiblechk = 0, toSleep = 0;
 
 // BLE Scan callback, get a comma-separated list of found devices and check for valid one to connect to
@@ -138,6 +138,7 @@ bool loadConfig() {
     btnAnims[2][i] = doc[String(i+1+30)].as<String>();
   }
   functionBtn = doc["functionBtn"].as<int>();
+  sleepTime = doc["sleepTime"].as<int>();
   wifiName = doc["wifiName"].as<String>();
   wifiPass = doc["wifiPass"].as<String>();
   BLE = doc["BLE"].as<String>();
@@ -162,6 +163,7 @@ bool saveConfig() {
     doc[String(i+1+30)] = btnAnims[2][i];
   }
   doc["functionBtn"] = functionBtn;
+  doc["sleepTime"] = sleepTime;
   doc["wifiName"] = wifiName;
   doc["wifiPass"] = wifiPass;
   doc["BLE"] = BLE;
@@ -184,6 +186,7 @@ void setDefault() {
     btnAnims[2][i] = "default";
   }
   functionBtn = -1;
+  sleepTime = 600;
   wifiName = "ProtoRemote";
   wifiPass = "Proto123";
   BLE = "ProtoBLE";
@@ -246,6 +249,8 @@ void startWiFiWeb() {
         functionBtn = -1;
       }
     }
+    if(request->hasParam("sleepTime"))
+      sleepTime = request->getParam("sleepTime")->value().toInt();
     //wifi/ble
     if(request->hasParam("BLE"))
       BLE = String(request->getParam("BLE")->value());
@@ -310,7 +315,7 @@ void setup() {
 
   WiFi.onEvent(onWifiConnect, WiFiEvent_t::ARDUINO_EVENT_WIFI_AP_STACONNECTED);
 
-  NimBLEDevice::init("");
+  NimBLEDevice::init("ProtoESPRemote");
   scanBLE(5);
 
   Serial.println("[I] Free heap: "+String(ESP.getFreeHeap()));
@@ -340,7 +345,7 @@ void loop() {
   }
   if (connected && !pClient->isConnected()) {
     Serial.println("[I] BT: Disconnected from server. Reconnecting...");
-    toSleep = millis()-(SLEEPTIME*30000);
+    toSleep = millis()-(sleepTime*3000);
     connected = false;
     NimBLEDevice::getScan()->start(5,nullptr, false);
   }
@@ -393,7 +398,7 @@ void loop() {
   }
 
   //sleep
-  if((toSleep+SLEEPTIME*60000)<millis() && WiFi.softAPgetStationNum() == 0) {
+  if((toSleep+sleepTime*6000)<millis() && WiFi.softAPgetStationNum() == 0) {
     Serial.println("[I] Going eep");
     esp_light_sleep_start();
     ESP.restart();
@@ -412,5 +417,6 @@ void loop() {
     Serial.println("[I] set def wait");
   }
 
+  yield();
   delay(20); // Prevent spamming the loop?
 }

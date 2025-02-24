@@ -54,10 +54,8 @@
 - [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
 
 ### ToDo: Remote
-- [ ] Update NimBLE, proper platform link?
-- [ ] Better settings page, add sleep time?
-- [ ] Lower freq. for lower power usage - implement+test
-- [ ] ESP-C3 support, proper platform link, proper board def
+- [ ] Update NimBLE
+- [ ] ESP-C3/C6 support, proper platform link, proper board def
 
 ### ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune IR proximity sensor" for boop
