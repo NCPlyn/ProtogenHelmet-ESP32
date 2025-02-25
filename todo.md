@@ -55,7 +55,7 @@
 
 ### ToDo: Remote
 - [ ] Update NimBLE
-- [ ] ESP-C3/C6 support, proper platform link, proper board def
+- [ ] ESP-C3/C6 support, proper platform link, proper board def, pins, pcb edit for LED
 
 ### ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune IR proximity sensor" for boop

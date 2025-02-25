@@ -4,7 +4,7 @@
 *Not 100% complete, might be buggy, refer to  [Legacy](../Legacy) branch.*
 
 ##### Main features
-- Utilizes **MAX7219** matrixes using SPI or **[WS2812B RGB Matrixes](https://foxxo.cz/proto/matrix/)** to show faces/animations
+- Utilizes **MAX7219** matrixes using SPI or **[WS2812B RGB Matrixes](RGBMatrix)** to show faces/animations
 - Has two additional WS2812 outputs:
 	1. for ring LEDs in the ears (animated or coded);
 	2. for leds under the eyes (can be repurposed for something else)
@@ -33,7 +33,7 @@
 - [**Controller**](ProtoESP-Controller) folder: ProtoESP controller code with all features
 - [**Remote**](ProtoESP-Remote) folder: ProtoESP *(Not legacy)*  Wireless control remote
 - [**Legacy**](../Legacy) branch: Legacy controller&remote&WS2812 matrix <- all three not supported anymore but **stable&working**
-- [**Matrix**](https://foxxo.cz/proto/matrix/) site: WS2812B 8x8 RGB Matrix replacement for single color MAX7219 Matrixes
+- [**Matrix**](RGBMatrix) folder: WS2812B 8x8 RGB Matrix replacement for single color MAX7219 Matrixes
 - [**Animator**](https://foxxo.cz/proto/animator.html) site: Program to make animations for the controller
 - [**ToDo**](todo.md) .md: Checklist of To Do things
 
