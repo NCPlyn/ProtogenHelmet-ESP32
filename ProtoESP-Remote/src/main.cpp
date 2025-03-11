@@ -1,11 +1,9 @@
-#define SLEEPTIME 10 //go to deep sleep after x minutes (when disconnected, will go in half this time)
-int sleepArray[] = {1,2,3,4,7,8,9};
-
 #include <driver/rtc_io.h>
+#include <ezButton.h>
 
 #define BTNTIME 800 //under this time in ms is considered short press, over is long press
+int sleepArray[] = {1,2,3,4,7,8,9}; //numbers of pins to wake up with
 #define BUTTONS 7
-#include <ezButton.h>
 ezButton buttonArray[BUTTONS] = { //1... left to right, row by row, pins of buttons
   ezButton(8), //up left
   ezButton(2), //up right
@@ -15,6 +13,7 @@ ezButton buttonArray[BUTTONS] = { //1... left to right, row by row, pins of butt
   ezButton(1), //right
   ezButton(4)  //down
 };
+
 unsigned long btnPressTime[BUTTONS];
 String btnAnims[3][BUTTONS];
 
@@ -31,7 +30,7 @@ String btnAnims[3][BUTTONS];
 #include <ArduinoJson.h>
 AsyncWebServer server(80);
 
-String wifiName = "ProtoRemote", wifiPass = "Proto123";
+String wifiName = "ProtoRemote", wifiPass = "Proto1234";
 
 #define LEDOFF HIGH
 #define LEDON LOW

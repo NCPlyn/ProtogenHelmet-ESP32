@@ -14,8 +14,8 @@
 - [x] Auto gen CRC before filesystem upload
 - [x] Make sure ifdef for definitons work (should), add definition for wifiena (done), RGB orders def (wrote comment)
 - [x] Support for ESP32 with PSRAM soldered on
-- [x] Supported both MAX and WS28xx displays in the same codebase (**should work but needs to be kept under supervision**)
-- [x] Custom amount of displays and their placement (**same as above**)
+- [x] Supported both MAX and WS28xx displays in the same codebase
+- [x] Custom amount of displays and their placement
 - [x] Redo tilt calibration code
 - [x] OLED init bug fix at runtime (now fixed fr)
 - [x] ElegantOTA (**192.168.4.1/update**)
@@ -33,25 +33,28 @@
 - [x] Remote: Create/finish .MD file with: What is it, how to wire, how to connect/edit, photos + sponsor, how to flash
 - [x] Remote: ~~Deep~~Light sleep after 10 minutes & no Wifi clients (devided by double when disconnected from server)
 - [x] Remote: Current from batt: Powered On: 110mA; DeepSleep: 15.5 uA (0.015mA) == 4.5h with 500mAh battery
-- [x] Better custom WS28xx display (**In stock** [RGB-Matrix](https://foxxo.cz/proto/matrix/))
+- [x] Better custom WS28xx display ([RGB-Matrix](https://github.com/NCPlyn/ProtogenHelmet-ESP32/tree/ProtoESP/RGBMatrix))
 - [x] Slightly faster analog read & oled (8.8->2.5/1.3ms ; 10ms -> 1-3ms)
 - [x] Proper platform link, board defines, partitions
 - [x] Update NimBLE https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md (should work)
 - [x] Completely redo OLED: INA V/A;remote connect/set;animation current/speaking/rgb mode
+- [x] Put into classes/seperate files
 
 ### ToDo: Controller
-- [ ] Debug and get FastLED 3.9.13+ working (glitching AF, test on ESP32 + ESP32S3)
+- [ ] Check currentEarsFrame & currentVisorFrame accessing -1 and current frame handling
 - [ ] Fade between frames, add frame color/per matrix color
 - [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
-
-- [ ] Optimize execution speed: xTask?
-- [ ] Serial.println() ->> ESP_LOG(I/V/W/D) https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32/api-reference/system/log.html ????
 - [ ] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
 - [ ] Ear/blush disable?
-- [ ] Proper enable/disable of features (code wise or reset) - bug/missed comments code check
-- [ ] Put into classes/seperate files (slowly doing it)
-- [ ] Apa102 style led matrix? (With clock and 20x20 IC size)
 - [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
+
+- [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
+  - (~~Downgrade to 2.0core?~~ (3.0 functions); ~~I2S driver?~~ (need to support SK9822); force RMT4? / stay on 3.7.8?)
+- [ ] Optimize execution speed: xTask?
+- [ ] Serial.println() ->> ESP_LOG(I/V/W/D) [ESP-DIF-DOCS](https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32/api-reference/system/log.html)
+- [ ] Proper enable/disable of features (code wise or reset) - bug/missed comments code check
+- [ ] Apa102 style led matrix? [LCSC](https://www.lcsc.com/product-detail/RGB-LEDs-Built-in-IC_OPSCO-Optoelectronics-SK9822-EC20_C2909059.html)
+- [ ] WiFi name/pass length check
 
 ### ToDo: Remote
 - [ ] Update NimBLE
@@ -59,5 +62,5 @@
 
 ### ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune IR proximity sensor" for boop
-- [ ] Controller readme.md including capabilities, how to flash, explain head definiton for animation/upgrade, etc...
-- [ ] Is Remote readme.md uptodate? Sleep, OTA, long 0 reset etc....
+- [ ] Controller readme.md including capabilities, oled explain, etc..
+- [ ] Animator guide, visor configs + animation upgrade

@@ -39,15 +39,14 @@
 #endif
 
 //LEDs amount
-#define MAX72xx_DEVICES 11
+#define MAX72xx_DEVICES 11 //Number of MAX72xx matrices for visor
+#define VisorLedsNum 704 //Number of WS2812 leds for visor (matrixNumber*64)
 #define EarLedsNum 74
-#define VisorLedsNum 704
 #define blushLedsNum 8
 
 #define visorType "WS2812" // WS2812 or MAX72XX so far available for visor displays
 
-#define MaxFEars 30 //Max amount of Ear frames (hardcoded to assign memory)
-#define MaxFVisor 30 //Max amount of Visor frames
+bool INApresent = true; //is INA219 used?
 
 #define revertTilt 8000 //The maximum time that animation caused by tilt gets shown (used as if tilt bugs out etc)
 
@@ -55,9 +54,10 @@
 
 #define oledAddr 60 //define oled on address 0x3c
 
-bool INApresent = true; //is INA219 used?
-
 //--------------------------------//No touching after this
+
+#define MaxFEars 30 //Max amount of Ear frames (hardcoded to assign memory)
+#define MaxFVisor 30 //Max amount of Visor frames
 
 #include <Arduino.h>
 
@@ -66,9 +66,9 @@ adc_oneshot_unit_handle_t adc_handle;
 
 #define earTypeSize 5
 #define visTypeSize 2
-String earTypes[earTypeSize] = {"custom","rainbow","white_noise","corner_sabers","custom_glow"};
-String visorTypes[visTypeSize] = {"custom","all_rainbow"};
-String vTAcro[visTypeSize] = {"cust","rnbw"};
+String earTypes[earTypeSize] = {"custom","rainbow","white_noise","corner_sabers","custom_glow"}; //available ear type animations
+String visorTypes[visTypeSize] = {"custom","all_rainbow"}; //available visor type animations
+String vTAcro[visTypeSize] = {"cust","rnbw"}; //OLED acronyms for visor type animations
 
 #include <ezButton.h>
 ezButton hwBtn(animBtn);
@@ -81,7 +81,6 @@ ezButton hwBtn(animBtn);
 #include <ArduinoJson.h>
 
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
-#define SPIFFS LittleFS
 #include <LittleFS.h>
 
 #include "fileOp.h" //CRC + Config variables store/save/load/default
@@ -110,9 +109,24 @@ AsyncWebServer server(80);
 String wifiName = "ProtoWiFi", wifiPass = "Proto1234";
 
 //--------------------------------//Config vars
-bool instantReload = false, oledInitDone = false, tiltInitDone = false;
-int currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush;
-String currentAnim = "";
+bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true;
+uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims;
+String currentAnim = "", animToLoad = "", availAnims[50], getfilesCache;
+
+//--------------------------------//getting stored anims names and count
+void getFilesFunc() {
+  getfilesCache = "";
+  totalAnims = 0;
+  File root = LittleFS.open("/anims");
+  File file = root.openNextFile();
+  while(file){
+    availAnims[totalAnims] = String(file.name());
+    getfilesCache += availAnims[totalAnims] + ";";
+    totalAnims++;
+    file = root.openNextFile();
+  }
+  getfilesProper = false;
+}
 
 //--------------------------------//Structs for anims in psram
 struct FramesEars {
@@ -141,118 +155,6 @@ struct AnimNowVisor {
 
 AnimNowEars* earsNow;
 AnimNowVisor* visorNow;
-
-//--------------------------------//BLE
-#define CONFIG_BT_NIMBLE_MAX_CONNECTIONS 2
-#define CONFIG_BT_NIMBLE_ROLE_CENTRAL_DISABLED
-#define CONFIG_BT_NIMBLE_ROLE_OBSERVER_DISABLED
-#include "NimBLEDevice.h"
-
-//add to config
-String animToLoad = "";
-String BLEfiles[20];
-uint8_t BLEnum;
-
-BLEServer *pServer = NULL;
-BLECharacteristic * pCharacteristic;
-BLEAdvertising* pAdvertising;
-
-class MyCallbacks: public NimBLECharacteristicCallbacks {
-    void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
-      String temp = String(pCharacteristic->getValue().c_str());
-      if(temp.charAt(0) == 'g') { //legacy remote reasons
-        pCharacteristic->setValue("i"+String(BLEnum));
-        pCharacteristic->notify();
-      } else if (temp.charAt(0) == '?') {
-        String animtemp;
-        for(int i = 0; i < BLEnum; i++) {
-          animtemp += BLEfiles[i].substring(0, BLEfiles[i].length() - 5);
-          animtemp += ";";
-        }
-        pCharacteristic->setValue(animtemp);
-        pCharacteristic->notify(true);
-      } else if (temp.charAt(0) == ';') { //command
-        if (temp.indexOf("rgb") > 0 && visorType == "WS2812") {
-          visorNow->type++;
-          if(visorNow->type == visTypeSize)
-            visorNow->type = 0;
-          if(cfg.oledEna && oledInitDone)
-            oled.writeRGB(vTAcro[visorNow->type]);
-        } else if (temp.indexOf("set") > 0) {
-          temp.remove(0,4);
-          if(cfg.oledEna && oledInitDone)
-            oled.writeSet(temp.toInt()+1);
-        }
-      } else if (temp.toInt() > 0 && temp.toInt() <= BLEnum){ //legacy remote reasons
-        animToLoad = BLEfiles[temp.toInt()-1];
-      } else {
-        for(int i = 0; i < BLEnum; i++) {
-          if(temp == BLEfiles[i].substring(0, BLEfiles[i].length() - 5)) {
-            animToLoad = BLEfiles[i];
-          }
-        }
-      }
-      Serial.println(temp);
-    };
-} chrCallbacks;
-
-class ServerCallbacks : public NimBLEServerCallbacks {
-  void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
-      NimBLEDevice::startAdvertising();
-  }
-} serverCallbacks;
-
-bool startBLE() {
-  std::string stdStr(wifiName.c_str(), wifiName.length());
-  BLEDevice::init(stdStr);
-  NimBLEDevice::setPower(ESP_PWR_LVL_P9);
-
-  pServer = BLEDevice::createServer();
-  pServer->setCallbacks(&serverCallbacks);
-
-  BLEService *pService = pServer->createService("ffe0");
-
-  pCharacteristic = pService->createCharacteristic("ffe1",
-      NIMBLE_PROPERTY::BROADCAST | NIMBLE_PROPERTY::READ  |
-      NIMBLE_PROPERTY::NOTIFY    | NIMBLE_PROPERTY::WRITE |
-      NIMBLE_PROPERTY::INDICATE
-  );
-  pCharacteristic->setValue(BLEnum);
-  pCharacteristic->setCallbacks(&chrCallbacks);
-
-  if(!pService->start()) {
-    return false;
-  }
-
-  pAdvertising = NimBLEDevice::getAdvertising();
-  pAdvertising->setName(stdStr);
-  pAdvertising->addServiceUUID(BLEUUID(pService->getUUID()));
-  pAdvertising->enableScanResponse(true);
-  if(!pAdvertising->start(0)) {
-    return false;
-  }
-
-  return true;
-}
-
-//--------------------------------//getting stored anims names and count
-String getfilesCache;
-bool getfilesProper = true;
-
-void getFilesFunc() {
-  String temp;
-  BLEnum = 0;
-  File root = LittleFS.open("/anims");
-  File file = root.openNextFile();
-  while(file){
-    temp += String(file.name()) + ";";
-    BLEfiles[BLEnum] = String(file.name());
-    BLEnum++;
-    file = root.openNextFile();
-  }
-  getfilesCache = temp;
-  getfilesProper = false;
-}
 
 //--------------------------------//MAX LEDs
 #include <MD_MAX72xx.h>
@@ -384,6 +286,94 @@ bool loadAnim(String anim, String temp) {
     return true;
   }
   return false;
+}
+
+//--------------------------------//BLE
+#define CONFIG_BT_NIMBLE_MAX_CONNECTIONS 2
+#define CONFIG_BT_NIMBLE_ROLE_CENTRAL_DISABLED
+#define CONFIG_BT_NIMBLE_ROLE_OBSERVER_DISABLED
+#include "NimBLEDevice.h"
+
+BLEServer *pServer = NULL;
+BLECharacteristic * pCharacteristic;
+BLEAdvertising* pAdvertising;
+
+class MyCallbacks: public NimBLECharacteristicCallbacks {
+    void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override {
+      String temp = String(pCharacteristic->getValue().c_str());
+      if(temp.charAt(0) == 'g') { //legacy remote reasons
+        pCharacteristic->setValue("i"+String(totalAnims));
+        pCharacteristic->notify();
+      } else if (temp.charAt(0) == '?') {
+        String animtemp;
+        for(int i = 0; i < totalAnims; i++) {
+          animtemp += availAnims[i].substring(0, availAnims[i].length() - 5);
+          animtemp += ";";
+        }
+        pCharacteristic->setValue(animtemp);
+        pCharacteristic->notify(true);
+      } else if (temp.charAt(0) == ';') { //command
+        if (temp.indexOf("rgb") > 0 && visorType == "WS2812") {
+          visorNow->type++;
+          if(visorNow->type == visTypeSize)
+            visorNow->type = 0;
+          if(cfg.oledEna && oledInitDone)
+            oled.writeRGB(vTAcro[visorNow->type]);
+        } else if (temp.indexOf("set") > 0) {
+          temp.remove(0,4);
+          if(cfg.oledEna && oledInitDone)
+            oled.writeSet(temp.toInt()+1);
+        }
+      } else if (temp.toInt() > 0 && temp.toInt() <= totalAnims){ //legacy remote reasons
+        animToLoad = availAnims[temp.toInt()-1];
+      } else {
+        for(int i = 0; i < totalAnims; i++) {
+          if(temp == availAnims[i].substring(0, availAnims[i].length() - 5)) {
+            animToLoad = availAnims[i];
+          }
+        }
+      }
+      Serial.println(temp);
+    };
+} chrCallbacks;
+
+class ServerCallbacks : public NimBLEServerCallbacks {
+  void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
+      NimBLEDevice::startAdvertising();
+  }
+} serverCallbacks;
+
+bool startBLE() {
+  std::string stdStr(wifiName.c_str(), wifiName.length());
+  BLEDevice::init(stdStr);
+  NimBLEDevice::setPower(ESP_PWR_LVL_P9);
+
+  pServer = BLEDevice::createServer();
+  pServer->setCallbacks(&serverCallbacks);
+
+  BLEService *pService = pServer->createService("ffe0");
+
+  pCharacteristic = pService->createCharacteristic("ffe1",
+      NIMBLE_PROPERTY::BROADCAST | NIMBLE_PROPERTY::READ  |
+      NIMBLE_PROPERTY::NOTIFY    | NIMBLE_PROPERTY::WRITE |
+      NIMBLE_PROPERTY::INDICATE
+  );
+  pCharacteristic->setValue(totalAnims);
+  pCharacteristic->setCallbacks(&chrCallbacks);
+
+  if(!pService->start()) {
+    return false;
+  }
+
+  pAdvertising = NimBLEDevice::getAdvertising();
+  pAdvertising->setName(stdStr);
+  pAdvertising->addServiceUUID(BLEUUID(pService->getUUID()));
+  pAdvertising->enableScanResponse(true);
+  if(!pAdvertising->start(0)) {
+    return false;
+  }
+
+  return true;
 }
 
 //--------------------------------//WiFi server setup
@@ -914,12 +904,12 @@ void loop() {
   if(hwBtn.isReleased()) {
     if(millis()-btnPressTime < 1500) { //short press
       btnNum++;
-      if(btnNum >= BLEnum) {
+      if(btnNum >= totalAnims) {
         btnNum = 0;
       } else {
-        animToLoad = BLEfiles[btnNum];
+        animToLoad = availAnims[btnNum];
       }
-      Serial.println("Changing to "+BLEfiles[btnNum]+", amount of anims: "+String(BLEnum));
+      Serial.println("Changing to "+availAnims[btnNum]+", amount of anims: "+String(totalAnims));
     }
   }
 
