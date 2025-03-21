@@ -10,7 +10,6 @@
 - [x] Online web version of animator ([HERE](https://foxxo.cz/proto/animator.html))
 - [x] Fix current animations
 - [x] Add function to change anims with button
-- [x] Proper partition tables for current microcontrollers
 - [x] Auto gen CRC before filesystem upload
 - [x] Make sure ifdef for definitons work (should), add definition for wifiena (done), RGB orders def (wrote comment)
 - [x] Support for ESP32 with PSRAM soldered on
@@ -19,7 +18,7 @@
 - [x] Redo tilt calibration code
 - [x] OLED init bug fix at runtime (now fixed fr)
 - [x] ElegantOTA (**192.168.4.1/update**)
-- [x] visor / blush brightness fix (ws 0-255, max 0-16)
+- [x] visor / blush brightness fix (ws 0-255, max 0-16), enable/disable blush&ears
 - [x] More QOL for animator (credit to https://xantorohara.github.io/led-matrix-editor/, this is kinda built on top xD)
 - [x] Remote: Convert to PlatformIO + add ElegantOTA
 - [x] Remote: Buttons XIAO + PCB
@@ -39,22 +38,19 @@
 - [x] Update NimBLE https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md (should work)
 - [x] Completely redo OLED: INA V/A;remote connect/set;animation current/speaking/rgb mode
 - [x] Put into classes/seperate files
+- [ ] Frame color (per matrix someday?; if 0 => config color; 792; publish animator; test controller)
 
 ### ToDo: Controller
-- [ ] Check currentEarsFrame & currentVisorFrame accessing -1 and current frame handling
-- [ ] Fade between frames, add frame color/per matrix color
+- [ ] Fade between frames (see what time is & how many steps at these points can we do, track how many we already did, fade by calc amount bright+color vise)
 - [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
 - [ ] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
-- [ ] Ear/blush disable?
 - [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
 
-- [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
+- [ ] How.... FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
   - (~~Downgrade to 2.0core?~~ (3.0 functions); ~~I2S driver?~~ (need to support SK9822); force RMT4? / stay on 3.7.8?)
 - [ ] Optimize execution speed: xTask?
-- [ ] Serial.println() ->> ESP_LOG(I/V/W/D) [ESP-DIF-DOCS](https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32/api-reference/system/log.html)
-- [ ] Proper enable/disable of features (code wise or reset) - bug/missed comments code check
 - [ ] Apa102 style led matrix? [LCSC](https://www.lcsc.com/product-detail/RGB-LEDs-Built-in-IC_OPSCO-Optoelectronics-SK9822-EC20_C2909059.html)
-- [ ] WiFi name/pass length check
+- [ ] Constantly check: Proper enable/disable of features, compatible libraries versions...
 
 ### ToDo: Remote
 - [ ] Update NimBLE
@@ -63,4 +59,4 @@
 ### ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune IR proximity sensor" for boop
 - [ ] Controller readme.md including capabilities, oled explain, etc..
-- [ ] Animator guide, visor configs + animation upgrade
+- [ ] Animator guide, visor configs + animation upgrade (isMouth convert/upgrade, frameColor upgrade)

@@ -12,13 +12,17 @@
 ![ProtoESP-Controller_SCHEM](controller-diagram.png)
 
 ### Upload
-- Open VS Code (Install if not present on your computer, afterwards install PlatformIO extension)
-- Clone this repository and open this folder and let PIO download needed files
+- Install if not already: VS Code + PlatformIO extension, Python 3
+- Clone this repository, open this folder with PlatformIO and let it download all needed files
 - In `src/main.cpp`:
-  - Change visorType definition for the display you have (line 47)
-  - Change INApresent if you (don't)have INA219 connected (line 49)
-  - Change amount of matrices connected for ones you're using (line 42 & 43)
-- Connect the ESP32S3 and in the PIO tab open `esp32-s3-devkitc-1`
+  - Change visorType definition for the display you have (line 22)
+  - Change amount of matrices connected for ones you're using (line 23 & 24)
+  - Declare if you're using blush LEDs and how many (line 29 & 30)
+  - Declare if you're using ear LEDs and how many (line 26 & 27)
+  - Change INApresent if you (don't)have INA219 connected (line 32)
+- In `platformio.ini`:
+  - If using different capacity than n16r8, do... (others not available atm)
+- Connect the ESP32S3 and in the PIO tab open `esp32-s3`
 - Click on `Upload` and after successful operation expand `Platform` dropdown and click on `Upload filesystem image`
 - The ProtoESP should now be fully working and ready to configure if now errors are printed in the `Monitor`
 

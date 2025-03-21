@@ -66,7 +66,13 @@
         <br>
         <button onclick="fillBlack()">Fill black</button>
         <button onclick="mirrorEars()">Copy left to right</button><br>
-        <label for="timespanEars"> Frame timespan</label>
+        <div class="usedColorsMain">
+          <div class="playBtns"> 
+            Pick color: <input type="color" id="color" value="#000000"> | Used colors:
+          </div>
+          <div id="usedColors"></div>
+        </div>
+        <label for="timespanEars">Timespan:</label>
         <input type="number" id="timespanEars" value="500" min="1"> |
         <button onclick="frameGenEars(-1)">Add ears frame</button><br>
         <p class="timespan">Frames:</p>
@@ -79,15 +85,10 @@
       </div>
     </div> <!-- END OF EARS PART -->
     <hr><hr>
-    <div id="usedColorsMain">
-      <div class="playBtns">
-        <button onclick="playAnim();">Play animation</button>
-        <button onclick="stopAnim();">Stop</button> |
-        Pick color: 
-        <input type="color" id="color" value="#000000"> |
-        Used colors:
-      </div>
-      <div id="usedColors"></div>
+    <div class="usedColorsMain">
+      <button onclick="playAnim();">Play animation</button>
+      <button onclick="stopAnim();">Stop</button>
+      <button onclick="nukeAll();">Reset all</button>
     </div>
     <hr><hr>
     <div> <!-- START OF VISOR PART -->
@@ -102,10 +103,10 @@
         <option value="custom">custom</option>
         <option value="custom_file">custom_file</option>
       </select> | 
-      <label for="typeVisor">Animation: </label> <sup onclick="alert('Select custom or modifier for visor animation')">&#9432;</sup>
+      <label for="typeVisor">Modifier: </label> <sup onclick="alert('Select modifier for visor animation')">&#9432;</sup>
       <select id="typeVisor">
         <option value="custom">custom</option>
-        <option value="all_rainbow">all_rainbow</option>
+        <option value="all_rainbow">(RGB)all_rainbow</option>
       </select><br>
       <div id="customConfig" style="display: none;">
         <label for="visorCfg">Visor cfg: </label>
@@ -140,8 +141,11 @@
             <button type="button" onclick='setAction("select");' title="Keyboard: 'S' - Select matrix to copy from">Copy</button> <button type="button" onclick='setAction("paste");'title="Keyboard: 'P' - Select matrix to paste to">Paste</button> <sup onclick="alert('Click on Copy or Paste and then click on matrix which you want to affect')">&#9432;</sup><br>
             <button type="button" onclick="fillBlackVisor()">Empty visor</button>
             <button type="button" onclick="mirrorVisor()">Copy left to right</button> <sup onclick="alert('Might not work due to wierd config/wiring')">&#9432;</sup><br>
+          </div>
+          <div style="margin-left:20px;">
             <label for="timespanVisor">Timespan: </label>
-            <input type="number" id="timespanVisor" value="500" min="1"> |
+            <input type="number" id="timespanVisor" value="500" min="1"><br>
+            Frame color: <input type="color" id="fColor" value="#000000"> <sup onclick="alert('For RGB Matrices\n0;0;0 = black = Visor will have color from the config')">&#9432;</sup><br><br>
             <button onclick="frameGenVisor(-1)">Add visor frame</button>
           </div>
         </div>
@@ -240,10 +244,10 @@
     cursor: pointer;
     float: left;
   }
-  #usedColorsMain {
+  .usedColorsMain {
     height: 35px;
   }
-  #usedColorsMain button {
+  .usedColorsMain button {
     margin-top: 5px;
   }
   .playBtns {
@@ -643,6 +647,11 @@
   function loadVisorFrame() {
     var obj = JSON.parse(framesVisor[nowEditVisorFrame]);
     $("#timespanVisor").val(obj.timespan);
+    if(obj.fColor == undefined || obj.fColor == "0") { 
+      $("#fColor").val("#000000");
+    } else {
+      $("#fColor").val("#"+obj.fColor);
+    }
     for (var x = 0; x < obj.leds.length; x++) {
       hexInputToLeds(x, obj.leds[x])
     }
@@ -937,7 +946,7 @@
     if ($("#timespanVisor").val().length == 0 && $("#timespanVisor").val() > 0) {
       alert("Timespan missing");
     } else {
-      var temp = "{\"timespan\":" + $("#timespanVisor").val() + ",\"leds\":[";
+      var temp = "{\"timespan\":" + $("#timespanVisor").val() + ",\"fColor\":\"" + $("#fColor").val().substring(1) + "\",\"leds\":[";
       for (var x = 0; x < numOfSegm; x++) {
         temp += "\"" + ledsToHex(x) + "\"";
         if (x != numOfSegm-1) {
@@ -1003,6 +1012,22 @@
   function stopAnim(){
     clearTimeout(visorTimeout);
     clearTimeout(earTimeout);
+  }
+
+  //nuke and reset all
+  function nukeAll() {
+    if(confirm("You sure to reset all?") == true) {
+      $("#earsFramesP").empty();
+      $("#editDivEars").hide();
+      $("#visorFramesP").empty();
+      $("#editDivVisor").hide();
+      fillBlack();
+      fillBlackVisor();
+      framesEars.length = 0;
+      framesVisor.length = 0;
+      $("#output").val("");
+      $("#usedColors").html("");
+    }
   }
 
   //sends animation to ESP for test

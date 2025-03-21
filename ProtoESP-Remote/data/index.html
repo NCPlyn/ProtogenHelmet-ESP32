@@ -54,10 +54,10 @@
             <label for="BLE" onclick="alert('Values show after 6s of the page being loaded')">Proto BLE name</label>
             <select id="BLE" name="BLE"></select>
             
-            <label for="wifiName">WiFi AP SSID (Proto)</label>
-            <input type="text" name="wifiName">
-            <label for="wifiPass">WiFi Password (Proto123)</label>
-            <input type="text" name="wifiPass">
+            <label for="wifiName">WiFi AP SSID (ProtoRemote)</label>
+            <input type="text" name="wifiName" minlength="9">
+            <label for="wifiPass">WiFi Password (Proto1234)</label>
+            <input type="text" name="wifiPass" minlength="9">
             <label for="sleepTime">Sleep timer <sup onclick="alert('Time in seconds after the remote goes to sleep, halfed if no connections. Wake up with any button.')">&#9432;</sup></label>
             <input type="number" name="sleepTime" min="60" value="600"><br>
             <button type="submit">Save config</button>
