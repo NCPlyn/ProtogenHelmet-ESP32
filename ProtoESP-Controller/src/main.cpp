@@ -193,7 +193,7 @@ bool loadAnim(String anim, String temp) {
   JsonDocument doc;
   DeserializationError error;
 
-  if (currentAnim != anim) {
+  if (currentAnim != anim || anim == "POSTAnimLoad") {
     if(anim == "POSTAnimLoad") {
       Serial.println(F("[I] POST load"));
       error = deserializeJson(doc, temp);
@@ -769,8 +769,7 @@ void loop() {
     if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
-      if(visorNow[currentVisorFrame].frames->fColor == 0)
-      setAllVisor(visorLeds,(visorNow[currentVisorFrame].frames->fColor==0)?cfg.visColor:visorNow[currentVisorFrame].frames->fColor,currentVisorFrame); //set visor leds
+      setAllVisor(visorLeds,(visorNow->frames[currentVisorFrame].fColor==0)?cfg.visColor:visorNow->frames[currentVisorFrame].fColor,currentVisorFrame); //set visor leds
       if(blushPresent) {
         for(int x = 0; x<8; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
       }

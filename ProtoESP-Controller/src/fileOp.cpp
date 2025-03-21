@@ -50,8 +50,8 @@ void Config::setDefault() {
   tiltTol = 0.1;
   visColorStr = "#ff0000";
   visColor = strtol(visColorStr.c_str()+1, NULL, 16);
-  wifiName = "Proto";
-  wifiPass = "Proto123";
+  wifiName = "ProtoWiFi";
+  wifiPass = "Proto1234";
   fanDuty = 255;
   save();
 }
