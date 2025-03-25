@@ -21,8 +21,9 @@
   - Declare if you're using ear LEDs and how many (line 26 & 27)
   - Change INApresent if you (don't)have INA219 connected (line 32)
 - In `platformio.ini`:
-  - If using different capacity than n16r8, do... (others not available atm)
-- Connect the ESP32S3 and in the PIO tab open `esp32-s3`
+  - If using different capacity than n16r8, change to proper sized board (line 2)
+  - If your board has lower flash capacity than 8MB, change partition file (line 11)
+- Connect the ESP32S3 via COM USB connector and in the PIO tab open `esp32-s3`
 - Click on `Upload` and after successful operation expand `Platform` dropdown and click on `Upload filesystem image`
 - The ProtoESP should now be fully working and ready to configure if now errors are printed in the `Monitor`
 

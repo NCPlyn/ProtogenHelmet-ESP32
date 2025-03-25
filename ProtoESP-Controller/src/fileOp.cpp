@@ -58,15 +58,6 @@ void Config::setDefault() {
 
 bool Config::save() {
   JsonDocument doc;
-
-  File file = LittleFS.open("/config.json", "w");
-  if (!file) {
-    Serial.println("[E] There was an error opening the config file!");
-    file.close();
-    return false;
-  }
-  Serial.println("[I] Config file opened to save!");
-
   doc["boopEna"] = boopEna;
   doc["speechEna"] = speechEna;
   doc["tiltEna"] = tiltEna;
@@ -101,24 +92,30 @@ bool Config::save() {
   
   CrcWriter CRCchk;
   serializeJson(doc, CRCchk);
-  Serial.println("[I] Config CRC is: "+ String(CRCchk.hash()));
   File fileCRC = LittleFS.open("/configCRC.txt", "w");
   if(!fileCRC) {
-    Serial.println("[E] There was an error opening the config CRC file!");
+    Serial.println(F("[E] There was an error opening the configs CRC file!"));
     fileCRC.close();
   } else {
     fileCRC.print(String(CRCchk.hash()));
     fileCRC.close();
-    Serial.println("[I] CRC saved");
+    Serial.println("[I] CRC saved as: "+ String(CRCchk.hash()));
   }
 
-  if(serializeJson(doc, file) == 0) {
-    Serial.println("[E] Failed to deserialize the config file");
+  File file = LittleFS.open("/config.json", "w");
+  if (!file) {
+    Serial.println(F("[E] There was an error opening the config file!"));
+    file.close();
     return false;
   }
-
+  WriteBufferingStream bufferedFile2(file, 64);
+  if(serializeJson(doc, bufferedFile2) == 0) {
+    Serial.println(F("[E] Failed to deserialize the config file!"));
+    return false;
+  }
+  bufferedFile2.flush();
   file.close();
-  Serial.println("[I] Config file saved with CRC");
+  Serial.println(F("[I] Config file saved!"));
 
   return true;
 }
@@ -128,25 +125,25 @@ bool Config::load() {
 
   File file = LittleFS.open("/config.json", "r");
   if (!file) {
-    Serial.println("[E] There was an error opening the config file, using default config");
+    Serial.println(F("[E] There was an error opening the config file, using default config"));
     //using default
     return false;
   }
-  Serial.println("[I] Config file opened");
+  Serial.println(F("[I] Config file opened"));
 
   if(deserializeJson(doc, file)){
-    Serial.println("[E] Failed to deserialize the config file, using default config");
+    Serial.println(F("[E] Failed to deserialize the config file, using default config"));
     //using default
     return false;
   }
   file.close();
-  Serial.println("[I] Deserialized JSON");
+  Serial.println(F("[I] Deserialized JSON"));
   
   CrcWriter CRCchk;
   serializeJson(doc, CRCchk);
   File fileCRC = LittleFS.open("/configCRC.txt", "r");
   if(!fileCRC) {
-    Serial.println("[E] There was an error opening the config CRC file, using default config");
+    Serial.println(F("[E] There was an error opening the configs CRC file, using default config"));
     fileCRC.close();
     return false;
   } else {
@@ -155,11 +152,10 @@ bool Config::load() {
       jsonCRC+=char(fileCRC.read());
     }
     fileCRC.close();
-    Serial.println("[I] CRC is: " + String(CRCchk.hash()) + " and should be: " + jsonCRC);
     if(jsonCRC == String(CRCchk.hash())) {
-      Serial.println("[I] CRC check OK");
+      Serial.println("[I] CRC check OK; is: " + String(CRCchk.hash()));
     } else {
-      Serial.println("[E] CRC not the same, using default config");
+      Serial.println("[E] CRC check FAILED; is: " + String(CRCchk.hash()) + " and should be: " + jsonCRC + "; using default config");
       return false;
     }
   }

@@ -59,6 +59,8 @@ ezButton hwBtn(animBtn);
 #include <StreamUtils.h>
 #include <sstream>
 #define FASTLED_ESP8266_RAW_PIN_ORDER
+//#define FASTLED_RMT5 = 0 //doesnt compile
+#define FASTLED_ESP32_FLASH_LOCK = 1
 #include <FastLED.h>
 #define ARDUINOJSON_USE_DOUBLE 0
 #include <ArduinoJson.h>
@@ -95,6 +97,7 @@ String wifiName = "ProtoWiFi", wifiPass = "Proto1234";
 bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true;
 uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims;
 String currentAnim = "", animToLoad = "", availAnims[50], getfilesCache;
+volatile int64_t DONOTDRAW = -3000;
 
 //--------------------------------//getting stored anims names and count
 void getFilesFunc() {
@@ -198,6 +201,8 @@ bool loadAnim(String anim, String temp) {
       Serial.println(F("[I] POST load"));
       error = deserializeJson(doc, temp);
     } else {
+      DONOTDRAW = millis();
+      delay(25);
       File file = LittleFS.open("/anims/"+anim, "r");
       if (!file) {
         Serial.println(F("[E] There was an error opening the animation file!"));
@@ -208,6 +213,7 @@ bool loadAnim(String anim, String temp) {
       ReadBufferingStream bufferedFile{file, 64};
       error = deserializeJson(doc, bufferedFile);
       file.close();
+      DONOTDRAW = millis()-1950;
     }
     
     if(error){
@@ -233,7 +239,6 @@ bool loadAnim(String anim, String temp) {
         earsNow->frames[x].ledColor[y] = strtol(doc["ears"]["frames"][x]["leds"][y].as<String>().c_str(), NULL, 16);
       }
     }
-
     //Visor anim type
     for(int o=0;o<visTypeSize;o++) {
       if(doc["visor"]["type"].as<String>() == visorTypes[o]) {
@@ -449,6 +454,8 @@ void startWiFiWeb() {
       cfg.wifiName = String(request->getParam("wifiName")->value());
     if(request->hasParam("wifiPass"))
       cfg.wifiPass = String(request->getParam("wifiPass")->value());
+    DONOTDRAW = millis();
+    delay(25);
     if(cfg.save()) {
       request->redirect("/saved.html?main");
     } else {
@@ -487,7 +494,9 @@ void startWiFiWeb() {
 
   server.on("/change", HTTP_GET, [](AsyncWebServerRequest *request){ //loads anim from selected avaible anims
     if(request->hasParam("anim")) {
-      if(loadAnim(request->getParam("anim")->value(),"")) {
+      if(request->getParam("anim")->value() == currentAnim) {
+        request->send(200, "text/plain", F("This animation is already selected!")); //change to something else?
+      } else if(loadAnim(request->getParam("anim")->value(),"")) {
         request->redirect("/saved.html?main");
       } else {
         request->send(200, "text/plain", F("Loading animation has failed!"));
@@ -537,6 +546,7 @@ void startWiFiWeb() {
         visorNow->type = 0;
       if(cfg.oledEna && oledInitDone)
         oled.writeRGB(vTAcro[visorNow->type]);
+        Serial.println("[I] Changing visor type to: "+visorTypes[visorNow->type]);
     }
     request->redirect("/saved.html?main");
   });
@@ -962,7 +972,7 @@ void loop() {
     }
   }
 
-  if((FdisplayEar || FdisplayBlush || FdisplayVisor)) {
+  if((FdisplayEar || FdisplayBlush || FdisplayVisor) && DONOTDRAW+2000<millis()) {
     if(FdisplayEar) {
       ledController[0]->showLeds(cfg.bEar); //ears
       FdisplayEar = false;

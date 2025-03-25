@@ -41,13 +41,14 @@
 - [x] Frame color (per matrix someday?)
 
 ### ToDo: Controller
+- [ ] publish updated animator, test BT
+- [ ] How.... FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
+  - When SPIFFS and FastLED.show at same time crashes, make it not draw while save or vice versa? (not use rtm... new version fix? away from rtm->i2s?)
 - [ ] Fade between frames (see what time is & how many steps at these points can we do, track how many we already did, fade by calc amount bright+color vise)
 - [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
 - [ ] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
 - [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
 
-- [ ] How.... FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
-  - Now when saving and drawing leds at same time, we crash
 - [ ] Optimize execution speed: xTask?
 - [ ] Apa102 style led matrix? [LCSC](https://www.lcsc.com/product-detail/RGB-LEDs-Built-in-IC_OPSCO-Optoelectronics-SK9822-EC20_C2909059.html)
 - [ ] Constantly check: Proper enable/disable of features, compatible libraries versions...

@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
 #include <LittleFS.h>
+#include <StreamUtils.h>
 
 //--------------------------------//CRC checksum class
 class CrcWriter {
