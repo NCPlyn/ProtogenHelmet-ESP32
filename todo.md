@@ -41,7 +41,7 @@
 - [x] Frame color (per matrix someday?)
 
 ### ToDo: Controller
-- [ ] publish updated animator, test BT
+- [ ] publish updated animator, test BT, doesnt show anim on startup???, only 2 controllers?
 - [ ] How.... FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
   - When SPIFFS and FastLED.show at same time crashes, make it not draw while save or vice versa? (not use rtm... new version fix? away from rtm->i2s?)
 - [ ] Fade between frames (see what time is & how many steps at these points can we do, track how many we already did, fade by calc amount bright+color vise)

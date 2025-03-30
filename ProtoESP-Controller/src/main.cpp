@@ -17,7 +17,6 @@
 #define MAX_CS 10 //ChipSelect for MAX72xx matrixes if used
 #define animBtn 4 //Pulling this pin LOW cycles trough animations
 #define fanPWM 13 //PWM pin to control 4pin fan
-#define wifi_en 14 //Pulling this pin LOW disables WiFi  //ADC2?? maybe problem?
 
 #define visorType "WS2812" // What displays are you using? (WS2812 or MAX72XX so far)
 #define MAX72xx_DEVICES 11 // How many MAX72xx matrices for visor?
@@ -60,7 +59,7 @@ ezButton hwBtn(animBtn);
 #include <sstream>
 #define FASTLED_ESP8266_RAW_PIN_ORDER
 //#define FASTLED_RMT5 = 0 //doesnt compile
-#define FASTLED_ESP32_FLASH_LOCK = 1
+#define FASTLED_ESP32_FLASH_LOCK 1
 #include <FastLED.h>
 #define ARDUINOJSON_USE_DOUBLE 0
 #include <ArduinoJson.h>
@@ -568,7 +567,6 @@ void setup() {
 
   pinMode(T_in, INPUT_PULLUP);
   pinMode(T_en, OUTPUT);
-  pinMode(wifi_en, INPUT_PULLUP);
   pinMode(animBtn, INPUT_PULLUP);
   pinMode(0, INPUT_PULLUP);
   pinMode(fanPWM, OUTPUT);
@@ -624,9 +622,7 @@ void setup() {
   FastLED.setCorrection(TypicalPixelString);
   FastLED.setDither(0);
 
-  if(digitalRead(wifi_en) == HIGH) { //Pulling pin 13 LOW disables WiFi
-    startWiFiWeb();
-  }
+  startWiFiWeb();
 
   getFilesFunc();
   if(cfg.bleEna) { //you can disable BLE in config
@@ -667,6 +663,7 @@ void setup() {
     }
   }
   
+  while(millis()<2000) {yield();} //2s delay for the anim to load properly (idk why but it doesnt without this or with 1s)
   loadAnim("default.json","");
 
   Serial.println("[I] Free heap: "+String(ESP.getFreeHeap()));
@@ -972,12 +969,12 @@ void loop() {
     }
   }
 
-  if((FdisplayEar || FdisplayBlush || FdisplayVisor) && DONOTDRAW+2000<millis()) {
-    if(FdisplayEar) {
+  if((FdisplayEar || FdisplayBlush || FdisplayVisor) ) { //&& DONOTDRAW+2000<millis()
+    if(FdisplayEar && earPresent) {
       ledController[0]->showLeds(cfg.bEar); //ears
       FdisplayEar = false;
     }
-    if(FdisplayBlush) {
+    if(FdisplayBlush && blushPresent) {
       ledController[1]->showLeds(cfg.bBlush); //blush
       FdisplayBlush = false;
     }
