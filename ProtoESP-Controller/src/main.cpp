@@ -30,6 +30,8 @@ bool blushPresent = true; // Are you using blush leds?
 
 bool INApresent = true; //Are you using INA219?
 
+String boopMode = "IR-KY"; //"IR-KY" for KY-032, "Capac" for capacitive sensor/boop when HIGH, "IR-Dist" for ADPS... tbd
+
 #define revertTilt 8000 //The maximum time that animation caused by tilt gets shown (used as if tilt bugs out etc)
 
 #define oldMatrixFix false //fix for Legacy WS2812B-2020 matrix
@@ -96,7 +98,6 @@ String wifiName = "ProtoWiFi", wifiPass = "Proto1234";
 bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true;
 uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims;
 String currentAnim = "", animToLoad = "", availAnims[50], getfilesCache;
-volatile int64_t DONOTDRAW = -3000;
 
 //--------------------------------//getting stored anims names and count
 void getFilesFunc() {
@@ -129,7 +130,7 @@ struct FramesVisor {
   int timespan;
   uint64_t leds[20];
   long ledsBlush[blushLedsNum];
-  long fColor;
+  long fColor[(VisorLedsNum/64)+1];
 };
 
 struct AnimNowVisor {
@@ -200,7 +201,6 @@ bool loadAnim(String anim, String temp) {
       Serial.println(F("[I] POST load"));
       error = deserializeJson(doc, temp);
     } else {
-      DONOTDRAW = millis();
       delay(25);
       File file = LittleFS.open("/anims/"+anim, "r");
       if (!file) {
@@ -212,7 +212,6 @@ bool loadAnim(String anim, String temp) {
       ReadBufferingStream bufferedFile{file, 64};
       error = deserializeJson(doc, bufferedFile);
       file.close();
-      DONOTDRAW = millis()-1950;
     }
     
     if(error){
@@ -254,7 +253,9 @@ bool loadAnim(String anim, String temp) {
     for(int x = 0; x < visorNow->numOfFrames; x++) {
       visorNow->frames[x].timespan = doc["visor"]["frames"][x]["timespan"].as<int>();
       numOfSegm = doc["visor"]["frames"][x]["leds"].size();
-      visorNow->frames[x].fColor = strtol(doc["visor"]["frames"][x]["fColor"].as<String>().c_str(), NULL, 16); //should return 0 if not present
+      for(int y = 0; y < numOfSegm; y++) {
+        visorNow->frames[x].fColor[y] = strtol(doc["visor"]["frames"][x]["fColor"][y].as<String>().c_str(), NULL, 16); //should return 0 if not present
+      }
       for(int y = 0; y < doc["visor"]["frames"][x]["leds"].size(); y++) {
         visorNow->frames[x].leds[y] = strtoull(String(doc["visor"]["frames"][x]["leds"][y].as<String>()).c_str(), NULL, 16); //string to uint64
       }
@@ -453,9 +454,9 @@ void startWiFiWeb() {
       cfg.wifiName = String(request->getParam("wifiName")->value());
     if(request->hasParam("wifiPass"))
       cfg.wifiPass = String(request->getParam("wifiPass")->value());
-    DONOTDRAW = millis();
     delay(25);
     if(cfg.save()) {
+      instantReload = true;
       request->redirect("/saved.html?main");
     } else {
       request->send(200, "text/plain", F("Saving config failed!"));
@@ -494,7 +495,7 @@ void startWiFiWeb() {
   server.on("/change", HTTP_GET, [](AsyncWebServerRequest *request){ //loads anim from selected avaible anims
     if(request->hasParam("anim")) {
       if(request->getParam("anim")->value() == currentAnim) {
-        request->send(200, "text/plain", F("This animation is already selected!")); //change to something else?
+        request->redirect("/saved.html?main");
       } else if(loadAnim(request->getParam("anim")->value(),"")) {
         request->redirect("/saved.html?main");
       } else {
@@ -690,10 +691,17 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
       row = (tempSegment >> i * 8) & 0xFF;
       for (int j = 0; j < 8; j++) {
         if(visorType == "WS2812") {
+          unsigned long tempColor = ledColor; //use given color
+          if(ledColor == 0) { //if given color == 0, use config color
+            tempColor = cfg.visColor;
+            if(visorNow->frames[visorFrame].fColor[y] != 0) { //if theres color then 0 in anim, use that
+              tempColor = visorNow->frames[visorFrame].fColor[y];
+            }
+          }
           if(oldMatrixFix) {
-            ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?ledColor:CRGB::Black; //includes fix for bad rgbmatrix
+            ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?tempColor:CRGB::Black; //includes fix for bad rgbmatrix
           } else {
-            ledArray[(y*64)+(i*8)+j] = (bitRead(row,j))?ledColor:CRGB::Black;
+            ledArray[(y*64)+(i*8)+j] = (bitRead(row,j))?tempColor:CRGB::Black;
           }
         } else if (visorType == "MAX72XX") {
           mx.setPoint(i, j+(y*8), bitRead(row, j)); //MAXstuff
@@ -776,7 +784,7 @@ void loop() {
     if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
-      setAllVisor(visorLeds,(visorNow->frames[currentVisorFrame].fColor==0)?cfg.visColor:visorNow->frames[currentVisorFrame].fColor,currentVisorFrame); //set visor leds
+      setAllVisor(visorLeds,0,currentVisorFrame); //set visor leds
       if(blushPresent) {
         for(int x = 0; x<8; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
       }
@@ -917,25 +925,46 @@ void loop() {
 
   //--------------------------------//BOOP Detection
   if(millis() > 200 && cfg.boopEna) {
-    digitalWrite(T_en, HIGH);
-    delayMicroseconds(210);
-    if(booping == false && !digitalRead(T_in)) {
-      delayMicroseconds(395);
-      if(!digitalRead(T_in)) {
-        Serial.println(F("[I] IR BOOP"));
-        booping = true;
-        boopoldanim = currentAnim;
-        loadAnim("boop.json","");
-        lastMillsBoop = millis();
+    if(boopMode == "IR-KY") {
+      digitalWrite(T_en, HIGH);
+      delayMicroseconds(210);
+      if(booping == false && !digitalRead(T_in)) {
+        delayMicroseconds(395);
+        if(!digitalRead(T_in)) {
+          Serial.println(F("[I] IR BOOP"));
+          booping = true;
+          boopoldanim = currentAnim;
+          loadAnim("boop.json","");
+          lastMillsBoop = millis();
+        }
+        digitalWrite(T_en, LOW);
+      } else if(booping == true && lastMillsBoop+1000<millis() && digitalRead(T_in)) {
+        digitalWrite(T_en, LOW);
+        Serial.println(F("[I] IR unBOOP"));
+        booping = false;
+        if(!wasTilt) {
+          loadAnim(boopoldanim,"");
+        }
       }
-      digitalWrite(T_en, LOW);
-    } else if(booping == true && lastMillsBoop+1000<millis() && digitalRead(T_in)) {
-      digitalWrite(T_en, LOW);
-      Serial.println(F("[I] IR unBOOP"));
-      booping = false;
-      if(!wasTilt) {
-        loadAnim(boopoldanim,"");
+    } else if (boopMode == "Capac") {
+      if(booping == false && digitalRead(T_in)) {
+        delayMicroseconds(395);
+        if(digitalRead(T_in)) {
+          Serial.println(F("[I] Touch BOOP"));
+          booping = true;
+          boopoldanim = currentAnim;
+          loadAnim("boop.json","");
+          lastMillsBoop = millis();
+        }
+      } else if(booping == true && lastMillsBoop+1000<millis() && !digitalRead(T_in)) {
+        Serial.println(F("[I] Touch unBOOP"));
+        booping = false;
+        if(!wasTilt) {
+          loadAnim(boopoldanim,"");
+        }
       }
+    } else if (boopMode == "IR-Dist") {
+      //TBD
     }
   }
 
@@ -969,7 +998,7 @@ void loop() {
     }
   }
 
-  if((FdisplayEar || FdisplayBlush || FdisplayVisor) ) { //&& DONOTDRAW+2000<millis()
+  if((FdisplayEar || FdisplayBlush || FdisplayVisor) ) {
     if(FdisplayEar && earPresent) {
       ledController[0]->showLeds(cfg.bEar); //ears
       FdisplayEar = false;

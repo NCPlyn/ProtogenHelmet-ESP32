@@ -15,11 +15,12 @@
 - Install if not already: VS Code + PlatformIO extension, Python 3
 - Clone this repository, open this folder with PlatformIO and let it download all needed files
 - In `src/main.cpp`:
-  - Change visorType definition for the display you have (line 22)
-  - Change amount of matrices connected for ones you're using (line 23 & 24)
-  - Declare if you're using blush LEDs and how many (line 29 & 30)
-  - Declare if you're using ear LEDs and how many (line 26 & 27)
-  - Change INApresent if you (don't)have INA219 connected (line 32)
+  - Change visorType definition for the display you have (line 21)
+  - Change amount of matrices connected for ones you're using (line 22 & 23)
+  - Declare if you're using blush LEDs and how many (line 28 & 29)
+  - Declare if you're using ear LEDs and how many (line 25 & 26)
+  - Change INApresent if you (don't)have INA219 connected (line 31)
+  - Change what input for boop are you using (line 33s)
 - In `platformio.ini`:
   - If using different capacity than n16r8, change to proper sized board (line 2)
   - If your board has lower flash capacity than 8MB, change partition file (line 11)

@@ -141,11 +141,11 @@
             <button type="button" onclick='setAction("select");' title="Keyboard: 'S' - Select matrix to copy from">Copy</button> <button type="button" onclick='setAction("paste");'title="Keyboard: 'P' - Select matrix to paste to">Paste</button> <sup onclick="alert('Click on Copy or Paste and then click on matrix which you want to affect')">&#9432;</sup><br>
             <button type="button" onclick="fillBlackVisor()">Empty visor</button>
             <button type="button" onclick="mirrorVisor()">Copy left to right</button> <sup onclick="alert('Might not work due to wierd config/wiring')">&#9432;</sup><br>
+            Segment color: <input type="color" id="fColor" value="#000000"> <sup onclick="alert('For RGB Matrices\n0;0;0 = black = Visor will have color from the config')">&#9432;</sup><br><br>
           </div>
           <div style="margin-left:20px;">
             <label for="timespanVisor">Timespan: </label>
-            <input type="number" id="timespanVisor" value="500" min="1"><br>
-            Frame color: <input type="color" id="fColor" value="#000000"> <sup onclick="alert('For RGB Matrices\n0;0;0 = black = Visor will have color from the config')">&#9432;</sup><br><br>
+            <input type="number" id="timespanVisor" value="500" min="1"><br><br>
             <button onclick="frameGenVisor(-1)">Add visor frame</button>
           </div>
         </div>
@@ -276,7 +276,11 @@
     background: #808080;
   }
   .leds-matrix .item.active {
-    background: #ff0000;
+    background: #000000;
+    border-style: double;
+    border-color: red;
+    border-width: 2px;
+    box-sizing: border-box;
   }
   .leds-matrix .item:hover {
     box-shadow: 0 0 1px #cccccc;
@@ -318,7 +322,8 @@
   }
 </style>
 
-<script src="jquerymin.js"></script>
+<script type="text/javascript" src="jquerymin.js"></script>
+<script type="text/javascript" src="jss.min.js"></script>
 <script>
 
   let visType;
@@ -430,6 +435,12 @@
   $("#color").change(function() {
     curColor = $(this).val();
     $("#usedColors").append("<div class=\"colorItem\" style=\"background-color:" + curColor + "\"></div>");
+  });
+
+  $("#fColor").change(function() {
+    jss.set('#t'+selMatrix+' .active', {
+      'background': $("#fColor").val()+' !important'
+    });
   });
 
   //Hold down to color
@@ -647,11 +658,20 @@
   function loadVisorFrame() {
     var obj = JSON.parse(framesVisor[nowEditVisorFrame]);
     $("#timespanVisor").val(obj.timespan);
-    if(obj.fColor == undefined || obj.fColor == "0") { 
-      $("#fColor").val("#000000");
-    } else {
-      $("#fColor").val("#"+obj.fColor);
+    if(obj.fColor == undefined || obj.fColor == "0") {} else {
+      for (var x = 0; x < obj.fColor.length; x++) {
+        if(obj.fColor[x] == undefined || obj.fColor[x] == "0") {
+          jss.set('#t'+x+' .active', {
+            'background': '#000000 !important'
+          });
+        } else {
+          jss.set('#t'+x+' .active', {
+            'background': '#'+obj.fColor[x]+' !important'
+          });
+        }
+      }
     }
+    
     for (var x = 0; x < obj.leds.length; x++) {
       hexInputToLeds(x, obj.leds[x])
     }
@@ -761,6 +781,11 @@
         $("#t"+selMatrix).find("table").css("border-color","");
         $("#"+tID).find("table").css("border-color","red");
         selMatrix = tID.slice(1);
+        var temp = "#000000";
+        if(jss.get('#t'+selMatrix+' .active')['background-color'] != undefined){
+          temp = "#"+rgb2hex(jss.get('#t'+selMatrix+' .active')['background-color']);
+        }
+        $("#fColor").val(temp);
       }
       matrixAction = "";
     }
@@ -785,6 +810,11 @@
         $("#t"+selMatrix).find("table").css("border-color","");
         $("#"+tID).find("table").css("border-color","red");
         selMatrix = tID.slice(1);
+        var temp = "#000000";
+        if(jss.get('#t'+selMatrix+' .active')['background-color'] != undefined){
+          temp = "#"+rgb2hex(jss.get('#t'+selMatrix+' .active')['background-color']);
+        }
+        $("#fColor").val(temp);
       }
       matrixAction = "";
     }
@@ -946,7 +976,19 @@
     if ($("#timespanVisor").val().length == 0 && $("#timespanVisor").val() > 0) {
       alert("Timespan missing");
     } else {
-      var temp = "{\"timespan\":" + $("#timespanVisor").val() + ",\"fColor\":\"" + $("#fColor").val().substring(1) + "\",\"leds\":[";
+      var temp = "{\"timespan\":" + $("#timespanVisor").val() + ",\"fColor\":[";
+      for (var x = 0; x < numOfSegm; x++) {
+        var temp2 = "0";
+        if(jss.get('#t'+x+' .active')['background-color'] != undefined){
+          temp2 = rgb2hex(jss.get('#t'+x+' .active')['background-color']);
+          if(temp2=="000000") { temp2 = "0"; }
+        }
+        temp += "\"" + temp2 + "\"";
+        if (x != numOfSegm-1) {
+          temp += ",";
+        }
+      }
+      temp += "],\"leds\":[";
       for (var x = 0; x < numOfSegm; x++) {
         temp += "\"" + ledsToHex(x) + "\"";
         if (x != numOfSegm-1) {
