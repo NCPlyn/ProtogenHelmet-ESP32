@@ -62,6 +62,9 @@
             <input type="number" name="sleepTime" min="60" value="600"><br>
             <button type="submit">Save config</button>
           </form>
+          <input type="file" id="cfgFile" style="display:none" accept=".json">
+          <a class="small-btn" onclick="document.getElementById('cfgFile').click()">Load .json</a>
+          <a href="/config.json" class="small-btn" download>Download config</a><br><br>
         </div>
       </div>
       <p style="text-align:center">Coded by <a target=”_blank” href="https://github.com/ncplyn" class="rainbow-text">@NCPlyn</a></p>
@@ -223,15 +226,10 @@
 		xmlhttp.send();
 	}
 	loadAnims();
-
-	function loadConfig() {
-		xmlhttp=new XMLHttpRequest();
-		xmlhttp.onreadystatechange=function()
-		{
-			if (xmlhttp.readyState==4 && xmlhttp.status==200)
-			{
-				var obj = JSON.parse(xmlhttp.responseText);
-        for (var x = 1; x < 8; x++) {
+  
+  function loadIntoInputs(jsonobj) {
+        var obj = JSON.parse(jsonobj);
+				for (var x = 1; x < 8; x++) {
           document.getElementById(x+10).value = obj[x+10];
           document.getElementById(x+20).value = obj[x+20];
           document.getElementById(x+30).value = obj[x+30];
@@ -245,6 +243,15 @@
         document.getElementsByName("wifiName")[0].value = obj.wifiName;
         document.getElementsByName("wifiPass")[0].value = obj.wifiPass;
         BLEnameload = obj.BLE;
+  }
+
+	function loadConfig() {
+		xmlhttp=new XMLHttpRequest();
+		xmlhttp.onreadystatechange=function()
+		{
+			if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+        loadIntoInputs(xmlhttp.responseText);
 			}
 		}
 		xmlhttp.open("GET", "/config.json", false);
@@ -254,4 +261,18 @@
 		xmlhttp.send();
 	}
 	loadConfig();
+  
+  document.getElementById("cfgFile").addEventListener("change", cfgLoad, false);
+  function cfgLoad() {
+    let fileToLoad = this.files[0];
+    if(fileToLoad === undefined || fileToLoad.name.includes(".json") == false) {
+      alert("No selected file or not a .json file!");
+    } else {
+      let fileReader = new FileReader();
+      fileReader.onload = function (fileLoadedEvent) {
+          loadIntoInputs(fileLoadedEvent.target.result);
+      };
+      fileReader.readAsText(fileToLoad, "UTF-8");
+    }
+  }
 </script>

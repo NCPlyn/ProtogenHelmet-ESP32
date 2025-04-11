@@ -35,23 +35,21 @@
 - [x] Better custom WS28xx display ([RGB-Matrix](https://github.com/NCPlyn/ProtogenHelmet-ESP32/tree/ProtoESP/RGBMatrix))
 - [x] Slightly faster analog read & oled (8.8->2.5/1.3ms ; 10ms -> 1-3ms)
 - [x] Proper platform link, board defines, partitions
-- [x] Update NimBLE https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md (should work)
+- [x] Update NimBLE https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md
 - [x] Completely redo OLED: INA V/A;remote connect/set;animation current/speaking/rgb mode
 - [x] Put into classes/seperate files
-- [x] Frame color (per matrix someday?)
+- [x] Per matrix, per frame color for RGB matrices
+- [x] Export anims to zip + loader, download/load config from upload .json (same for remote)
+- [x] Combined ears&blush leds into one controller/pin - crash with >2 controllers (RMTvsSPIFFS)
+- [x] Fade between frames (only RGB matrices) (**should be ok, need to redraw schematic**)
 
 ### ToDo: Controller
-- [ ] publish updated animator, test BT, doesnt show anim on startup???, only 2 controllers-blush after ears
-- [ ] How.... FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
-  - When SPIFFS and FastLED.show at same time crashes, make it not draw while save or vice versa? (not use rtm... new version fix? away from rtm->i2s?)
-- [ ] Fade between frames (see what time is & how many steps at these points can we do, track how many we already did, fade by calc amount bright+color vise)
-- [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
 - [ ] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
-- [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
-
-- [ ] Optimize execution speed: xTask?
 - [ ] Apa102 style led matrix? [LCSC](https://www.lcsc.com/product-detail/RGB-LEDs-Built-in-IC_OPSCO-Optoelectronics-SK9822-EC20_C2909059.html)
-- [ ] Constantly check: Proper enable/disable of features, compatible libraries versions...
+- [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
+- [ ] Optimize execution speed: xTask?
+- [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
+- [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
 
 ### ToDo: Remote
 - [ ] Update NimBLE
@@ -59,5 +57,5 @@
 
 ### ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune IR proximity sensor" for boop
-- [ ] Controller readme.md including capabilities, oled explain, etc..
-- [ ] Animator guide, visor configs + animation upgrade (isMouth convert/upgrade, frameColor upgrade)
+- [ ] Controller readme.md including capabilities, oled explain, add capac and ir boop connection, ears/blush connect, etc..
+- [ ] Animator guide, visor configs + animation upgrade (isMouth convert/upgrade, matrix color)

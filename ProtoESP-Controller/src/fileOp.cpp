@@ -28,7 +28,6 @@ void Config::setDefault() {
   oledEna = false;
   bEar = 60;
   bVisor = 100;
-  bBlush = 100;
   bOled = 2;
   rbSpeed = 15;
   rbWidth = 8;
@@ -65,7 +64,6 @@ bool Config::save() {
   doc["oledEna"] = oledEna;
   doc["bEar"] = bEar;
   doc["bVisor"] = bVisor;
-  doc["bBlush"] = bBlush;
   doc["bOled"] = bOled;
   doc["rbSpeed"] = rbSpeed;
   doc["rbWidth"] = rbWidth;
@@ -167,7 +165,6 @@ bool Config::load() {
   oledEna = doc["oledEna"].as<bool>();
   bEar = doc["bEar"].as<int>();
   bVisor = doc["bVisor"].as<int>();
-  bBlush = doc["bBlush"].as<int>();
   bOled = doc["bOled"].as<int>();
   rbSpeed = doc["rbSpeed"].as<int>();
   rbWidth = doc["rbWidth"].as<int>();

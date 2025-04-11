@@ -21,7 +21,7 @@ private:
 class Config {
 public:
   bool boopEna, speechEna, tiltEna, bleEna, oledEna;
-  int bEar,bVisor,bBlush,bOled,rbSpeed,rbWidth,spMin,spMax,spTrig,fanDuty;
+  int bEar,bVisor,bOled,rbSpeed,rbWidth,spMin,spMax,spTrig,fanDuty;
   float neutralX,neutralY,neutralZ,tiltX,tiltY,tiltZ,upX,upY,upZ,tiltTol;
   String aTilt,aUp,aBoop,visColorStr,wifiName,wifiPass;
   unsigned long visColor;

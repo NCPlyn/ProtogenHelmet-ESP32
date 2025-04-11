@@ -1,8 +1,6 @@
-//ESP32(Vin), all LEDs and fan is wired with 5V
-//Gyro,OLED,Microphone,INA219 and touch is wired with 3.3V (gyro and mic needs RC filter + 100nF ceramic capacitor on MIC output)
-//IF "configCRC.txt" doesn't get automaticaly generated before building filesystem, run "genCRC_manual.py" by hand and then build filesystem etc... again. (needs python installed)
+#include <Arduino.h>
 //IF your WS leds do not correspond to set color, check color order for each strip in setup():FastLED.addLeds...
-//Replace 0.1R with 0.03R resistor on INA219 board
+//Make sure you have everything connected by the schematic in the repository!
 
 #define MICpin ADC_CHANNEL_0 //Microphone, pin 1
 #define T_in 2 //Output from Touch Sensor
@@ -20,13 +18,15 @@
 
 #define visorType "WS2812" // What displays are you using? (WS2812 or MAX72XX so far)
 #define MAX72xx_DEVICES 11 // How many MAX72xx matrices for visor?
-#define VisorLedsNum 704 // How many WS2812 LEDs for visor? (matrixNumber*64)
+#define visorLedsNum 704 // How many WS2812 LEDs for visor? (matrixNumber*64)
+#define FADESTEPS 4 //how many steps when fading between frames? (0=disabled)
 
 bool earPresent = true; // Are you using ear leds?
-#define EarLedsNum 74 // How many? (74 rn, no other option atm)
+#define earLedsNum 74 // How many? (74 rn, no other option atm)
 
 bool blushPresent = true; // Are you using blush leds?
-#define blushLedsNum 8 // How many?
+#define blushLedsNum 8 // How many? (might crash under 8)
+bool useRGBblush = true; //Swaps red-green for RGB strip
 
 bool INApresent = true; //Are you using INA219?
 
@@ -117,7 +117,7 @@ void getFilesFunc() {
 //--------------------------------//Structs for anims in psram
 struct FramesEars {
   int timespan;
-  long ledColor[EarLedsNum];
+  long ledColor[earLedsNum];
 };
 
 struct AnimNowEars {
@@ -130,7 +130,7 @@ struct FramesVisor {
   int timespan;
   uint64_t leds[20];
   long ledsBlush[blushLedsNum];
-  long fColor[(VisorLedsNum/64)+1];
+  long fColor[(visorLedsNum/64)+1];
 };
 
 struct AnimNowVisor {
@@ -152,15 +152,17 @@ AnimNowVisor* visorNow;
 MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, MAX_MOSI, MAX_CLK, MAX_CS, MAX72xx_DEVICES);
 
 //--------------------------------//WS2812 LEDs
-CRGB earLeds[EarLedsNum];
+CRGB earLeds[earLedsNum];
 CRGB blushLeds[blushLedsNum];
-CRGB visorLeds[VisorLedsNum];
+CRGB visorLeds[visorLedsNum];
+CRGB visorLedsNEW[visorLedsNum];
+CRGB c2Leds[earLedsNum+blushLedsNum];
 
-CLEDController *ledController[3];
+CLEDController *ledController[2];
 
 CRGB pixelBuffer[18];
 CRGB visorPixelBuffer[10];
-uint8_t noiseData[EarLedsNum];
+uint8_t noiseData[earLedsNum];
 
 DEFINE_GRADIENT_PALETTE( blackWhite_gp ) {
   0,   100,  0, 0,
@@ -397,8 +399,6 @@ void startWiFiWeb() {
       cfg.bEar = request->getParam("bEar")->value().toInt();
     if(request->hasParam("bVisor"))
       cfg.bVisor = request->getParam("bVisor")->value().toInt();
-    if(request->hasParam("bBlush"))
-      cfg.bBlush = request->getParam("bBlush")->value().toInt();
     if(request->hasParam("bOled"))
       cfg.bOled = request->getParam("bOled")->value().toInt();
       if(cfg.oledEna && oledInitDone) {
@@ -566,7 +566,11 @@ void startWiFiWeb() {
 void setup() {
   Serial.begin(115200);
 
-  pinMode(T_in, INPUT_PULLUP);
+  if(boopMode == "IR-KY") {
+    pinMode(T_in, INPUT_PULLUP);
+  } else {
+    pinMode(T_in, INPUT_PULLDOWN);
+  }
   pinMode(T_en, OUTPUT);
   pinMode(animBtn, INPUT_PULLUP);
   pinMode(0, INPUT_PULLUP);
@@ -609,17 +613,20 @@ void setup() {
   //ledcAttachPin(fanPWM, 0); //For Arduino 2.x
   //ledcWrite(0, cfg.fanDuty); //for Arduino 2.x
 
-  if(earPresent) {
-    ledController[0] = &FastLED.addLeds<WS2812B, DATA_PIN_EARS, GRB>(earLeds, EarLedsNum);
-  }
-  if(blushPresent) {
-    ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, blushLedsNum);
-  }
   if(visorType == "WS2812") {
-    ledController[2] = &FastLED.addLeds<WS2812B, DATA_PIN_VISOR, GRB>(visorLeds, VisorLedsNum);
+    ledController[0] = &FastLED.addLeds<WS2812B, DATA_PIN_VISOR, GRB>(visorLeds, visorLedsNum);
   } else if (visorType == "MAX72XX") {
     mx.begin();
   }
+  if(earPresent || blushPresent) { //RMT4 2 controller fix
+    ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_EARS, GRB>(c2Leds, earLedsNum+blushLedsNum);
+  }
+  /*if(earPresent) {
+    ledController[1] = &FastLED.addLeds<WS2812B, DATA_PIN_EARS, GRB>(earLeds, earLedsNum);
+  }
+  if(blushPresent) {
+    ledController[2] = &FastLED.addLeds<WS2812B, DATA_PIN_BLUSH, RGB>(blushLeds, blushLedsNum);
+  }*/
   FastLED.setCorrection(TypicalPixelString);
   FastLED.setDither(0);
 
@@ -675,8 +682,8 @@ void setup() {
 String oldanim, boopoldanim;
 bool FdisplayVisor = false, FdisplayBlush = false, FdisplayEar = false, booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false, remoteSign = false;;
 float zAx,yAx,finalMicAvg,avgMicArr[10];
-int randomNum, boopRead, randomTimespan = 0, startIndex = 1, speaking = 0, currentMicAvg = 0, btnNum = 0;
-unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0, looptime = 0;
+int randomNum, boopRead, randomTimespan = 0, startIndex = 1, speaking = 0, currentMicAvg = 0, btnNum = 0, currFade = 1;
+unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0, looptime = 0, fadeTime = 0;
 byte row = 0;
 
 //--------------------------------//Visor bufferer
@@ -710,6 +717,7 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
     }
   }
   FdisplayVisor = true;
+  currFade = 1;
 }
 
 void loop() {
@@ -720,13 +728,13 @@ void loop() {
       if(lastMillsEars+earsNow->frames[currentEarsFrame-1].timespan <= millis() || instantReload) {
         lastMillsEars = millis();
         if(currentEarsFrame == earsNow->numOfFrames) { currentEarsFrame = 0; } //loop back to first frame if last frame
-        for(int y = 0; y < EarLedsNum; y++) { earLeds[y] = earsNow->frames[currentEarsFrame].ledColor[y]; } //set ear leds
+        for(int y = 0; y < earLedsNum; y++) { earLeds[y] = earsNow->frames[currentEarsFrame].ledColor[y]; } //set ear leds
         currentEarsFrame++;
         FdisplayEar = true;
       }
     } else if (earsNow->type == 1) { //rainbow
       fill_rainbow(pixelBuffer, 4, millis()/cfg.rbSpeed, 255/cfg.rbWidth);
-      for(int x = 0;x<EarLedsNum;x++) {
+      for(int x = 0;x<earLedsNum;x++) {
         if(x<16) {
           earLeds[x] = pixelBuffer[0];
           earLeds[x+37] = pixelBuffer[0];
@@ -743,9 +751,9 @@ void loop() {
       }
       FdisplayEar = true;
     } else if (earsNow->type == 2) { //white_noise
-      memset(noiseData, 0, EarLedsNum);
-      fill_raw_noise8(noiseData, EarLedsNum, 2, 0, 50, millis()/4);
-      for(int x = 0;x<EarLedsNum;x++) {
+      memset(noiseData, 0, earLedsNum);
+      fill_raw_noise8(noiseData, earLedsNum, 2, 0, 50, millis()/4);
+      for(int x = 0;x<earLedsNum;x++) {
         earLeds[x] = ColorFromPalette(blackWhite, noiseData[x]);
       }
       FdisplayEar = true;
@@ -768,7 +776,7 @@ void loop() {
       }
     } else if (earsNow->type == 4) { //custom_glow
       fill_rainbow(pixelBuffer, 4, millis()/cfg.rbSpeed, 255/cfg.rbWidth);
-      for(int y = 0; y < EarLedsNum; y++) {
+      for(int y = 0; y < earLedsNum; y++) {
         if(earsNow->frames[0].ledColor[y] == 0) {
           earLeds[y] = 0x000000;
         } else {
@@ -784,7 +792,7 @@ void loop() {
     if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
-      setAllVisor(visorLeds,0,currentVisorFrame); //set visor leds
+      setAllVisor(visorLedsNEW,0,currentVisorFrame); //set visor leds
       if(blushPresent) {
         for(int x = 0; x<8; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
       }
@@ -892,14 +900,14 @@ void loop() {
       randomNum = random(2);
     }
     if(visorNow->type == 0) { //custom
-      setAllVisor(visorLeds,cfg.visColor,currentVisorFrame-1);
+      setAllVisor(visorLedsNEW,0,currentVisorFrame-1);
     }
     lastMillsSpeechAnim = millis();
   }
   //--------------------------------//SPEECH Reset frames
   if(!speechResetDone && !speak && lastMillsSpeechAnim+800<millis()) {
     if(visorNow->type == 0) { //custom
-      setAllVisor(visorLeds,cfg.visColor,currentVisorFrame-1);
+      setAllVisor(visorLedsNEW,0,currentVisorFrame-1);
     } else if (visorNow->type == 1) { //all_rainbow
       setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame-1);
     }
@@ -934,7 +942,7 @@ void loop() {
           Serial.println(F("[I] IR BOOP"));
           booping = true;
           boopoldanim = currentAnim;
-          loadAnim("boop.json","");
+          loadAnim(cfg.aBoop,"");
           lastMillsBoop = millis();
         }
         digitalWrite(T_en, LOW);
@@ -953,7 +961,7 @@ void loop() {
           Serial.println(F("[I] Touch BOOP"));
           booping = true;
           boopoldanim = currentAnim;
-          loadAnim("boop.json","");
+          loadAnim(cfg.aBoop,"");
           lastMillsBoop = millis();
         }
       } else if(booping == true && lastMillsBoop+1000<millis() && !digitalRead(T_in)) {
@@ -999,18 +1007,38 @@ void loop() {
   }
 
   if((FdisplayEar || FdisplayBlush || FdisplayVisor) ) {
-    if(FdisplayEar && earPresent) {
-      ledController[0]->showLeds(cfg.bEar); //ears
-      FdisplayEar = false;
-    }
-    if(FdisplayBlush && blushPresent) {
-      ledController[1]->showLeds(cfg.bBlush); //blush
-      FdisplayBlush = false;
-    }
     if(visorType == "WS2812") {
       if(FdisplayVisor) {
-        ledController[2]->showLeds(cfg.bVisor); //visor
-        FdisplayVisor = false;
+        if(visorNow->type == 0) {
+          if(FADESTEPS == 0) {
+            memcpy(visorLeds, visorLedsNEW, sizeof(CRGB) * visorLedsNum);
+            ledController[0]->showLeds(cfg.bVisor);
+            FdisplayVisor = false;
+          }else if(fadeTime + (visorLedsNum*0.03) < millis()) {
+            for (uint16_t i = 0; i < visorLedsNum; i++) {
+              visorLeds[i] = blend(visorLeds[i], visorLedsNEW[i], (currFade * 255) / FADESTEPS);
+            }
+            ledController[0]->showLeds(cfg.bVisor); //visor
+            currFade++;
+            if(currFade > FADESTEPS) {
+              memcpy(visorLeds, visorLedsNEW, sizeof(CRGB) * visorLedsNum);
+              FdisplayVisor = false;
+              currFade = 1;
+            }
+          }
+          /*for (uint8_t step = 1; step <= FADESTEPS; step++) {
+            for (uint16_t i = 0; i < visorLedsNum; i++) {
+              visorLeds[i] = blend(visorLeds[i], visorLedsNEW[i], (step * 255) / FADESTEPS);
+            }
+            ledController[0]->showLeds(cfg.bVisor); //visor
+            delay(21); 
+          }
+          memcpy(visorLeds, visorLedsNEW, sizeof(CRGB) * visorLedsNum);
+          FdisplayVisor = false;*/
+        } else {
+          ledController[0]->showLeds(cfg.bVisor);
+          FdisplayVisor = false;
+        }
       }
     } else if (visorType == "MAX72XX") {
       if(cfg.bVisor > 15) { cfg.bVisor = 15;}
@@ -1018,6 +1046,43 @@ void loop() {
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
       mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
     }
+    if(blushPresent && useRGBblush) {
+      for(int i = 0; i < blushLedsNum; i++) {
+        uint32_t temp = blushLeds[i].r;
+        blushLeds[i].r = blushLeds[i].g;
+        blushLeds[i].g = temp;
+      }
+    }
+    if(earPresent && !blushPresent && FdisplayEar) { //RMT4 2 controllers fix
+      for(int i = 0; i < earLedsNum; i++) {
+        c2Leds[i] = earLeds[i];
+      }
+      ledController[1]->showLeds(cfg.bEar);
+    } else if (blushPresent && !earPresent && FdisplayBlush) {
+      for(int i = 0; i < blushLedsNum; i++) {
+        c2Leds[i] = blushLeds[i];
+      }
+      ledController[1]->showLeds(cfg.bEar);
+    } else if (blushPresent && earPresent && (FdisplayBlush || FdisplayEar)) { //ear-blush-ear
+      for(int i = 0; i < (earLedsNum/2); i++) {
+        c2Leds[i] = earLeds[i];
+      }
+      for(int i = (earLedsNum/2); i < (earLedsNum/2)+blushLedsNum; i++) {
+        c2Leds[i] = blushLeds[i-(earLedsNum/2)];
+      }
+      for(int i = (earLedsNum/2)+blushLedsNum; i < earLedsNum+blushLedsNum; i++) {
+        c2Leds[i] = earLeds[i-blushLedsNum];
+      }
+      ledController[1]->showLeds(cfg.bEar);
+    }
+    /*if(FdisplayEar && earPresent) {
+      ledController[1]->showLeds(cfg.bEar); //ears
+      FdisplayEar = false;
+    }
+    if(FdisplayBlush && blushPresent) {
+      ledController[2]->showLeds(cfg.bBlush); //blush
+      FdisplayBlush = false;
+    }*/
   }
 
   //press boot button for 10sec to reset

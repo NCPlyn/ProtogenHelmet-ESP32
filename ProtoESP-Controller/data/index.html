@@ -18,6 +18,14 @@
         <a href="/animator.html" class="small-btn">Animator</a>
         <a class="animbtn" href="/rgb">VisorRGB</a>
         <a href="/update" class="small-btn">OTA Update</a><br><br>
+        
+        <input type="file" id="cfgFile" style="display:none" accept=".json">
+        <a class="small-btn" onclick="document.getElementById('cfgFile').click()">Load .json</a>
+        <a href="/config.json" class="small-btn" download>Download config</a><br><br>
+        
+        <input type="file" id="zipInput" style="display:none" accept=".zip">
+        <a class="small-btn" onclick="document.getElementById('zipInput').click()">Load anims.zip</a>
+        <a class="small-btn" onclick="downloadZip()">Download animations</a><br><br>
       </div>
       <div>
         <hr>
@@ -54,8 +62,6 @@
             <input type="number" name="bEar" min="0">
             <label for="bVisor">Brightness visor (WS:0-255|MAX:0-15)</label>
             <input type="number" name="bVisor" min="0" max="255">
-            <label for="bBlush">Brightness blush (0-255|128)</label>
-            <input type="number" name="bBlush" min="0" max="255">
             <label for="bOled">Brightness OLED (0-2|2)</label>
             <input type="number" name="bOled" min="0" max="2">
             <label for="rbSpeed">Rainbow prefab speed (1-200ms|15)</label>
@@ -77,8 +83,7 @@
             <label for="wifiName">WiFi AP SSID (ProtoWiFi)</label>
             <input type="text" name="wifiName" minlength="9">
             <label for="wifiPass">WiFi Password (Proto1234)</label>
-            <input type="text" name="wifiPass" minlength="9">
-            <label for="ledType">Type of visor LEDs</label><br>
+            <input type="text" name="wifiPass" minlength="9"><br>
             <button type="submit">Save config</button>
           </form>
         </div>
@@ -209,6 +214,8 @@
 
 <script src="jquerymin.js"></script>
 <script>
+  let availableAnims = [];
+
 	function fillSelect(id,val) {
 		var select, option;
 		select = document.getElementById(id);
@@ -262,6 +269,8 @@
 					fillSelect("aUp",partsArray[i]);
           fillSelect("aBoop",partsArray[i]);
 				}
+        partsArray.shift();
+        availableAnims = partsArray;
 			}
 		}
 		xmlhttp.open("GET", "/getfiles", false);
@@ -294,14 +303,9 @@
 		xmlhttp.open("GET", "/gyro", false);
 		xmlhttp.send();
 	}
-
-	function loadConfig() {
-		xmlhttp=new XMLHttpRequest();
-		xmlhttp.onreadystatechange=function()
-		{
-			if (xmlhttp.readyState==4 && xmlhttp.status==200)
-			{
-				var obj = JSON.parse(xmlhttp.responseText);
+  
+  function loadIntoInputs(jsonobj) {
+        var obj = JSON.parse(jsonobj);
 				document.getElementById("boop").checked = obj.boopEna;
 				document.getElementById("speech").checked = obj.speechEna;
 				document.getElementById("tilt").checked = obj.tiltEna;
@@ -309,7 +313,6 @@
         document.getElementById("oled").checked = obj.oledEna;
 				document.getElementsByName("bEar")[0].value = obj.bEar;
 				document.getElementsByName("bVisor")[0].value = obj.bVisor;
-        document.getElementsByName("bBlush")[0].value = obj.bBlush;
         document.getElementsByName("bOled")[0].value = obj.bOled;
 				document.getElementsByName("rbSpeed")[0].value = obj.rbSpeed;
 				document.getElementsByName("rbWidth")[0].value = obj.rbWidth;
@@ -332,8 +335,16 @@
         document.getElementsByName("tiltTol")[0].value = obj.tiltTol;
         document.getElementsByName("wifiName")[0].value = obj.wifiName;
         document.getElementsByName("wifiPass")[0].value = obj.wifiPass;
-        document.getElementsByName("ledType")[0].value = obj.ledType;
         document.getElementById("fanspeed").value = obj.fanDuty;
+  }
+
+	function loadConfig() {
+		xmlhttp=new XMLHttpRequest();
+		xmlhttp.onreadystatechange=function()
+		{
+			if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+				loadIntoInputs(xmlhttp.responseText);
 			}
 		}
 		xmlhttp.open("GET", "/config.json", false );
@@ -359,4 +370,133 @@
     }
 	  xhr.send(null);
 	}
+  
+  document.getElementById("cfgFile").addEventListener("change", cfgLoad, false);
+  function cfgLoad() {
+    let fileToLoad = this.files[0];
+    if(fileToLoad === undefined || fileToLoad.name.includes(".json") == false) {
+      alert("No selected file or not a .json file!");
+    } else {
+      let fileReader = new FileReader();
+      fileReader.onload = function (fileLoadedEvent) {
+          loadIntoInputs(fileLoadedEvent.target.result);
+          alert("Config, loaded.\nPlease save!");
+      };
+      fileReader.readAsText(fileToLoad, "UTF-8");
+    }
+  }
+  
+  function downloadZip() {
+      // Lazy load JSZip
+      const script = document.createElement('script');
+      script.src = "/jszip.min.js";
+
+      script.onload = async () => {
+        const zip = new JSZip();
+
+        for (const fileName of availableAnims) {
+          try {
+            const response = await fetch(`./anims/${fileName}`, {
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, max-age=0',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              }
+            });
+            if (!response.ok) throw new Error(`Failed to load ${fileName}`);
+            const jsonText = await response.text();
+            zip.file(fileName, jsonText);
+          } catch (err) {
+            console.error(`Error fetching ${fileName}:`, err);
+          }
+        }
+
+        zip.generateAsync({ type: "blob" }).then(content => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(content);
+          a.download = 'anims.zip';
+          a.click();
+        });
+      };
+
+      document.head.appendChild(script);
+  }
+  $('#zipInput').on('change', async function(event) {
+      if(confirm("This will replace same named animations!\nYou sure?") == false) {
+        return;
+      }
+      const file = event.target.files[0];
+      if (!file) return;
+      // Lazy load JSZip
+      const script = document.createElement('script');
+      script.src = "/jszip.min.js";
+
+      script.onload = async () => {
+        try {
+          const zipData = await file.arrayBuffer();
+          const zip = await JSZip.loadAsync(zipData);
+
+          const jsonFiles = Object.values(zip.files).filter(f => f.name.endsWith('.json'));
+
+          if (jsonFiles.length === 0) {
+            alert('No .json files found in the ZIP.');
+            return;
+          }
+
+          let successCount = 0;
+          let failureCount = 0;
+
+          for (const fileEntry of jsonFiles) {
+            try {
+              const content = await fileEntry.async('text');
+              const fileName = fileEntry.name.replace(/\.json$/, '');
+
+              const formData = new FormData();
+              formData.append('file', fileName);
+              formData.append('content', content);
+
+              const response = await fetch('/savefile', {
+                method: 'POST',
+                body: formData,
+                cache: 'no-store',
+                headers: {
+                  'Cache-Control': 'no-cache, no-store, max-age=0',
+                  'Pragma': 'no-cache',
+                  'Expires': '0'
+                }
+              });
+              
+              const text = await response.text();
+
+              if (text.includes("Error opening file") || text.includes("No valid parameters")) {
+                console.error(`Failed saving ${fileName}:`, text);
+                failureCount++;
+              } else {
+                successCount++;
+              }
+            } catch (err) {
+              console.error(`Failed to process ${fileEntry.name}`, err);
+              failureCount++;
+            }
+          }
+
+          if (failureCount === 0) {
+            alert(`All ${successCount} files saved successfully!`);
+          } else {
+            alert(`${successCount} succeeded, ${failureCount} failed.`);
+          }
+
+        } catch (err) {
+          console.error('Error reading ZIP file:', err);
+          alert('Something went wrong reading the ZIP file.');
+        }
+      };
+
+      script.onerror = () => {
+        alert('Failed to load JSZip library.');
+      };
+
+      document.head.appendChild(script);
+    });
 </script>
