@@ -1,12 +1,9 @@
-#include <Arduino.h>
-//IF your WS leds do not correspond to set color, check color order for each strip in setup():FastLED.addLeds...
-//Make sure you have everything connected by the schematic in the repository!
+//Make sure you have everything connected by the schematic in the repository and set these defines correctly!
 
 #define MICpin ADC_CHANNEL_0 //Microphone, pin 1
 #define T_in 2 //Output from Touch Sensor
 #define T_en 42 //Enable pin to Touch Sensor
-#define DATA_PIN_EARS 5  //Ears (from outer to inner, right cheek first)
-#define DATA_PIN_BLUSH 6 //Blush (from top to bottom, right cheek nearest to ear first) 
+#define DATA_PIN_EARS 5  //Ears(Blush) (from outer to inner, POV-right cheek, (if blush: from top to bottom, right cheek nearest to ear first))
 #define DATA_PIN_VISOR 7 //Face (right cheek, left segment of eye first)
 #define I2C_SDA 8 //SDA for Gyro, OLED, INA219
 #define I2C_SCL 9 //SCL for Gyro, OLED, INA219
@@ -24,13 +21,13 @@
 bool earPresent = true; // Are you using ear leds?
 #define earLedsNum 74 // How many? (74 rn, no other option atm)
 
-bool blushPresent = true; // Are you using blush leds?
+bool blushPresent = false; // Are you using blush leds?
 #define blushLedsNum 8 // How many? (might crash under 8)
 bool useRGBblush = true; //Swaps red-green for RGB strip
 
 bool INApresent = true; //Are you using INA219?
 
-String boopMode = "IR-KY"; //"IR-KY" for KY-032, "Capac" for capacitive sensor/boop when HIGH, "IR-Dist" for ADPS... tbd
+#define boopMode "IR-KY" //"IR-KY" for KY-032, "Capac" for capacitive sensor/boop when HIGH, "IR-Dist" for ADPS... tbd
 
 #define revertTilt 8000 //The maximum time that animation caused by tilt gets shown (used as if tilt bugs out etc)
 
@@ -38,7 +35,7 @@ String boopMode = "IR-KY"; //"IR-KY" for KY-032, "Capac" for capacitive sensor/b
 
 #define oledAddr 60 //define oled on address 0x3c
 
-//--------------------------------//No touching after this
+//--------------------------------//No touching after this!
 
 #define MaxFEars 30 //Max amount of Ear frames (hardcoded to assign memory)
 #define MaxFVisor 30 //Max amount of Visor frames
@@ -254,16 +251,14 @@ bool loadAnim(String anim, String temp) {
     visorNow->numOfFrames = doc["visor"]["frames"].size();
     for(int x = 0; x < visorNow->numOfFrames; x++) {
       visorNow->frames[x].timespan = doc["visor"]["frames"][x]["timespan"].as<int>();
+      numAnimBlush = min((uint8_t)doc["visor"]["frames"][x]["ledsBlush"].size(),numAnimBlush); //overflow fix
+      for(int y = 0; y < numAnimBlush; y++) {
+        visorNow->frames[x].ledsBlush[y] = strtol(doc["visor"]["frames"][x]["ledsBlush"][y].as<String>().c_str(), NULL, 16);
+      }
       numOfSegm = doc["visor"]["frames"][x]["leds"].size();
       for(int y = 0; y < numOfSegm; y++) {
         visorNow->frames[x].fColor[y] = strtol(doc["visor"]["frames"][x]["fColor"][y].as<String>().c_str(), NULL, 16); //should return 0 if not present
-      }
-      for(int y = 0; y < doc["visor"]["frames"][x]["leds"].size(); y++) {
-        visorNow->frames[x].leds[y] = strtoull(String(doc["visor"]["frames"][x]["leds"][y].as<String>()).c_str(), NULL, 16); //string to uint64
-      }
-      numAnimBlush = doc["visor"]["frames"][x]["ledsBlush"].size();
-      for(int y = 0; y < doc["visor"]["frames"][x]["ledsBlush"].size(); y++) {
-        visorNow->frames[x].ledsBlush[y] = strtol(doc["visor"]["frames"][x]["ledsBlush"][y].as<String>().c_str(), NULL, 16);
+        visorNow->frames[x].leds[y] = strtoull(doc["visor"]["frames"][x]["leds"][y].as<String>().c_str(), NULL, 16); //string to uint64
       }
     }
 
@@ -687,7 +682,7 @@ unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpea
 byte row = 0;
 
 //--------------------------------//Visor bufferer
-void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) {
+void setAllVisor(struct CRGB *ledArray, long ledColor, int visorFrame) {
   uint64_t tempSegment;
   for(int y = 0; y < numOfSegm; y++) {
     tempSegment = visorNow->frames[visorFrame].leds[y];
@@ -698,7 +693,7 @@ void setAllVisor(struct CRGB *ledArray, unsigned long ledColor, int visorFrame) 
       row = (tempSegment >> i * 8) & 0xFF;
       for (int j = 0; j < 8; j++) {
         if(visorType == "WS2812") {
-          unsigned long tempColor = ledColor; //use given color
+          long tempColor = ledColor; //use given color
           if(ledColor == 0) { //if given color == 0, use config color
             tempColor = cfg.visColor;
             if(visorNow->frames[visorFrame].fColor[y] != 0) { //if theres color then 0 in anim, use that

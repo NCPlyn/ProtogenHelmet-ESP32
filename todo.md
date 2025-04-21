@@ -44,7 +44,7 @@
 - [x] Fade between frames (only RGB matrices) (**should be ok, need to redraw schematic**)
 
 ### ToDo: Controller
-- [ ] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
+- [ ] [I] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
 - [ ] Apa102 style led matrix? [LCSC](https://www.lcsc.com/product-detail/RGB-LEDs-Built-in-IC_OPSCO-Optoelectronics-SK9822-EC20_C2909059.html)
 - [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
 - [ ] Optimize execution speed: xTask?
@@ -52,8 +52,8 @@
 - [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
 
 ### ToDo: Remote
-- [ ] Update NimBLE
-- [ ] ESP-C3/C6 support, proper platform link, proper board def, pins, pcb edit for LED
+- [ ] [I] Update NimBLE
+- [ ] [I] ESP-C3/C6 support, proper platform link, proper board def, pins, pcb edit for LED
 
 ### ToDo: Manuals etc.
 - [ ] Make "How to properly place and tune IR proximity sensor" for boop
