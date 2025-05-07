@@ -18,7 +18,7 @@ unsigned long btnPressTime[BUTTONS];
 String btnAnims[3][BUTTONS];
 
 #ifndef LED_BUILTIN
-#define LED_BUILTIN 21
+#define LED_BUILTIN 6 //21
 #endif
 
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1

@@ -20,7 +20,7 @@ Powered with Seeeduino **XIAO ESP32-S3** over BLE!
 - Update the firmware without use of VSCode using ElegantOTA (**192.168.4.1/update**)
 - The **PCB can be broken apart** if you want to extend the buttons into paws etc -> solderable pads remain<br><br>
 ![remote_pcb](https://github.com/user-attachments/assets/c468b4fe-0240-4ee2-a439-224a187af036)
-The Gerber file (ProtoESP-Remote_Gerber_2024-11-13.zip) for manufacturing the PCB is in this folder to use for free.
+The Gerber file (ProtoESP-Remote_Gerber_2025-04-28.zip) for manufacturing the PCB is in this folder to use for free.
 ## How to
 ### Build
 - Parts needed are in the Pastebin parts [list](https://pastebin.com/7z4fnVfQ), get different buttons if you're going to implement them into paws etc...

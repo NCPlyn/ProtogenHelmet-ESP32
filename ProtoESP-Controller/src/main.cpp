@@ -89,8 +89,6 @@ Adafruit_INA219 ina219;
 
 AsyncWebServer server(80);
 
-String wifiName = "ProtoWiFi", wifiPass = "Proto1234";
-
 //--------------------------------//Config vars
 bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true;
 uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims;
@@ -332,7 +330,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
 } serverCallbacks;
 
 bool startBLE() {
-  std::string stdStr(wifiName.c_str(), wifiName.length());
+  std::string stdStr(cfg.wifiName.c_str(), cfg.wifiName.length());
   BLEDevice::init(stdStr);
   NimBLEDevice::setPower(ESP_PWR_LVL_P9);
 
@@ -366,7 +364,7 @@ bool startBLE() {
 
 //--------------------------------//WiFi server setup
 void startWiFiWeb() {
-  WiFi.softAP(wifiName, wifiPass);
+  WiFi.softAP(cfg.wifiName, cfg.wifiPass);
 
   server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
 

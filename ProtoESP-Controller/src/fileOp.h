@@ -23,7 +23,7 @@ public:
   bool boopEna, speechEna, tiltEna, bleEna, oledEna;
   int bEar,bVisor,bOled,rbSpeed,rbWidth,spMin,spMax,spTrig,fanDuty;
   float neutralX,neutralY,neutralZ,tiltX,tiltY,tiltZ,upX,upY,upZ,tiltTol;
-  String aTilt,aUp,aBoop,visColorStr,wifiName,wifiPass;
+  String aTilt,aUp,aBoop,visColorStr,wifiName = "ProtoWiFi",wifiPass = "Proto1234";
   unsigned long visColor;
   void setDefault();
   bool save();
