@@ -17,6 +17,7 @@
 - In `src/main.cpp`:
   - Change `visorType` definition for the display you have (WS2812 or MAX72XX)
   - Change `MAX72xx_DEVICES` or `visorLedsNum` to the correct amount of matrices/LEDs connected
+  - Change `HARDWARE_TYPE` accordingly if your matrices are flipped or mirrored
   - Change `FADESTEPS` to the amount of steps to fade between frames (0 to disable - good for frames with <100ms)
   - Change `earPresent` if you're or not using ear LEDs
   - Change `blushPresent` if you're or not using blush LEDs (set `useRGBblush` to true if they are RGB and not GRB, for ear and visor color: `setup():FastLED.addLeds...`)
@@ -33,7 +34,7 @@
 ### Use
 - Connect to the ProtoESP WiFi AP named `ProtoWiFi` with password `Proto1234`
 - Open any web browser and visit site `192.168.4.1` with mobile data turned off
-- Change the password and name of the WiFi. You will have to reconnect after restarting the ESP!
+- Change the password and name of the WiFi. (**Both minimum 9 chars!!**) You will have to reconnect after restarting the ESP!
 - Here you can play any available animation, enable or disable features, configure variables and more!
 - Click on `Save` after you're done setting things
 - If you need to put the remote to defaults, power on the ESP and hold down the BOOT button for 10s

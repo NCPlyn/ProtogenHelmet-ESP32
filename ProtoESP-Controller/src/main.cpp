@@ -14,6 +14,7 @@
 #define fanPWM 13 //PWM pin to control 4pin fan
 
 #define visorType "WS2812" // What displays are you using? (WS2812 or MAX72XX so far)
+#define HARDWARE_TYPE MD_MAX72XX::FC16_HW //flip up-down: ::DR1CR0RR1_HW , flip left-right: ::PAROLA_HW , flip both: ::ICSTATION_HW
 #define MAX72xx_DEVICES 11 // How many MAX72xx matrices for visor?
 #define visorLedsNum 704 // How many WS2812 LEDs for visor? (matrixNumber*64)
 #define FADESTEPS 4 //how many steps when fading between frames? (0=disabled)
@@ -141,8 +142,6 @@ AnimNowVisor* visorNow;
 //--------------------------------//MAX LEDs
 #include <MD_MAX72xx.h>
 #include <SPI.h>
-
-#define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 
 MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, MAX_MOSI, MAX_CLK, MAX_CS, MAX72xx_DEVICES);
 

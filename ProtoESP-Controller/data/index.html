@@ -20,11 +20,11 @@
         <a href="/update" class="small-btn">OTA Update</a><br><br>
         
         <input type="file" id="cfgFile" style="display:none" accept=".json">
-        <a class="small-btn" onclick="document.getElementById('cfgFile').click()">Load .json</a>
+        <a class="small-btn" onclick="document.getElementById('cfgFile').click()">Load config.json</a>
         <a href="/config.json" class="small-btn" download>Download config</a><br><br>
         
-        <input type="file" id="zipInput" style="display:none" accept=".zip">
-        <a class="small-btn" onclick="document.getElementById('zipInput').click()">Load anims.zip</a>
+        <input type="file" id="zipInput" style="display:none" accept=".zip,.json">
+        <a class="small-btn" onclick="document.getElementById('zipInput').click()">Upload anims .json/.zip</a>
         <a class="small-btn" onclick="downloadZip()">Download animations</a><br><br>
       </div>
       <div>
@@ -374,11 +374,15 @@
   document.getElementById("cfgFile").addEventListener("change", cfgLoad, false);
   function cfgLoad() {
     let fileToLoad = this.files[0];
-    if(fileToLoad === undefined || fileToLoad.name.includes(".json") == false) {
-      alert("No selected file or not a .json file!");
+    if(fileToLoad === undefined || fileToLoad.name.includes("config.json") == false) {
+      alert("No selected file or not a config.json file!");
     } else {
       let fileReader = new FileReader();
       fileReader.onload = function (fileLoadedEvent) {
+          if (!fileLoadedEvent.target.result.includes("wifiName")) {
+            alert("Most likely invalid file");
+            return;
+          }
           loadIntoInputs(fileLoadedEvent.target.result);
           alert("Config, loaded.\nPlease save!");
       };
@@ -422,81 +426,128 @@
 
       document.head.appendChild(script);
   }
+
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  }
+
   $('#zipInput').on('change', async function(event) {
       if(confirm("This will replace same named animations!\nYou sure?") == false) {
         return;
       }
       const file = event.target.files[0];
       if (!file) return;
-      // Lazy load JSZip
-      const script = document.createElement('script');
-      script.src = "/jszip.min.js";
-
-      script.onload = async () => {
-        try {
-          const zipData = await file.arrayBuffer();
-          const zip = await JSZip.loadAsync(zipData);
-
-          const jsonFiles = Object.values(zip.files).filter(f => f.name.endsWith('.json'));
-
-          if (jsonFiles.length === 0) {
-            alert('No .json files found in the ZIP.');
-            return;
-          }
-
-          let successCount = 0;
-          let failureCount = 0;
-
-          for (const fileEntry of jsonFiles) {
-            try {
-              const content = await fileEntry.async('text');
-              const fileName = fileEntry.name.replace(/\.json$/, '');
-
-              const formData = new FormData();
-              formData.append('file', fileName);
-              formData.append('content', content);
-
-              const response = await fetch('/savefile', {
-                method: 'POST',
-                body: formData,
-                cache: 'no-store',
-                headers: {
-                  'Cache-Control': 'no-cache, no-store, max-age=0',
-                  'Pragma': 'no-cache',
-                  'Expires': '0'
-                }
-              });
-              
-              const text = await response.text();
-
-              if (text.includes("Error opening file") || text.includes("No valid parameters")) {
-                console.error(`Failed saving ${fileName}:`, text);
-                failureCount++;
-              } else {
-                successCount++;
-              }
-            } catch (err) {
-              console.error(`Failed to process ${fileEntry.name}`, err);
-              failureCount++;
-            }
-          }
-
-          if (failureCount === 0) {
-            alert(`All ${successCount} files saved successfully!`);
-          } else {
-            alert(`${successCount} succeeded, ${failureCount} failed.`);
-          }
-
-        } catch (err) {
-          console.error('Error reading ZIP file:', err);
-          alert('Something went wrong reading the ZIP file.');
+      if(file.name.includes(".json")) { //just json
+        const content = await readFileAsText(file);
+        if (!content.includes("frames")) {
+          alert("Most likely invalid file");
+          return;
         }
-      };
 
-      script.onerror = () => {
-        alert('Failed to load JSZip library.');
-      };
+        const fileName = file.name.replace(/\.json$/, '');
 
-      document.head.appendChild(script);
+        const formData = new FormData();
+        formData.append('file', fileName);
+        formData.append('content', content);
+
+        const response = await fetch('/savefile', {
+          method: 'POST',
+          body: formData,
+          cache: 'no-store',
+          headers: {
+           'Cache-Control': 'no-cache, no-store, max-age=0',
+           'Pragma': 'no-cache',
+           'Expires': '0'
+          }
+        });
+                
+        const text = await response.text();
+
+        if (text.includes("Error opening file") || text.includes("No valid parameters")) {
+          alert("Failed to upload");
+        } else {
+          alert("Animation uploaded");
+        }
+      } else { //zip with jsons
+        const script = document.createElement('script');
+        script.src = "/jszip.min.js";
+
+        script.onload = async () => {
+          try {
+            const zipData = await file.arrayBuffer();
+            const zip = await JSZip.loadAsync(zipData);
+
+            const jsonFiles = Object.values(zip.files).filter(f => f.name.endsWith('.json'));
+
+            if (jsonFiles.length === 0) {
+              alert('No .json files found in the ZIP.');
+              return;
+            }
+
+            let successCount = 0;
+            let failureCount = 0;
+
+            for (const fileEntry of jsonFiles) {
+              try {
+                const content = await fileEntry.async('text');
+                if(!content.includes("frames")) { //invalid json
+                  alert("Most likely invalid file within the .zip :"+fileEntry.name);
+                  failureCount++;
+                } else {
+                  const fileName = fileEntry.name.replace(/\.json$/, '');
+
+                  const formData = new FormData();
+                  formData.append('file', fileName);
+                  formData.append('content', content);
+
+                  const response = await fetch('/savefile', {
+                    method: 'POST',
+                    body: formData,
+                    cache: 'no-store',
+                    headers: {
+                      'Cache-Control': 'no-cache, no-store, max-age=0',
+                      'Pragma': 'no-cache',
+                      'Expires': '0'
+                    }
+                  });
+                  
+                  const text = await response.text();
+
+                  if (text.includes("Error opening file") || text.includes("No valid parameters")) {
+                    console.error(`Failed saving ${fileName}:`, text);
+                    failureCount++;
+                  } else {
+                    successCount++;
+                  }
+                }
+              } catch (err) {
+                console.error(`Failed to process ${fileEntry.name}`, err);
+                failureCount++;
+              }
+            }
+
+            if (failureCount === 0) {
+              alert(`All ${successCount} files saved successfully!`);
+            } else {
+              alert(`${successCount} succeeded, ${failureCount} failed.`);
+            }
+
+          } catch (err) {
+            console.error('Error reading ZIP file:', err);
+            alert('Something went wrong reading the ZIP file.');
+          }
+        };
+
+        script.onerror = () => {
+          alert('Failed to load JSZip library.');
+        };
+
+        document.head.appendChild(script);
+      }
     });
 </script>

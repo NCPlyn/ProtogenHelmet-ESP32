@@ -270,6 +270,10 @@
     } else {
       let fileReader = new FileReader();
       fileReader.onload = function (fileLoadedEvent) {
+          if (!fileLoadedEvent.target.result.includes("wifiName")) {
+            alert("Most likely invalid file");
+            return;
+          }
           loadIntoInputs(fileLoadedEvent.target.result);
       };
       fileReader.readAsText(fileToLoad, "UTF-8");
