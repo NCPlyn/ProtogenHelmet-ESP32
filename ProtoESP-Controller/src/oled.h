@@ -69,6 +69,8 @@ public:
   void writeRGB(String) const;
   void speak(bool) const;
   void remote(bool) const;
+  // New: Show TOF sensor values
+  void writeTOF(int vl6180x_mm, int apds9960_prox) const;
 private:
   bool INAavail = false;
 };

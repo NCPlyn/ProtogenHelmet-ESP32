@@ -1,3 +1,14 @@
+#include <string>
+// Show TOF sensor values (VL6180X distance in mm, APDS9960 proximity)
+void SSDOLED::writeTOF(int vl6180x_mm, int apds9960_prox) const {
+  u8g2.setDrawColor(0);
+  u8g2.drawBox(0, 48, 128, 16); // Clear bottom area
+  u8g2.setDrawColor(1);
+  u8g2.setFont(u8g2_font_t0_22b_tr);
+  String s = "VL:" + String(vl6180x_mm) + "mm AP:" + String(apds9960_prox);
+  u8g2.drawStr(0, 63, s.c_str());
+  u8g2.updateDisplayArea(0, 6, 16, 2);
+}
 #include "oled.h"
 
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0,/* reset=*/ U8X8_PIN_NONE);

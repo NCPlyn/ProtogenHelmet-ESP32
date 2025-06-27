@@ -2,7 +2,10 @@
 ### The working brain of your Protogen!
 ![IMG_20230228_191415](https://github.com/user-attachments/assets/cc3951e1-8a25-4073-93dd-ec07dff64e9a)
 ### Main features
-- TBD
+- IR proximity sensor (default)
+- **NEW:** Time-of-Flight (TOF) sensors support:
+  - Adafruit VL6180X (distance, I2C)
+  - SparkFun APDS9960 (proximity, I2C)
 ## How to
 ### Build
 - **Connect matrices in following order** (start at the right eye when your head is in the helmet)
@@ -23,6 +26,21 @@
   - Change `blushPresent` if you're or not using blush LEDs (set `useRGBblush` to true if they are RGB and not GRB, for ear and visor color: `setup():FastLED.addLeds...`)
   - Change `INApresent` if you have or not INA219 connected
   - Change `boopMode` to what you use as boop sensor (`IR-KY` for KY032/active LOW or `Capac` for capacitive/active HIGH)
+  - **TOF sensors (VL6180X, APDS9960) are supported out-of-the-box.**
+## TOF Sensors Wiring
+
+- **VL6180X:**
+  - SDA: ESP32 SDA (default GPIO 8)
+  - SCL: ESP32 SCL (default GPIO 9)
+  - VIN: 3.3V or 5V
+  - GND: GND
+- **APDS9960:**
+  - SDA: ESP32 SDA (default GPIO 8)
+  - SCL: ESP32 SCL (default GPIO 9)
+  - VIN: 3.3V
+  - GND: GND
+
+See also: `controller-diagram.png` and `TOF_README.md` for more info.
 - In `platformio.ini`:
   - If using different capacity than n16r8, change to proper sized board (line 2)
   - If your board has lower flash capacity than 8MB, change partition file (line 11)
@@ -65,12 +83,12 @@ monitor_speed = 115200
 monitor_filters = esp32_exception_decoder
 board_build.partitions = 4MB_17-17-05.csv
 extra_scripts = genCRC-auto.py
-build_flags = 
+build_flags =
 	-DBOARD_HAS_PSRAM
 	-mfix-esp32-psram-cache-issue
 ;	-DCORE_DEBUG_LEVEL=5
 	-DELEGANTOTA_USE_ASYNC_WEBSERVER=1
-lib_deps = 
+lib_deps =
 	bblanchon/StreamUtils@1.9.0
 	fastled/FastLED@3.7.8
 	bblanchon/ArduinoJson@7.3.1

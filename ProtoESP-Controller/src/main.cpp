@@ -83,6 +83,14 @@ LSM6DS3 myIMU;
 #include <Adafruit_INA219.h> //edited library in this sketch (replace 0.1R with 0.03R resistor on the board)
 Adafruit_INA219 ina219;
 
+// TOF Sensors
+#include "tof_vl6180.h"
+#include "tof_apds9960.h"
+int vl6180x_distance = -1;
+int apds9960_proximity = -1;
+bool vl6180x_ok = false;
+bool apds9960_ok = false;
+
 //--------------------------------//web / wifi
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
@@ -165,7 +173,7 @@ DEFINE_GRADIENT_PALETTE( blackWhite_gp ) {
 };
 CRGBPalette16 blackWhite = blackWhite_gp;
 
-const std::vector<std::vector<int>> lookupDiag1 = 
+const std::vector<std::vector<int>> lookupDiag1 =
 {{14,15,16},
  {13,27,28,1},
  {12,26,36,17,2},
@@ -176,7 +184,7 @@ const std::vector<std::vector<int>> lookupDiag1 =
  {9,22,21,5},
  {8,7,6}};
 
-const std::vector<std::vector<int>> lookupDiag2 = 
+const std::vector<std::vector<int>> lookupDiag2 =
 {{2,3,4},
  {1,18,19,5},
  {16,17,30,20,6},
@@ -209,7 +217,7 @@ bool loadAnim(String anim, String temp) {
       error = deserializeJson(doc, bufferedFile);
       file.close();
     }
-    
+
     if(error){
       Serial.print(F("[E] Failed to deserialize animation file! : "));
       Serial.println(error.c_str());
@@ -530,7 +538,7 @@ void startWiFiWeb() {
       request->send(200, "text/plain", F("No valid parameters detected!"));
     }
   });
-  
+
   server.on("/rgb", HTTP_GET, [](AsyncWebServerRequest *request){
     if(visorType == "WS2812") {
       visorNow->type++;
@@ -662,7 +670,13 @@ void setup() {
       ina219.setCalibration_16V_8A();
     }
   }
-  
+  // Initialize VL6180X
+  vl6180x_ok = TOF_VL6180::begin();
+  // Initialize APDS9960
+  apds9960_ok = TOF_APDS9960::begin();
+  if (!vl6180x_ok) Serial.println("[E] VL6180X not found or failed to init");
+  if (!apds9960_ok) Serial.println("[E] APDS9960 not found or failed to init");
+
   while(millis()<2000) {yield();} //2s delay for the anim to load properly (idk why but it doesnt without this or with 1s)
   loadAnim("default.json","");
 
@@ -853,7 +867,7 @@ void loop() {
   }
   //Serial.println(">SPK1:"+String(micros()-looptime));
   //looptime = micros();
-  
+
   if(cfg.speechEna && laskSpeakCheck+10<=millis()) {
     finalMicAvg = 0;
     for (int i = 0; i<10; i++){
@@ -968,6 +982,29 @@ void loop() {
     }
   }
 
+  // TOF Sensor Readings
+  if (vl6180x_ok) {
+    int dist = TOF_VL6180::readDistance();
+    if (dist >= 0) {
+      vl6180x_distance = dist;
+    }
+  }
+  if (apds9960_ok) {
+    int prox = TOF_APDS9960::readProximity();
+    if (prox >= 0) {
+      apds9960_proximity = prox;
+    }
+  }
+  // Log to Serial
+  if (millis() % 1000 < 50) { // Print every ~1s
+    if (vl6180x_ok) Serial.println("[TOF] VL6180X Distance: " + String(vl6180x_distance) + " mm");
+    if (apds9960_ok) Serial.println("[TOF] APDS9960 Proximity: " + String(apds9960_proximity));
+  }
+  // OLED: show TOF values if enabled
+  if(cfg.oledEna && oledInitDone) {
+    oled.writeTOF(vl6180x_distance, apds9960_proximity);
+  }
+
   //--------------------------------//OLED routine, ~~10ms qwq~~, 1-5ms.. eh better
   if(cfg.oledEna && oledInitDone && vaStatLast+1000<millis()) {
     //looptime = micros();
@@ -1023,7 +1060,7 @@ void loop() {
               visorLeds[i] = blend(visorLeds[i], visorLedsNEW[i], (step * 255) / FADESTEPS);
             }
             ledController[0]->showLeds(cfg.bVisor); //visor
-            delay(21); 
+            delay(21);
           }
           memcpy(visorLeds, visorLedsNEW, sizeof(CRGB) * visorLedsNum);
           FdisplayVisor = false;*/
