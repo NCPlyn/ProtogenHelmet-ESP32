@@ -1002,11 +1002,11 @@ void loop() {
     if(visorType == "WS2812") {
       if(FdisplayVisor) {
         if(visorNow->type == 0) {
-          if(FADESTEPS == 0) {
+          if(FADESTEPS == 0) { //just fading
             memcpy(visorLeds, visorLedsNEW, sizeof(CRGB) * visorLedsNum);
             ledController[0]->showLeds(cfg.bVisor);
             FdisplayVisor = false;
-          }else if(fadeTime + (visorLedsNum*0.03) < millis()) {
+          } else if(fadeTime + (visorLedsNum*0.03) < millis()) {
             for (uint16_t i = 0; i < visorLedsNum; i++) {
               visorLeds[i] = blend(visorLeds[i], visorLedsNEW[i], (currFade * 255) / FADESTEPS);
             }

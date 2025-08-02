@@ -1,15 +1,28 @@
 # ProtoESP - Controler
 ### The working brain of your Protogen!
 ![IMG_20230228_191415](https://github.com/user-attachments/assets/cc3951e1-8a25-4073-93dd-ec07dff64e9a)
+
 ### Main features
-- TBD
+- Running on ESP32-**S3**
+- Supports **MAX721x** single color matrices & **[WS2812 8x8 RGB](https://github.com/NCPlyn/ProtogenHelmet-ESP32/tree/ProtoESP/RGBMatrix)** matrices
+- **Any number of matrices** depending on your liking! All is about you creating proper animation for your setup
+- Fixed support for WS2812 **RGB rings in the ears** that can be also animated
+- Any number of additional (blush) WS2812 LEDs that can be used for blush or any other place
+- **Animator** on the [internet](https://foxxo.cz/proto/animator.html) or on the ESP to make your animations and test them on the go! (**Web playback and ESP irl playback**)
+- Support for **remote or push button** from ESP to change animation
+- **OLED support** to see what is your proot doing
+- Dynamic change of animation when speaking, IR/Capacitive/TOF **boop sensors**....
+
+### OLED display description
+![ProtoESP-Controller_SCHEM](imgs/protoOLED.png)
+
 ## How to
 ### Build
 - **Connect matrices in following order** (start at the right eye when your head is in the helmet)
-![image](https://github.com/user-attachments/assets/c1ca67f9-de79-4f47-be82-14fa918654f9)
+![image](img/protoVisor.png)
 
 - **Connect all available components according this schematic** (visor leds & power supply are the ones completely necessary, other are optional but preffered)
-![ProtoESP-Controller_SCHEM](controller-diagram.png)
+![ProtoESP-Controller_SCHEM](imgs/protoSchema.png)
 
 ### Upload
 - Install if not already: VS Code + PlatformIO extension and Python 3
@@ -27,7 +40,8 @@
   - If using different capacity than n16r8, change to proper sized board (line 2)
   - If your board has lower flash capacity than 8MB, change partition file (line 11)
 - Connect the ESP32S3 via COM USB connector and in the PIO tab open `esp32-s3`
-- Click on `Upload` and after successful operation expand `Platform` dropdown and click on `Upload filesystem image`
+- Click on `Upload` and wait for successful build and flash
+- Expand `Platform` dropdown and click on `Upload filesystem image` and wait for successful build and flash
 - If `configCRC.txt` doesn't get automaticaly generated (`Generated CRC` in the terminal) while building the filesystem, run "genCRC_manual.py" manually and then `Upload filesystem image` again
 - The ProtoESP should now be fully working and ready to configure if now errors are printed in the `Monitor`
 
