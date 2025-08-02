@@ -14,7 +14,7 @@
 - Dynamic change of animation when speaking, IR/Capacitive/TOF **boop sensors**....
 
 ### OLED display description
-![ProtoESP-Controller_SCHEM](imgs/protoOLED.png)
+![ProtoESP-Controller_SCHEM](img/protoOLED.png)
 
 ## How to
 ### Build
@@ -22,7 +22,7 @@
 ![image](img/protoVisor.png)
 
 - **Connect all available components according this schematic** (visor leds & power supply are the ones completely necessary, other are optional but preffered)
-![ProtoESP-Controller_SCHEM](imgs/protoSchema.png)
+![ProtoESP-Controller_SCHEM](img/protoSchema.png)
 
 ### Upload
 - Install if not already: VS Code + PlatformIO extension and Python 3
