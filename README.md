@@ -50,11 +50,12 @@
 - If you have thought of a new feature or QoL improvement you would like to see being implemented, please contact me directly on Discord or Telegram: @NCPlyn.
 
 ## Support
-If you have found this project helpful / used it / want to support and encourage me into working more, you can do so here: [Revolut](https://revolut.me/ncplyn) (I'm getting 100%) or [PayPal](https://paypal.me/NCPlyn) (I'm getting only 79%) or Crypto (DM me at [Telegram](https://t.me/NCPlyn)).
+If you have found this project helpful / used it / want to support and encourage me into working more, you can do so here: [Revolut](https://revolut.me/ncplyn) (EU only, I'm getting 100%) or [PayPal](https://paypal.me/NCPlyn) (Please send in your currency, not in CZK!, I'm getting only 79%) or Crypto (DM me at [Telegram](https://t.me/NCPlyn)).
 Any amount is more than welcome! Don't forget to add contact info or DM me, so I can add you here:
 
 - **<a href="https://pcbway.com/g/77jC58">PCBWay</a>** has sponsored this project by providing prototype PCBs!
 - [**Arkoss**](https://www.instagram.com/snowkatark/), Thank you for your donation!
+- [**NULL**](https://www.instagram.com/null_the_protogen), Thank you for your donation!
 - [**Alellv**](https://github.com/Alellv), Thank you for your donation!
 - [**Jura**](https://www.instagram.com/jura_furr/), Thank you for your donation!
 
