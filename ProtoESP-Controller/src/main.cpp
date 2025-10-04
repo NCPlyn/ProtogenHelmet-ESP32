@@ -20,7 +20,7 @@
 #define FADESTEPS 4 //how many steps when fading between frames? (0=disabled)
 
 bool earPresent = true; // Are you using ear leds?
-#define earLedsNum 74 // How many? (74 rn, no other option atm)
+#define earLedsNum 74 // How many? (74 or 32 rn)
 
 bool blushPresent = false; // Are you using blush leds?
 #define blushLedsNum 8 // How many? (might crash under 8)
@@ -46,9 +46,9 @@ bool INApresent = true; //Are you using INA219?
 #include "esp_adc/adc_oneshot.h"
 adc_oneshot_unit_handle_t adc_handle;
 
-#define earTypeSize 5
+#define earTypeSize 6
 #define visTypeSize 2
-String earTypes[earTypeSize] = {"custom","rainbow","white_noise","corner_sabers","custom_glow"}; //available ear type animations
+String earTypes[earTypeSize] = {"custom","rainbow","white_noise","corner_sabers","custom_glow","none"}; //available ear type animations
 String visorTypes[visTypeSize] = {"custom","all_rainbow"}; //available visor type animations
 String vTAcro[visTypeSize] = {"cust","rnbw"}; //OLED acronyms for visor type animations
 
@@ -726,21 +726,27 @@ void loop() {
       }
     } else if (earsNow->type == 1) { //rainbow
       fill_rainbow(pixelBuffer, 4, millis()/cfg.rbSpeed, 255/cfg.rbWidth);
-      for(int x = 0;x<earLedsNum;x++) {
-        if(x<16) {
-          earLeds[x] = pixelBuffer[0];
-          earLeds[x+37] = pixelBuffer[0];
-        } else if(x<28) {
-          earLeds[x] = pixelBuffer[1];
-          earLeds[x+37] = pixelBuffer[1];
-        } else if(x<36) {
-          earLeds[x] = pixelBuffer[2];
-          earLeds[x+37] = pixelBuffer[2];
-        } else if(x==36) {
-          earLeds[x] = pixelBuffer[3];
-          earLeds[x+37] = pixelBuffer[3];
-        }
-      }
+	  if(earLedsNum == 74) {
+		for(int x = 0;x<earLedsNum;x++) {
+	      if(x<16) {
+			earLeds[x] = pixelBuffer[0];
+			earLeds[x+37] = pixelBuffer[0];
+		  } else if(x<28) {
+			earLeds[x] = pixelBuffer[1];
+			earLeds[x+37] = pixelBuffer[1];
+		  } else if(x<36) {
+			earLeds[x] = pixelBuffer[2];
+			earLeds[x+37] = pixelBuffer[2];
+		  } else if(x==36) {
+			earLeds[x] = pixelBuffer[3];
+			earLeds[x+37] = pixelBuffer[3];
+		  }
+		}
+	  } else {
+		for(int x = 0;x<earLedsNum;x++) {
+	      earLeds[x] = pixelBuffer[0];
+		}
+	  }
       FdisplayEar = true;
     } else if (earsNow->type == 2) { //white_noise
       memset(noiseData, 0, earLedsNum);
@@ -749,7 +755,7 @@ void loop() {
         earLeds[x] = ColorFromPalette(blackWhite, noiseData[x]);
       }
       FdisplayEar = true;
-    } else if (earsNow->type == 3) { //corner_sabers
+    } else if (earsNow->type == 3 && earLedsNum == 74) { //corner_sabers - only 74 led mode
       if(lastFLED+cfg.rbSpeed < millis()) {
         lastFLED = millis();
         startIndex++;
@@ -776,7 +782,7 @@ void loop() {
         }
       }
       FdisplayEar = true;
-    }
+	} else if (earsNow->type == 5) {} //none
   }
 
   //--------------------------------//VISOR+BLUSH Leds render

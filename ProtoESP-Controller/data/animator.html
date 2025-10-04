@@ -12,57 +12,21 @@
       <h2>Ears</h2>
       <hr>
       <label for="typeEars">Animation: </label> <sup onclick="alert('Select custom or prefab ears animation')">&#9432;</sup>
-      <select id="typeEars">
+      <select id="typeEars">,
+	    <option value="none">none</option>
         <option value="custom">custom</option>
         <option value="rainbow">rainbow</option>
         <option value="white_noise">white_noise</option>
         <option value="corner_sabers">corner_sabers</option>
         <option value="custom_glow">custom_glow</option>
       </select>
+	  <label for="earConfig"> | Config: </label> <sup onclick="alert('Select config of the ear leds')">&#9432;</sup>
+      <select id="earConfig">
+        <option value="74">74 LED</option>
+        <option value="32">32 LED</option>
+      </select>
       <div id="earsDiv">
-        <div id="divForSvg">
-          <svg id="svg1" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg">
-            <g fill="black">
-              <path id="37" d="m350 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="36" d="m286.36 256.36a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="35" d="m260 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="34" d="m286.36 383.64a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="33" d="m350 410a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="32" d="m413.64 383.64a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="31" d="m440 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="30" d="m413.64 256.36a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="29" d="m350 230a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="28" d="m260 164.12a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="27" d="m194.12 230a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="26" d="m170 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="25" d="m194.12 410a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="24" d="m260 475.88a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="23" d="m350 500a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="22" d="m440 475.88a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="21" d="m505.88 410a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="20" d="m530 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="19" d="m505.88 230a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="18" d="m440 164.12a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="17" d="m350 140a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="16" d="m248.86 69.66a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="15" d="m159.08 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="14" d="m101.464 214.5a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="13" d="m80 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="12" d="m99.66 421.14a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="11" d="m159.08 510.92a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="10" d="m244.5 568.54a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="9" d="m350 590a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="8" d="m451.14 570.34a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="7" d="m540.92 510.92a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="6" d="m598.54 425.5a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="5" d="m620 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="4" d="m600.34 218.86a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="3" d="m540.92 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="2" d="m455.5 71.464a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-              <path id="1" d="m350 50a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
-            </g>
-          </svg>
-        </div>
+        <div id="divForSvg"></div>
         <br>
         <button onclick="fillBlack()">Fill black</button>
         <button onclick="mirrorEars()">Copy left to right</button><br>
@@ -222,6 +186,7 @@
   #earsFramesP a,#visorFramesP a {
     margin-right: 5px;
     margin-left: 5px;
+	cursor: pointer;
   }
   h1,h2 {
     margin-block-start: 0.4em;
@@ -333,6 +298,76 @@
   
   let selMatrix = "t0";
   
+  $("#earConfig").change(function() {
+    $('#divForSvg').empty();
+    if($("#earConfig").val() == "74") {
+	  for(var x = 1; x <= 2; x++) {
+		$('#divForSvg').append(`<svg id="svg`+x+`" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg"><g fill="black">
+              <path id="37" d="m350 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="36" d="m286.36 256.36a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="35" d="m260 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="34" d="m286.36 383.64a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="33" d="m350 410a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="32" d="m413.64 383.64a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="31" d="m440 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="30" d="m413.64 256.36a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="29" d="m350 230a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="28" d="m260 164.12a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="27" d="m194.12 230a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="26" d="m170 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="25" d="m194.12 410a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="24" d="m260 475.88a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="23" d="m350 500a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="22" d="m440 475.88a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="21" d="m505.88 410a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="20" d="m530 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="19" d="m505.88 230a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="18" d="m440 164.12a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="17" d="m350 140a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="16" d="m248.86 69.66a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="15" d="m159.08 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="14" d="m101.464 214.5a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="13" d="m80 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="12" d="m99.66 421.14a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="11" d="m159.08 510.92a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="10" d="m244.5 568.54a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="9" d="m350 590a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="8" d="m451.14 570.34a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="7" d="m540.92 510.92a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="6" d="m598.54 425.5a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="5" d="m620 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="4" d="m600.34 218.86a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="3" d="m540.92 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="2" d="m455.5 71.464a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="1" d="m350 50a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+            </g></svg>`);
+	  }
+    } else if ($("#earConfig").val() == "32") {
+      for(var x = 1; x <= 2; x++) {
+		$('#divForSvg').append(`<svg id="svg`+x+`" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg"><g fill="black">
+              <path id="16" d="m248.86 69.66a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="15" d="m159.08 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="14" d="m101.464 214.5a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="13" d="m80 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="12" d="m99.66 421.14a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="11" d="m159.08 510.92a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="10" d="m244.5 568.54a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="9" d="m350 590a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="8" d="m451.14 570.34a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="7" d="m540.92 510.92a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="6" d="m598.54 425.5a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="5" d="m620 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="4" d="m600.34 218.86a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="3" d="m540.92 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="2" d="m455.5 71.464a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+              <path id="1" d="m350 50a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
+            </g></svg>`);
+	  }
+    }
+  });
+  $("#earsDiv").hide();
+  $("#earConfig").val('74').change();
+  
   $("#visorConfig").change(function() {
     numOfSegm = 0;
     numOfBlush = 0;
@@ -419,9 +454,6 @@
   }
 
   const rgb2hex = (rgb) => `${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice(1).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('')}`
-  //clone svg to save on file size
-  $('#svg1').clone().appendTo($('#divForSvg'));
-  $('#divForSvg svg:nth-child(2)').attr("id", "svg2");
 
   //cliked on used color and set it
   $("#usedColors").on('click', ".colorItem", function() {
@@ -453,11 +485,11 @@
   });
 
   //colors SVG dots with selected color
-  $("path").on('click', function() {
+  $(document).on('click', 'path', function() {
     $(this).attr('fill', curColor);
     $(this).attr('stroke', "gray");
   });
-  $("path").mouseenter(function() {
+  $(document).on('mouseenter', 'path', function() {
     if(isMouseDown) {
       $(this).attr('fill', curColor);
       $(this).attr('stroke', "gray");
@@ -476,7 +508,6 @@
       $("#svg2").find("#" + x).attr('fill', "#000000");
     }
   }
-  fillBlack();
 
   //mirrors left ear to right one
   function mirrorEars() {
@@ -487,19 +518,12 @@
 
   //hides animator if not needed
   $("#typeEars").change(function() {
-    if ($("#typeEars").val() == "custom" || $("#typeEars").val() == "custom_glow") {
+    if (($("#typeEars").val() == "custom" || $("#typeEars").val() == "custom_glow") && $("#typeEars").val() != "none") {
       $("#earsDiv").show();
     } else {
       $("#earsDiv").hide();
     }
   });
-  /*$("#typeVisor").change(function() {
-    if ($("#typeVisor").val() == "custom") {
-      $("#visorDiv").show();
-    } else {
-      $("#visorDiv").hide();
-    }
-  });*/
 
   var nowEditEarsFrame = 0;
   //deletes selected frame
@@ -535,11 +559,19 @@
     var obj = JSON.parse(framesEars[nowEditEarsFrame]);
     $("#timespanEars").val(obj.timespan);
     for (var x = 0; x < obj.leds.length; x++) {
-      if (x < 37) {
-        $("#svg1").find("#" + (x + 1)).attr('fill', "#" + obj.leds[x]);
-      } else {
-        $("#svg2").find("#" + (x - 36)).attr('fill', "#" + obj.leds[x]);
-      }
+	  if ($("#earConfig").val() == "74") {
+        if (x < 37) {
+          $("#svg1").find("#" + (x + 1)).attr('fill', "#" + obj.leds[x]);
+        } else {
+          $("#svg2").find("#" + (x - 36)).attr('fill', "#" + obj.leds[x]);
+        }
+	  } else if($("#earConfig").val() == "32") {
+	    if (x < 17) {
+          $("#svg1").find("#" + (x + 1)).attr('fill', "#" + obj.leds[x]);
+        } else {
+          $("#svg2").find("#" + (x - 16)).attr('fill', "#" + obj.leds[x]);
+        }
+	  }
     }
     $("#editDivEars").show();
     $("#saveEditFrameEars").attr('value', nowEditEarsFrame);
@@ -596,17 +628,18 @@
       alert("Timespan missing");
     } else {
       var temp = "{\"timespan\":" + $("#timespanEars").val() + ",\"leds\":[";
-      for (var x = 1; x < 38; x++) {
+	  var ledNum = Number($("#earConfig").val()/2) + 1;
+      for (var x = 1; x < ledNum; x++) {
         if (x > 1) {
           temp += ",";
         }
-        temp += "\"" + $("#svg1").find("#" + x).attr('fill').substring(1) + "\"";
+        temp += "\"" + (($("#svg1").find("#" + x).attr('fill') || "").substring(1) || "0") + "\"";
       }
-      for (var x = 1; x < 38; x++) {
-        if (x < 38) {
+      for (var x = 1; x < ledNum; x++) {
+        if (x < ledNum) {
           temp += ",";
         }
-        temp += "\"" + $("#svg2").find("#" + x).attr('fill').substring(1) + "\"";
+        temp += "\"" + (($("#svg2").find("#" + x).attr('fill') || "").substring(1) || "0") + "\"";
       }
       temp += "]}";
       if (editing < 0) {
@@ -1182,7 +1215,7 @@
     var obj = JSON.parse(response);
     if (obj.ears.type == "custom" || obj.ears.type == "custom_glow") {
       framesEars.length = 0;
-      $("#visorEarsP").html("");
+      $("#earsFramesP").html("");
       $("#earsDiv").show();
       $('#typeEars option[value="'+obj.ears.type+'"]').prop('selected', true);
       for (var x = 0; x < obj.ears.frames.length; x++) {
