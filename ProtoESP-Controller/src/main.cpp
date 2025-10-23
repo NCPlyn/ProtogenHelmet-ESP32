@@ -248,7 +248,7 @@ bool loadAnim(String anim, String temp) {
     visorNow->numOfFrames = doc["visor"]["frames"].size();
     for(int x = 0; x < visorNow->numOfFrames; x++) {
       visorNow->frames[x].timespan = doc["visor"]["frames"][x]["timespan"].as<int>();
-      numAnimBlush = min((uint8_t)doc["visor"]["frames"][x]["ledsBlush"].size(),numAnimBlush); //overflow fix
+      numAnimBlush = (uint8_t)doc["visor"]["frames"][x]["ledsBlush"].size();
       for(int y = 0; y < numAnimBlush; y++) {
         visorNow->frames[x].ledsBlush[y] = strtol(doc["visor"]["frames"][x]["ledsBlush"][y].as<String>().c_str(), NULL, 16);
       }
@@ -726,27 +726,27 @@ void loop() {
       }
     } else if (earsNow->type == 1) { //rainbow
       fill_rainbow(pixelBuffer, 4, millis()/cfg.rbSpeed, 255/cfg.rbWidth);
-	  if(earLedsNum == 74) {
-		for(int x = 0;x<earLedsNum;x++) {
-	      if(x<16) {
-			earLeds[x] = pixelBuffer[0];
-			earLeds[x+37] = pixelBuffer[0];
-		  } else if(x<28) {
-			earLeds[x] = pixelBuffer[1];
-			earLeds[x+37] = pixelBuffer[1];
-		  } else if(x<36) {
-			earLeds[x] = pixelBuffer[2];
-			earLeds[x+37] = pixelBuffer[2];
-		  } else if(x==36) {
-			earLeds[x] = pixelBuffer[3];
-			earLeds[x+37] = pixelBuffer[3];
-		  }
-		}
-	  } else {
-		for(int x = 0;x<earLedsNum;x++) {
-	      earLeds[x] = pixelBuffer[0];
-		}
-	  }
+      if(earLedsNum == 74) {
+        for(int x = 0;x<earLedsNum;x++) {
+          if(x<16) {
+            earLeds[x] = pixelBuffer[0];
+            earLeds[x+37] = pixelBuffer[0];
+          } else if(x<28) {
+            earLeds[x] = pixelBuffer[1];
+            earLeds[x+37] = pixelBuffer[1];
+          } else if(x<36) {
+            earLeds[x] = pixelBuffer[2];
+            earLeds[x+37] = pixelBuffer[2];
+          } else if(x==36) {
+            earLeds[x] = pixelBuffer[3];
+            earLeds[x+37] = pixelBuffer[3];
+          }
+        }
+      } else {
+        for(int x = 0;x<earLedsNum;x++) {
+          earLeds[x] = pixelBuffer[0];
+        }
+      }
       FdisplayEar = true;
     } else if (earsNow->type == 2) { //white_noise
       memset(noiseData, 0, earLedsNum);
@@ -782,7 +782,7 @@ void loop() {
         }
       }
       FdisplayEar = true;
-	} else if (earsNow->type == 5) {} //none
+    } else if (earsNow->type == 5) {} //none
   }
 
   //--------------------------------//VISOR+BLUSH Leds render
@@ -793,8 +793,8 @@ void loop() {
       setAllVisor(visorLedsNEW,0,currentVisorFrame); //set visor leds
       if(blushPresent) {
         for(int x = 0; x<8; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
+        FdisplayBlush = true;
       }
-      FdisplayBlush = true;
       currentVisorFrame++;
       instantReload = false;
     }
@@ -809,8 +809,8 @@ void loop() {
     setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame-1);
     if(blushPresent) {
       for(int x = 0; x<numAnimBlush; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame-1].ledsBlush[x]; } //set blush leds
+      FdisplayBlush = true;
     }
-    FdisplayBlush = true;
   }
 
   //--------------------------------//TILT
@@ -1039,10 +1039,13 @@ void loop() {
         }
       }
     } else if (visorType == "MAX72XX") {
-      if(cfg.bVisor > 15) { cfg.bVisor = 15;}
-      mx.control(MD_MAX72XX::INTENSITY, cfg.bVisor);
-      mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
-      mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
+      if(FdisplayVisor) {
+        if(cfg.bVisor > 15) { cfg.bVisor = 15;}
+        mx.control(MD_MAX72XX::INTENSITY, cfg.bVisor);
+        mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::ON);
+        mx.control(MD_MAX72XX::UPDATE, MD_MAX72XX::OFF);
+        FdisplayVisor = false;
+      }
     }
     if(blushPresent && useRGBblush) {
       for(int i = 0; i < blushLedsNum; i++) {
@@ -1056,11 +1059,13 @@ void loop() {
         c2Leds[i] = earLeds[i];
       }
       ledController[1]->showLeds(cfg.bEar);
+      FdisplayEar = false;
     } else if (blushPresent && !earPresent && FdisplayBlush) {
       for(int i = 0; i < blushLedsNum; i++) {
         c2Leds[i] = blushLeds[i];
       }
       ledController[1]->showLeds(cfg.bEar);
+      FdisplayBlush = false;
     } else if (blushPresent && earPresent && (FdisplayBlush || FdisplayEar)) { //ear-blush-ear
       for(int i = 0; i < (earLedsNum/2); i++) {
         c2Leds[i] = earLeds[i];
@@ -1072,6 +1077,8 @@ void loop() {
         c2Leds[i] = earLeds[i-blushLedsNum];
       }
       ledController[1]->showLeds(cfg.bEar);
+      FdisplayEar = false;
+      FdisplayBlush = false;
     }
     /*if(FdisplayEar && earPresent) {
       ledController[1]->showLeds(cfg.bEar); //ears
