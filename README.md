@@ -36,6 +36,7 @@
 - [**Matrix**](RGBMatrix) folder: WS2812B 8x8 RGB Matrix replacement for single color MAX7219 Matrixes
 - [**Animator**](https://foxxo.cz/proto/animator.html) site: Program to make animations for the controller
 - [**ToDo**](todo.md) .md: Checklist of To Do things
+- [**Troubleshooting / FAQ**](troublefaq.md) .md: If you have problems with anything, check firstly here before contacting me!
 
 ## Documentation
 - How to DIY protogen: [Imgur](https://imgur.com/a/jYpSbuZ)
