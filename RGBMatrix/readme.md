@@ -12,3 +12,4 @@
     - Tell them to check for completely dead LEDs or any single color of each LEDS (red,green,blue sub led), the whole matrix should be light up
 
 #### New version with `SK9822` that should be better in development
+Older version with 2020 package WS2812 [here](https://github.com/NCPlyn/ProtogenHelmet-ESP32/tree/Legacy/RGB-Matrix) (These are used on my own proto)
