@@ -250,7 +250,9 @@ bool loadAnim(String anim, String temp) {
       visorNow->frames[x].timespan = doc["visor"]["frames"][x]["timespan"].as<int>();
       numAnimBlush = (uint8_t)doc["visor"]["frames"][x]["ledsBlush"].size();
       for(int y = 0; y < numAnimBlush; y++) {
-        visorNow->frames[x].ledsBlush[y] = strtol(doc["visor"]["frames"][x]["ledsBlush"][y].as<String>().c_str(), NULL, 16);
+        if(y<blushLedsNum) {
+          visorNow->frames[x].ledsBlush[y] = strtol(doc["visor"]["frames"][x]["ledsBlush"][y].as<String>().c_str(), NULL, 16);
+        }
       }
       numOfSegm = doc["visor"]["frames"][x]["leds"].size();
       for(int y = 0; y < numOfSegm; y++) {
@@ -792,7 +794,7 @@ void loop() {
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
       setAllVisor(visorLedsNEW,0,currentVisorFrame); //set visor leds
       if(blushPresent) {
-        for(int x = 0; x<8; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
+        for(int x = 0; x<blushLedsNum; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
         FdisplayBlush = true;
       }
       currentVisorFrame++;
@@ -808,7 +810,7 @@ void loop() {
     fill_rainbow(visorPixelBuffer, 1, millis()/cfg.rbSpeed, 128/cfg.rbWidth);
     setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame-1);
     if(blushPresent) {
-      for(int x = 0; x<numAnimBlush; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame-1].ledsBlush[x]; } //set blush leds
+      for(int x = 0; x<blushLedsNum; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame-1].ledsBlush[x]; } //set blush leds
       FdisplayBlush = true;
     }
   }
