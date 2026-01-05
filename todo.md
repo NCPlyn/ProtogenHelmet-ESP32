@@ -28,7 +28,7 @@
 - [x] Remote: Different modes of using the buttons (7 anims/6anims+modifier-long change sets-short change rgb mode)
 - [x] Remote: Button on remote changes RGB modes of visor and anim sets
 - [x] Remote: v2 PCB (hole for antenna cable or internal antenna, different batt placement, rename)
-- [x] Make uptodate parts list for most options (**add apds later on if works**)
+- [x] Make uptodate parts list for most options
 - [x] Remote: Create/finish .MD file with: What is it, how to wire, how to connect/edit, photos + sponsor, how to flash
 - [x] Remote: ~~Deep~~Light sleep after 10 minutes & no Wifi clients (devided by double when disconnected from server)
 - [x] Remote: Current from batt: Powered On: 110mA; DeepSleep: 15.5 uA (0.015mA) == 4.5h with 500mAh battery
@@ -41,14 +41,18 @@
 - [x] Per matrix, per frame color for RGB matrices
 - [x] Export anims to zip + loader, download/load config from upload .json (same for remote)
 - [x] Combined ears&blush leds into one controller/pin - crash with >2 controllers (RMTvsSPIFFS)
-- [x] Fade between frames (only RGB matrices) (**should be ok, need to redraw schematic**)
+- [x] Fade between frames (only RGB matrices) (**should be ok**)
+- [x] Controller readme.md including capabilities, oled explain, add capac/ir/tof boop connection, ears/blush connect, etc..
+- [x] .md with touch sensor types and their uses
+- [x] VL53L1X/APDS9960 TOF support besides the IR KY-032 sensor
 
 ### ToDo: Controller
-- [ ] [I] VL6180/APDS9960 TOF support besides the ([IR](http://irsensor.wizecode.com/)) sensor
-- [ ] Apa102 style led matrix? [LCSC](https://www.lcsc.com/product-detail/RGB-LEDs-Built-in-IC_OPSCO-Optoelectronics-SK9822-EC20_C2909059.html)
-- [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
-- [ ] Optimize execution speed: xTask?
+- [ ] More fluid/animated dynamic speech (louder = more further/wider)
 - [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
+- [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
+
+- [ ] Apa102 style led matrix? [LCSC](https://www.lcsc.com/product-detail/RGB-LEDs-Built-in-IC_OPSCO-Optoelectronics-SK9822-EC20_C2909059.html)
+- [ ] Optimize execution speed: xTask?
 - [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
 
 ### ToDo: Remote
@@ -56,6 +60,4 @@
 - [ ] [I] Pins & sleep & PCBbatt for ESP-C3/C6; user LED
 
 ### ToDo: Manuals etc.
-- [ ] Make "How to properly place and tune IR proximity sensor" for boop
-- [ ] Controller readme.md including capabilities, oled explain, add capac and ir boop connection, ears/blush connect, etc..
 - [ ] Animator guide, visor configs + animation upgrade (isMouth convert/upgrade, matrix color)

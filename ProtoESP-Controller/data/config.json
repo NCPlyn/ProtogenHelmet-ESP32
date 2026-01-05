@@ -28,5 +28,6 @@
   "visColor":"#ff0000",
   "wifiName":"ProtoWiFi",
   "wifiPass":"Proto1234",
-  "fanDuty": 255
+  "fanDuty": 255,
+  "boopThresh":10
 }

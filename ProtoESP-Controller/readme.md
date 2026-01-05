@@ -12,6 +12,8 @@
 - Support for **remote or push button** from ESP to change animation
 - **OLED support** to see what is your proot doing
 - Dynamic change of animation when speaking, IR/Capacitive/TOF **boop sensors**....
+- Support for OTA updates via **ElegantOTA**
+- Animations and config files can be exported and imported for safekeeping/transfering
 
 ### OLED display description
 ![ProtoESP-Controller_SCHEM](img/protoOLED.png)
@@ -35,7 +37,7 @@
   - Change `earPresent` if you're or not using ear LEDs
   - Change `blushPresent` if you're or not using blush LEDs (set `useRGBblush` to true if they are RGB and not GRB, for ear and visor color: `setup():FastLED.addLeds...`)
   - Change `INApresent` if you have or not INA219 connected
-  - Change `boopMode` to what you use as boop sensor (`IR-KY` for KY032/active LOW or `Capac` for capacitive/active HIGH)
+  - Change `boopMode` to what you use as boop sensor (please see [**here**](touchSensors.md) for proper setup)
 - In `platformio.ini`:
   - If using different capacity than n16r8, change to proper sized board (line 2)
   - If your board has lower flash capacity than 8MB, change partition file (line 11)

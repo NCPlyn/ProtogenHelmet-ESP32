@@ -74,6 +74,8 @@
             <input type="number" name="spMax" min="30" max="600">
             <label for="spTrig">Speak trigger point (500-2500|1800)</label>
             <input type="number" name="spTrig" min="500" max="2500">
+            <label for="boopThresh">Bopp distance threshold (5-250|10)</label>
+            <input type="number" name="boopThresh" min="5" max="250">
             <label for="aTilt">Animation for tilt (confused.json)</label>
             <select id="aTilt" name="aTilt"></select>
             <label for="aUp">Animation for up (upset.json)</label>
@@ -336,6 +338,7 @@
         document.getElementsByName("wifiName")[0].value = obj.wifiName;
         document.getElementsByName("wifiPass")[0].value = obj.wifiPass;
         document.getElementById("fanspeed").value = obj.fanDuty;
+        document.getElementsByName("boopThresh")[0].value = obj.boopThresh;
   }
 
 	function loadConfig() {

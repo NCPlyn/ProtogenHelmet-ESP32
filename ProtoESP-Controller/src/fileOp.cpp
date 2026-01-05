@@ -52,6 +52,7 @@ void Config::setDefault() {
   wifiName = "ProtoWiFi";
   wifiPass = "Proto1234";
   fanDuty = 255;
+  boopThresh = 10;
   save();
 }
 
@@ -87,6 +88,7 @@ bool Config::save() {
   doc["wifiName"] = wifiName;
   doc["wifiPass"] = wifiPass;
   doc["fanDuty"] = fanDuty;
+  doc["boopThresh"] = boopThresh;
   
   CrcWriter CRCchk;
   serializeJson(doc, CRCchk);
@@ -189,6 +191,7 @@ bool Config::load() {
   wifiName = doc["wifiName"].as<String>();
   wifiPass = doc["wifiPass"].as<String>();
   fanDuty = doc["fanDuty"].as<int>();
+  boopThresh = doc["boopThresh"].as<int>();
 
   return true;
 }

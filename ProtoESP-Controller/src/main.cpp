@@ -1,12 +1,12 @@
 //Make sure you have everything connected by the schematic in the repository and set these defines correctly!
 
 #define MICpin ADC_CHANNEL_0 //Microphone, pin 1
-#define T_in 2 //Output from Touch Sensor
-#define T_en 42 //Enable pin to Touch Sensor
+#define T_in 2 //Output from Touch Sensor (for KY-032, Capac)
+#define T_en 42 //Enable pin to Touch Sensor (for KY-032)
 #define DATA_PIN_EARS 5  //Ears(Blush) (from outer to inner, POV-right cheek, (if blush: from top to bottom, right cheek nearest to ear first))
 #define DATA_PIN_VISOR 7 //Face (right cheek, left segment of eye first)
-#define I2C_SDA 8 //SDA for Gyro, OLED, INA219
-#define I2C_SCL 9 //SCL for Gyro, OLED, INA219
+#define I2C_SDA 8 //SDA for Gyro, OLED, INA219, ToF
+#define I2C_SCL 9 //SCL for Gyro, OLED, INA219, ToF
 #define MAX_CLK 12 //Clock for MAX72xx matrixes if used
 #define MAX_MOSI 11 //Data for MAX72xx matrixes if used
 #define MAX_CS 10 //ChipSelect for MAX72xx matrixes if used
@@ -17,7 +17,7 @@
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW //flip up-down: ::DR1CR0RR1_HW , flip left-right: ::PAROLA_HW , flip both: ::ICSTATION_HW
 #define MAX72xx_DEVICES 11 // How many MAX72xx matrices for visor?
 #define visorLedsNum 704 // How many WS2812 LEDs for visor? (matrixNumber*64)
-#define FADESTEPS 4 //how many steps when fading between frames? (0=disabled)
+#define FADESTEPS 4 //how many steps when fading between frames? (0=disabled; work only for WS2812 displays)
 
 bool earPresent = true; // Are you using ear leds?
 #define earLedsNum 74 // How many? (74 or 32 rn)
@@ -28,7 +28,7 @@ bool useRGBblush = true; //Swaps red-green for RGB strip
 
 bool INApresent = true; //Are you using INA219?
 
-#define boopMode "IR-KY" //"IR-KY" for KY-032, "Capac" for capacitive sensor/boop when HIGH, "IR-Dist" for ADPS... tbd
+#define boopMode "KY-032" //"KY-032" for KY-032, "Capac" for capacitive sensor/boop when HIGH, "APDS9960" for ADPS9960, "VL53L1X" for VL53L1X, leave empty for none
 
 #define revertTilt 8000 //The maximum time that animation caused by tilt gets shown (used as if tilt bugs out etc)
 
@@ -83,6 +83,12 @@ LSM6DS3 myIMU;
 #include <Adafruit_INA219.h> //edited library in this sketch (replace 0.1R with 0.03R resistor on the board)
 Adafruit_INA219 ina219;
 
+#include "Adafruit_APDS9960.h"
+Adafruit_APDS9960 apds;
+
+#include "Adafruit_VL53L1X.h"
+Adafruit_VL53L1X vl53;
+
 //--------------------------------//web / wifi
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
@@ -91,7 +97,7 @@ Adafruit_INA219 ina219;
 AsyncWebServer server(80);
 
 //--------------------------------//Config vars
-bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true;
+bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true, ToFInitDone = false;
 uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims;
 String currentAnim = "", animToLoad = "", availAnims[50], getfilesCache;
 
@@ -448,6 +454,9 @@ void startWiFiWeb() {
       cfg.wifiName = String(request->getParam("wifiName")->value());
     if(request->hasParam("wifiPass"))
       cfg.wifiPass = String(request->getParam("wifiPass")->value());
+    //boop sensors
+    if(request->hasParam("boopThresh"))
+      cfg.boopThresh = request->getParam("boopThresh")->value().toInt();
     delay(25);
     if(cfg.save()) {
       instantReload = true;
@@ -549,6 +558,20 @@ void startWiFiWeb() {
     request->send(200, "text/plain", String(floor(myIMU.readFloatAccelX()*100)/100)+";"+String(floor(myIMU.readFloatAccelY()*100)/100)+";"+String(floor(myIMU.readFloatAccelZ()*100)/100));
   });
 
+  server.on("/tof", HTTP_GET, [](AsyncWebServerRequest *request){
+    if(!ToFInitDone) {
+      request->send(200, "text/plain", "ToF not initialized!");
+    }
+    if (boopMode == "APDS9960") {
+        request->send(200, "text/plain", String(255 - apds.readProximity()));
+    } else if (boopMode == "VL53L1X") {
+      if (vl53.dataReady()) {
+        request->send(200, "text/plain", String(vl53.distance()));
+      }
+      request->send(200, "text/plain", "Data not ready!");
+    }
+  });
+
   server.onNotFound([](AsyncWebServerRequest *request){request->send(404, "text/plain", "Not found");});
   ElegantOTA.begin(&server);
   server.begin();
@@ -560,15 +583,16 @@ void startWiFiWeb() {
 void setup() {
   Serial.begin(115200);
 
-  if(boopMode == "IR-KY") {
-    pinMode(T_in, INPUT_PULLUP);
-  } else {
-    pinMode(T_in, INPUT_PULLDOWN);
-  }
-  pinMode(T_en, OUTPUT);
   pinMode(animBtn, INPUT_PULLUP);
   pinMode(0, INPUT_PULLUP);
   pinMode(fanPWM, OUTPUT);
+
+  if(boopMode == "KY-032") {
+    pinMode(T_in, INPUT_PULLUP);
+    pinMode(T_en, OUTPUT);
+  } else if ((boopMode == "Capac")) {
+    pinMode(T_in, INPUT_PULLDOWN);
+  }
 
   hwBtn.setDebounceTime(50);
 
@@ -638,7 +662,7 @@ void setup() {
 
   if(cfg.tiltEna) {
     if(myIMU.begin()) {
-      Serial.println(F("[E] An Error has occurred while connecting to LSM!"));
+      Serial.println(F("[E] An Error has occurred while initializing LSM!"));
       cfg.tiltEna = false;
     } else {
       tiltInitDone = true;
@@ -647,7 +671,7 @@ void setup() {
 
   if(cfg.oledEna) {
     if(!oled.init(oledAddr,cfg.bOled,INApresent)) {
-      Serial.println(F("[E] An Error has occurred while initializing SSD1306."));
+      Serial.println(F("[E] An Error has occurred while initializing SSD1306!"));
       cfg.oledEna = false;
     } else {
       oledInitDone = true;
@@ -658,10 +682,33 @@ void setup() {
 
   if(INApresent && oledInitDone) {
     if(!ina219.begin()) {
-      Serial.println(F("[E] An Error has occurred while finding INA219 chip!"));
+      Serial.println(F("[E] An Error has occurred while initializing INA219 chip!"));
       INApresent = false;
     } else {
       ina219.setCalibration_16V_8A();
+    }
+  }
+
+  if(boopMode == "APDS9960" && cfg.boopEna) {
+    if(!apds.begin()){
+      cfg.boopEna = false;
+      Serial.println(F("[E] An Error has occurred while initializing APDS9960 chip!"));
+    } else {
+      ToFInitDone = true;
+      apds.enableProximity(true);
+    }
+  } else if (boopMode == "VL53L1X" && cfg.boopEna) {
+    if(!vl53.begin()){
+      cfg.boopEna = false;
+      Serial.println(F("[E] An Error has occurred while initializing VL53L1X chip!"));
+    } else {
+      if (!vl53.startRanging()) {
+        cfg.boopEna = false;
+        Serial.println(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
+      } else {
+        ToFInitDone = true;
+        vl53.setTimingBudget(50);
+      }
     }
   }
   
@@ -933,7 +980,7 @@ void loop() {
 
   //--------------------------------//BOOP Detection
   if(millis() > 200 && cfg.boopEna) {
-    if(boopMode == "IR-KY") {
+    if(boopMode == "KY-032") {
       digitalWrite(T_en, HIGH);
       delayMicroseconds(210);
       if(booping == false && !digitalRead(T_in)) {
@@ -971,8 +1018,63 @@ void loop() {
           loadAnim(boopoldanim,"");
         }
       }
-    } else if (boopMode == "IR-Dist") {
-      //TBD
+    } else if (boopMode == "APDS9960") {
+      if(ToFInitDone) {
+        if(booping == false && (255 - apds.readProximity()) < cfg.boopThresh) {
+          Serial.println(F("[I] ToF BOOP"));
+          booping = true;
+          boopoldanim = currentAnim;
+          loadAnim(cfg.aBoop,"");
+          lastMillsBoop = millis();
+        } else if(booping == true && lastMillsBoop+1000<millis() && (255 - apds.readProximity()) > cfg.boopThresh) {
+          Serial.println(F("[I] ToF unBOOP"));
+          booping = false;
+          if(!wasTilt) {
+            loadAnim(boopoldanim,"");
+          }
+        }
+      } else {
+        if(!apds.begin()){
+          cfg.boopEna = false;
+          Serial.println(F("[E] An Error has occurred while initializing APDS9960 chip!"));
+        } else {
+          ToFInitDone = true;
+          apds.enableProximity(true);
+        }
+      }
+    } else if (boopMode == "VL53L1X") {
+      if(ToFInitDone) {
+        int16_t distance = -1;
+        if (vl53.dataReady()) {
+          distance = vl53.distance();
+        }
+        if(booping == false && distance < cfg.boopThresh && distance != -1) {
+          Serial.println(F("[I] ToF BOOP"));
+          booping = true;
+          boopoldanim = currentAnim;
+          loadAnim(cfg.aBoop,"");
+          lastMillsBoop = millis();
+        } else if(booping == true && lastMillsBoop+1000<millis() && distance > cfg.boopThresh && distance != -1) {
+          Serial.println(F("[I] ToF unBOOP"));
+          booping = false;
+          if(!wasTilt) {
+            loadAnim(boopoldanim,"");
+          }
+        }
+      } else {
+        if(!vl53.begin()){
+          cfg.boopEna = false;
+          Serial.println(F("[E] An Error has occurred while initializing VL53L1X chip!"));
+        } else {
+          if (!vl53.startRanging()) {
+            cfg.boopEna = false;
+            Serial.println(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
+          } else {
+            ToFInitDone = true;
+            vl53.setTimingBudget(50);
+          }
+        }
+      }
     }
   }
 

@@ -43,7 +43,7 @@
 - Parts list: [Pastebin](https://pastebin.com/7z4fnVfQ)
 - Controller how to: [**MD**](ProtoESP-Controller/readme.md)
 - Remote how to: [**MD**](ProtoESP-Remote/readme.md)
-- IR Sensor setup: TBD
+- Touch Sensor setup: [**MD**](ProtoESP-Controller/touchSensors.md)
 - Alive ProtoESP protogens / creators: [Furo](https://instagram.com/proto_furo), [Arkoss](https://www.instagram.com/snowkatark/), [Jura](https://www.instagram.com/jura_furr/), [BFoxCZ](https://www.instagram.com/bfoxcz/), & more...
 
 ### Feature request / issues
