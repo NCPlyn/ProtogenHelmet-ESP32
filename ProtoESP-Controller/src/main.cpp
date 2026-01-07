@@ -10,7 +10,7 @@
 #define MAX_CLK 12 //Clock for MAX72xx matrixes if used
 #define MAX_MOSI 11 //Data for MAX72xx matrixes if used
 #define MAX_CS 10 //ChipSelect for MAX72xx matrixes if used
-#define animBtn 4 //Pulling this pin LOW cycles trough animations
+#define animBtn 4 //Pulling this pin LOW cycles through animations
 #define fanPWM 13 //PWM pin to control 4pin fan
 
 #define visorType "WS2812" // What displays are you using? (WS2812 or MAX72XX so far)

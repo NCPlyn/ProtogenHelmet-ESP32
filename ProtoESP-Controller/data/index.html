@@ -54,37 +54,37 @@
         <div class="config">
           <h2>Advanced</h2>
           <form action="./saveconfig" method="get">
-            <i><label>Name (limits|default)</label></i>
-            <i><span>value</span></i>
-            <label for="visColor" id="visColorLabel">Visor color</label>
+            <i><label>Name</label></i>
+            <i><span>Value</span></i>
+            <label for="visColor" id="visColorLabel">Visor color <sup onclick="alert('The default color if using WS2812 panels.\nUse full bright color/top of the picker as more dark color = less brightness on panel!')">&#9432;</sup></label>
             <input type="color" name="visColor" id="visColor">
-            <label for="bEar">Brightness ears (0-255|64)</label>
+            <label for="bEar">Brightness ears <sup onclick="alert('Range: 0-255\nDefault: 64')">&#9432;</sup></label>
             <input type="number" name="bEar" min="0">
-            <label for="bVisor">Brightness visor (WS:0-255|MAX:0-15)</label>
+            <label for="bVisor">Brightness visor <sup onclick="alert('Range:\nWS2812: 0-255\nMAX7219\nDefault: 100 / 15')">&#9432;</sup></label>
             <input type="number" name="bVisor" min="0" max="255">
-            <label for="bOled">Brightness OLED (0-2|2)</label>
+            <label for="bOled">Brightness OLED <sup onclick="alert('Range: 0-2\nDefault: 2')">&#9432;</sup></label>
             <input type="number" name="bOled" min="0" max="2">
-            <label for="rbSpeed">Rainbow prefab speed (1-200ms|15)</label>
+            <label for="rbSpeed">Rainbow prefab speed <sup onclick="alert('Range: 1-200ms\nDefault: 15')">&#9432;</sup></label>
             <input type="number" name="rbSpeed" min="1" max="200">
-            <label for="rbWidth">Rainbow hue width (1-32|8)</label>
+            <label for="rbWidth">Rainbow hue width <sup onclick="alert('Range: 1-32\nDefault: 8')">&#9432;</sup></label>
             <input type="number" name="rbWidth" min="1" max="32">
-            <label for="spMin">Speak min delay (20-500ms|90)</label>
+            <label for="spMin">Speak min delay <sup onclick="alert('Range: 20-500ms\nDefault: 90')">&#9432;</sup></label>
             <input type="number" name="spMin" min="20" max="500">
-            <label for="spMax">Speak max delay (30-600ms|130)</label>
+            <label for="spMax">Speak max delay <sup onclick="alert('Range: 30-600ms\nDefault: 130')">&#9432;</sup></label>
             <input type="number" name="spMax" min="30" max="600">
-            <label for="spTrig">Speak trigger point (500-2500|1800)</label>
+            <label for="spTrig">Speak trigger point <sup onclick="alert('Range: 500-2500\nDefault: 1800')">&#9432;</sup></label>
             <input type="number" name="spTrig" min="500" max="2500">
-            <label for="boopThresh">Bopp distance threshold (5-250|10)</label>
+            <label for="boopThresh">Boop distance threshold <sup onclick="alert('Range: 5-250\nDefault: 10')">&#9432;</sup></label>
             <input type="number" name="boopThresh" min="5" max="250">
-            <label for="aTilt">Animation for tilt (confused.json)</label>
+            <label for="aTilt">Tilt sideways animation <sup onclick="alert('Default: confused.json')">&#9432;</sup></label>
             <select id="aTilt" name="aTilt"></select>
-            <label for="aUp">Animation for up (upset.json)</label>
+            <label for="aUp">Tilt up animation <sup onclick="alert('Default: upset.json')">&#9432;</sup></label>
             <select id="aUp" name="aUp"></select>
-            <label for="aBoop">Animation for boop (boop.json)</label>
+            <label for="aBoop">Boop animation <sup onclick="alert('Default: boop.json')">&#9432;</sup></label>
             <select id="aBoop" name="aBoop"></select>
-            <label for="wifiName">WiFi AP SSID (ProtoWiFi)</label>
+            <label for="wifiName">WiFi AP SSID <sup onclick="alert('Default: ProtoWiFi\nChange this so other people remotes don\'t connect to your protogen if multiple people running ProtoESP are at the same place!')">&#9432;</sup></label>
             <input type="text" name="wifiName" minlength="9">
-            <label for="wifiPass">WiFi Password (Proto1234)</label>
+            <label for="wifiPass">WiFi AP Password <sup onclick="alert('Default: Proto1234\nSame applies here as for the SSID!')">&#9432;</sup></label>
             <input type="text" name="wifiPass" minlength="9"><br>
             <button type="submit">Save config</button>
           </form>
@@ -211,6 +211,9 @@
     0% {background-position: 0% 50%}
     50% {background-position: 100% 25%}
     100% {background-position: 0% 50%}
+  }
+  sup {
+    cursor: pointer;
   }
 </style>
 
