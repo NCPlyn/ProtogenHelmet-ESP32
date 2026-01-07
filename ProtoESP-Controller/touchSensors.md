@@ -17,9 +17,9 @@
 - Might not detect small objects (aka booped by one finger etc..; 3+ or paws will be detected)
 - Chinese clones should work too
 - Has to be calibrated:
- - Visit [192.168.4.1/tof](http://192.168.4.1/tof) to see current sensor value
- - Nothing infront of visor value for example 240; hand on visor value for example 200
- - On the main page, set the Boop Threshold value to 220 and save.
+  - Visit [192.168.4.1/tof](http://192.168.4.1/tof) to see current sensor value
+  - Nothing infront of visor value for example 240; hand on visor value for example 200
+  - On the main page, set the Boop Threshold value to 220 and save.
  
 ### VL53L1X
 ![](img/VL53L1X.png)
@@ -28,15 +28,15 @@
 - Best placed 1-2cm from visor pointing up or slightly forward.
 - Might not detect small objects (aka booped by one finger etc..; 3+ or paws will be detected)
 - Has to be calibrated:
- - Visit [192.168.4.1/tof](http://192.168.4.1/tof) to see current sensor value
- - Nothing infront of visor value for example 20; hand on visor value for example 3
- - On the main page, set the Boop Threshold value to 10 and save.
+  - Visit [192.168.4.1/tof](http://192.168.4.1/tof) to see current sensor value
+  - Nothing infront of visor value for example 20; hand on visor value for example 3
+  - On the main page, set the Boop Threshold value to 10 and save.
  
 ### "Capac"
 ![](img/capac.png)
 - This option is universal and activates when GPIO2 is HIGH (3.3V applied)
 - Mainly used for capacitive sensors
- - These will work only on bare fingers, not on paws/gloves!
+- These will work only on bare fingers, not on paws/gloves!
 - The pictured module needs to have both AB bridges unbridged! 
- - No self locking (not a toggle -> momentary switch)
- - HIGH TTL output (touched -> 3.3V on output))
+  - No self locking (not a toggle -> momentary switch)
+  - HIGH TTL output (touched -> 3.3V on output))
