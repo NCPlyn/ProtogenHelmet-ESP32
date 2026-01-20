@@ -64,5 +64,7 @@ If displays glitch or behave incorrectly:
 3. Verify grounding and power:
    * All grounds (`-`) must be properly connected.
    * Make sure the power supply provides stable voltage without drops.
-4. Swap LED matrices or modules if problems persist:
+4. If all/most matrices are fully lit:
+   * Try to reupload the main program and filesystem in normal and viceversa order.
+6. Swap LED matrices or modules if problems persist:
    * Some **cheap MAX clones** are unreliable or faulty across batches.
