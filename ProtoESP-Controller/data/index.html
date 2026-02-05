@@ -7,14 +7,15 @@
   </head>
   <body>
     <main>
+      <h1>ProtoESP</h1>
       <div>
-        <h1>ProtoESP</h1>
-        <p>Active anim:</p>
+        <p>Active animation:</p>
         <h4 id="activeAnim"></h4>
-        <br><hr>
         <div class="anim_buttons1"></div>
         <div class="anim_buttons2"></div>
-        <hr><br>
+        <br>
+      </div>
+      <div>
         <a href="/animator.html" class="small-btn">Animator</a>
         <a class="animbtn" href="/rgb">VisorRGB</a>
         <a href="/update" class="small-btn">OTA Update</a><br><br>
@@ -27,97 +28,91 @@
         <a class="small-btn" onclick="document.getElementById('zipInput').click()">Upload anims .json/.zip</a>
         <a class="small-btn" onclick="downloadZip()">Download animations</a><br><br>
       </div>
+      <h1>Configuration</h1>
+      <div class="config">
+        <h2>Basic</h2>
+        <form>
+          <label for="fanspeed">Fan</label>
+          <input type="range" min="0" max="255" value="200" id="fanspeed">
+          <label for="boop">Boop</label>
+          <input type="checkbox" id="boop">
+          <label for="speech">Speech</label>
+          <input type="checkbox" id="speech">
+          <label for="tilt">Tilt</label>
+          <input type="checkbox" id="tilt">
+          <label for="ble">BLE</label>
+          <input type="checkbox" id="ble">
+          <label for="oled">OLED</label>
+          <input type="checkbox" id="oled">
+          <br>
+          <button type="button" onclick="saveConfig()">Save config</button>
+        </form>
+      </div>
+      <div class="config">
+        <h2>Advanced</h2>
+        <form action="./saveconfig" method="get">
+          <i><label>Name</label></i>
+          <i><span>Value</span></i>
+          <label for="visColor" id="visColorLabel">Visor color <sup onclick="alert('The default color if using WS2812 panels.\nUse full bright color/top of the picker as more dark color = less brightness on panel!')">&#9432;</sup></label>
+          <input type="color" name="visColor" id="visColor">
+          <label for="bEar">Brightness ears <sup onclick="alert('Range: 0-255\nDefault: 64')">&#9432;</sup></label>
+          <input type="number" name="bEar" min="0">
+          <label for="bVisor">Brightness visor <sup onclick="alert('Range:\nWS2812: 0-255\nMAX7219\nDefault: 100 / 15')">&#9432;</sup></label>
+          <input type="number" name="bVisor" min="0" max="255">
+          <label for="bOled">Brightness OLED <sup onclick="alert('Range: 0-2\nDefault: 2')">&#9432;</sup></label>
+          <input type="number" name="bOled" min="0" max="2">
+          <label for="rbSpeed">Rainbow prefab speed <sup onclick="alert('Range: 1-200ms\nDefault: 15')">&#9432;</sup></label>
+          <input type="number" name="rbSpeed" min="1" max="200">
+          <label for="rbWidth">Rainbow hue width <sup onclick="alert('Range: 1-32\nDefault: 8')">&#9432;</sup></label>
+          <input type="number" name="rbWidth" min="1" max="32">
+          <label for="spMin">Speak min delay <sup onclick="alert('Range: 20-500ms\nDefault: 90')">&#9432;</sup></label>
+          <input type="number" name="spMin" min="20" max="500">
+          <label for="spMax">Speak max delay <sup onclick="alert('Range: 30-600ms\nDefault: 130')">&#9432;</sup></label>
+          <input type="number" name="spMax" min="30" max="600">
+          <label for="spTrig">Speak trigger point <sup onclick="alert('Range: 500-2500\nDefault: 1800')">&#9432;</sup></label>
+          <input type="number" name="spTrig" min="500" max="2500">
+          <label for="boopThresh">Boop distance threshold <sup onclick="alert('Range: 5-250\nDefault: 10')">&#9432;</sup></label>
+          <input type="number" name="boopThresh" min="5" max="250">
+          <label for="aTilt">Tilt sideways animation <sup onclick="alert('Default: confused.json')">&#9432;</sup></label>
+          <select id="aTilt" name="aTilt"></select>
+          <label for="aUp">Tilt up animation <sup onclick="alert('Default: upset.json')">&#9432;</sup></label>
+          <select id="aUp" name="aUp"></select>
+          <label for="aBoop">Boop animation <sup onclick="alert('Default: boop.json')">&#9432;</sup></label>
+          <select id="aBoop" name="aBoop"></select>
+          <label for="wifiName">WiFi AP SSID <sup onclick="alert('Default: ProtoWiFi\nChange this so other people remotes don\'t connect to your protogen if multiple people running ProtoESP are at the same place!')">&#9432;</sup></label>
+          <input type="text" name="wifiName" minlength="9">
+          <label for="wifiPass">WiFi AP Password <sup onclick="alert('Default: Proto1234\nSame applies here as for the SSID!')">&#9432;</sup></label>
+          <input type="text" name="wifiPass" minlength="9"><br>
+          <button type="submit">Save config</button>
+        </form>
+      </div>
       <div>
-        <hr>
-        <h1>Configuration</h1>
-        <hr>
-        <div class="config">
-          <h2>Basic</h2>
-          <form>
-            <label for="fanspeed">Fan</label>
-            <input type="range" min="0" max="255" value="200" id="fanspeed">
-            <label for="boop">Boop</label>
-            <input type="checkbox" id="boop">
-            <label for="speech">Speech</label>
-            <input type="checkbox" id="speech">
-            <label for="tilt">Tilt</label>
-            <input type="checkbox" id="tilt">
-            <label for="ble">BLE</label>
-            <input type="checkbox" id="ble">
-            <label for="oled">OLED</label>
-            <input type="checkbox" id="oled">
-            <br>
-            <button type="button" onclick="saveConfig()">Save config</button>
-          </form>
-        </div>
-        <hr>
-        <div class="config">
-          <h2>Advanced</h2>
-          <form action="./saveconfig" method="get">
-            <i><label>Name</label></i>
-            <i><span>Value</span></i>
-            <label for="visColor" id="visColorLabel">Visor color <sup onclick="alert('The default color if using WS2812 panels.\nUse full bright color/top of the picker as more dark color = less brightness on panel!')">&#9432;</sup></label>
-            <input type="color" name="visColor" id="visColor">
-            <label for="bEar">Brightness ears <sup onclick="alert('Range: 0-255\nDefault: 64')">&#9432;</sup></label>
-            <input type="number" name="bEar" min="0">
-            <label for="bVisor">Brightness visor <sup onclick="alert('Range:\nWS2812: 0-255\nMAX7219\nDefault: 100 / 15')">&#9432;</sup></label>
-            <input type="number" name="bVisor" min="0" max="255">
-            <label for="bOled">Brightness OLED <sup onclick="alert('Range: 0-2\nDefault: 2')">&#9432;</sup></label>
-            <input type="number" name="bOled" min="0" max="2">
-            <label for="rbSpeed">Rainbow prefab speed <sup onclick="alert('Range: 1-200ms\nDefault: 15')">&#9432;</sup></label>
-            <input type="number" name="rbSpeed" min="1" max="200">
-            <label for="rbWidth">Rainbow hue width <sup onclick="alert('Range: 1-32\nDefault: 8')">&#9432;</sup></label>
-            <input type="number" name="rbWidth" min="1" max="32">
-            <label for="spMin">Speak min delay <sup onclick="alert('Range: 20-500ms\nDefault: 90')">&#9432;</sup></label>
-            <input type="number" name="spMin" min="20" max="500">
-            <label for="spMax">Speak max delay <sup onclick="alert('Range: 30-600ms\nDefault: 130')">&#9432;</sup></label>
-            <input type="number" name="spMax" min="30" max="600">
-            <label for="spTrig">Speak trigger point <sup onclick="alert('Range: 500-2500\nDefault: 1800')">&#9432;</sup></label>
-            <input type="number" name="spTrig" min="500" max="2500">
-            <label for="boopThresh">Boop distance threshold <sup onclick="alert('Range: 5-250\nDefault: 10')">&#9432;</sup></label>
-            <input type="number" name="boopThresh" min="5" max="250">
-            <label for="aTilt">Tilt sideways animation <sup onclick="alert('Default: confused.json')">&#9432;</sup></label>
-            <select id="aTilt" name="aTilt"></select>
-            <label for="aUp">Tilt up animation <sup onclick="alert('Default: upset.json')">&#9432;</sup></label>
-            <select id="aUp" name="aUp"></select>
-            <label for="aBoop">Boop animation <sup onclick="alert('Default: boop.json')">&#9432;</sup></label>
-            <select id="aBoop" name="aBoop"></select>
-            <label for="wifiName">WiFi AP SSID <sup onclick="alert('Default: ProtoWiFi\nChange this so other people remotes don\'t connect to your protogen if multiple people running ProtoESP are at the same place!')">&#9432;</sup></label>
-            <input type="text" name="wifiName" minlength="9">
-            <label for="wifiPass">WiFi AP Password <sup onclick="alert('Default: Proto1234\nSame applies here as for the SSID!')">&#9432;</sup></label>
-            <input type="text" name="wifiPass" minlength="9"><br>
-            <button type="submit">Save config</button>
-          </form>
-        </div>
-        <hr>
-        <div>
-          <h2>Tilt Calibration</h2>
-          <form action="./saveconfig" method="get">
-            <i><p>X Y Z</p></i>
-            Idle: 
-            <input type="number" name="neutralX" step="any" min="-1" max="1">
-            <input type="number" name="neutralY" step="any" min="-1" max="1">
-            <input type="number" name="neutralZ" step="any" min="-1" max="1">
-            <button type="button" onclick="pullFor('Neutral')">Pull data</button>
-            <br>
-            Tilt: 
-            <input type="number" name="tiltX" step="any" min="-1" max="1">
-            <input type="number" name="tiltY" step="any" min="-1" max="1">
-            <input type="number" name="tiltZ" step="any" min="-1" max="1">
-            <button type="button" onclick="pullFor('Tilt')">Pull data</button>
-            <br>
-            Up: 
-            <input type="number" name="upX" step="any" min="-1" max="1">
-            <input type="number" name="upY" step="any" min="-1" max="1">
-            <input type="number" name="upZ" step="any" min="-1" max="1">
-            <button type="button" onclick="pullFor('Up')">Pull data</button>
-            <br>
-            Tilt toleration:
-            <input type="number" name="tiltTol" step="any" min="0.01" max="1">
-            <br>
-            <button type="submit">Save tilt</button>
-          </form>
-        </div>
+        <h2>Tilt</h2>
+        <form action="./saveconfig" method="get">
+          <i><p>X Y Z</p></i>
+          Idle: 
+          <input type="number" name="neutralX" step="any" min="-1" max="1">
+          <input type="number" name="neutralY" step="any" min="-1" max="1">
+          <input type="number" name="neutralZ" step="any" min="-1" max="1">
+          <button type="button" onclick="pullFor('Neutral')">Pull data</button>
+          <br>
+          Tilt: 
+          <input type="number" name="tiltX" step="any" min="-1" max="1">
+          <input type="number" name="tiltY" step="any" min="-1" max="1">
+          <input type="number" name="tiltZ" step="any" min="-1" max="1">
+          <button type="button" onclick="pullFor('Tilt')">Pull data</button>
+          <br>
+          Up: 
+          <input type="number" name="upX" step="any" min="-1" max="1">
+          <input type="number" name="upY" step="any" min="-1" max="1">
+          <input type="number" name="upZ" step="any" min="-1" max="1">
+          <button type="button" onclick="pullFor('Up')">Pull data</button>
+          <br>
+          Tilt toleration:
+          <input type="number" name="tiltTol" step="any" min="0.01" max="1">
+          <br>
+          <button type="submit">Save tilt</button>
+        </form>
       </div>
       <p style="text-align:center">Coded by <a target=”_blank” href="https://github.com/ncplyn" class="rainbow-text">@NCPlyn</a></p>
     </main>
@@ -158,6 +153,14 @@
     width: fit-content;
     margin: auto;
   }
+  main > div {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 10px 25px;
+    margin-bottom: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
   input:not(#fanspeed), select {
     background-color:#21252B;
     color:white;
@@ -170,6 +173,7 @@
     margin-top:7px;
   }
   button, a {
+    cursor: pointer;
     text-decoration: none;
     background-color:#24282b;
     border:2px solid #3B4048;
@@ -214,6 +218,13 @@
   }
   sup {
     cursor: pointer;
+    color: #64b5f6;
+    font-weight: bold;
+    transition: color 0.1s ease;
+    vertical-align: middle !important;
+  }
+  sup:hover {
+    color: #90caf9;
   }
 </style>
 

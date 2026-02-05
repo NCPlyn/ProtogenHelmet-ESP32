@@ -10,7 +10,6 @@
     <h1>ProtoESP - Animator</h1>
     <div> <!-- START OF EARS PART -->
       <h2>Ears</h2>
-      <hr>
       <label for="typeEars">Animation: </label> <sup onclick="alert('Select custom or prefab ears animation')">&#9432;</sup>
       <select id="typeEars">,
 	    <option value="none">none</option>
@@ -20,7 +19,7 @@
         <option value="corner_sabers">corner_sabers</option>
         <option value="custom_glow">custom_glow</option>
       </select>
-	  <label for="earConfig"> | Config: </label> <sup onclick="alert('Select config of the ear leds')">&#9432;</sup>
+	  <label for="earConfig" style="margin-left:30px">Config: </label> <sup onclick="alert('Select config of the ear leds')">&#9432;</sup>
       <select id="earConfig">
         <option value="74">74 LED</option>
         <option value="32">32 LED</option>
@@ -28,18 +27,19 @@
       <div id="earsDiv">
         <div id="divForSvg"></div>
         <br>
-        <button onclick="fillBlack()">Fill black</button>
+        <button onclick="if(confirm('Do you want to empty the current frame?')){fillBlackVisor();}">Fill black</button>
         <button onclick="mirrorEars()">Copy left to right</button><br>
         <div class="usedColorsMain">
           <div class="playBtns"> 
-            Pick color: <input type="color" id="color" value="#000000"> | Used colors:
+            Pick color: <input type="color" id="color" value="#000000"> &nbsp;&nbsp;&nbsp; Used colors:
           </div>
           <div id="usedColors"></div>
         </div>
-        <label for="timespanEars">Timespan:</label>
-        <input type="number" id="timespanEars" value="500" min="1"> |
-        <button onclick="frameGenEars(-1)">Add ears frame</button><br>
-        <p class="timespan">Frames:</p>
+        <div style="clear: both;">
+          <label for="timespanEars">Timespan:</label>
+          <input type="number" id="timespanEars" value="500" min="1">
+          <button onclick="frameGenEars(-1)">Add frame</button>
+        </div>
         <div id="earsFramesP"></div>
         <div id="editDivEars" style="display:none">
           <button id="saveEditFrameEars" value="0">Save frame</button>
@@ -48,16 +48,13 @@
         </div>
       </div>
     </div> <!-- END OF EARS PART -->
-    <hr><hr>
     <div class="usedColorsMain">
       <button onclick="playAnim();">Play animation</button>
       <button onclick="stopAnim();">Stop</button>
       <button onclick="nukeAll();">Reset all</button>
     </div>
-    <hr><hr>
     <div> <!-- START OF VISOR PART -->
       <h2>Visor</h2>
-      <hr>
       <label for="visorConfig">Config: </label> <sup onclick="alert('Select config/wiring of your visor\n\'custom_file\' works only if your visor files are on the ESP!')">&#9432;</sup>
       <select id="visorConfig">
         <option value="none">None</option>
@@ -66,8 +63,8 @@
         <option value="BFoxCZ">BFoxCZ</option>
         <option value="custom">custom</option>
         <option value="custom_file">custom_file</option>
-      </select> | 
-      <label for="typeVisor">Modifier: </label> <sup onclick="alert('Select modifier for visor animation')">&#9432;</sup>
+      </select>
+      <label for="typeVisor" style="margin-left:30px">Modifier: </label> <sup onclick="alert('Select modifier for visor animation')">&#9432;</sup>
       <select id="typeVisor">
         <option value="custom">custom</option>
         <option value="all_rainbow">(RGB)all_rainbow</option>
@@ -85,79 +82,89 @@
       <div id="visorDiv">
         <div id="matrixes"></div>
         <br><br>
-        <p>Matrix control: <sup onclick="alert('There are keyboard shortcuts! Hover over button to see')">&#9432;</sup></p> 
+        <p>Matrix control: <sup onclick="alert('There are keyboard shortcuts! Hover over buttons to see!\nTo add or remove matrix to/from selection, hold CTRL/CMD and click on matrix!\nActive pixels on selected matrices will shift over into selected neighbors!')">&#9432;</sup></p> 
         <div style="display: flex;">
           <div>
-            <button type="button" onclick='setAction("select");' title="Keyboard: 'S' - Select matrix to work on">Select</button>
-            <button type="button" id="entire-button" title="Keyboard: 'T' - Toggle entire selected matrix">Toggle</button>
+            <button type="button" onclick='matrixAction = "select";' title="Keyboard: 'S' - Select matrix to work on">Select</button>
+            <button type="button" onclick='entireMatrix()' title="Keyboard: 'T' - Toggle entire selected matrix">Toggle</button>
             <div id="shift-buttons-container">
-              <button id="shift-up-button" style="left:35px;" title="Shift matrix up">🔼</button>
-              <button id="shift-right-button" style="top:35px;left:70px;" title="Shift matrix right">▶️</button>
-              <button id="shift-down-button" style="top:70px;left:35px;" title="Shift matrix down">🔽</button>
-              <button id="shift-left-button" style="top:35px;" title="Shift matrix left">◀️</button>
+              <button id="shift-up-button" style="left:35px;" title="Keyboard: 'Up' - Shift matrix up">🔼</button>
+              <button id="shift-right-button" style="top:35px;left:70px;" title="Keyboard: 'Right' - Shift matrix right">▶️</button>
+              <button id="shift-down-button" style="top:70px;left:35px;" title="Keyboard: 'Down' - Shift matrix down">🔽</button>
+              <button id="shift-left-button" style="top:35px;" title="Keyboard: 'Left' - Shift matrix left">◀️</button>
               <button id="invert-button" style="top:35px;left:35px;" title="Invert matrix">🔀</button>
               <button id="rotate-back-button"title="Rotate matrix counterclock-wise">🔄</button>
               <button id="rotate-button" style="left:70px;" title="Rotate matrix clockwise">🔃</button>
+              <button id="mirrorVertical-button" style="top:70px;left:70px;" title="Invert matrix vertically">↕️</button>
+              <button id="mirrorHorizontal-button" style="top:70px;" title="Invert matrix horizontally">↔️</button>
             </div>
           </div>
           <div style="margin-left:20px;">
-            <button type="button" onclick='setAction("row");' title="Keyboard: 'R' - Toggle entire clicked row">Row</button> <button type="button" onclick='setAction("col");' title="Keyboard: 'C' - Toggle entire clicked column">Column</button> <sup onclick="alert('Click on Row/Column and then click on Row/Column which you want to toggle')">&#9432;</sup><br>
-            <button type="button" onclick='setAction("select");' title="Keyboard: 'S' - Select matrix to copy from">Copy</button> <button type="button" onclick='setAction("paste");'title="Keyboard: 'P' - Select matrix to paste to">Paste</button> <sup onclick="alert('Click on Copy or Paste and then click on matrix which you want to affect')">&#9432;</sup><br>
-            <button type="button" onclick="fillBlackVisor()">Empty visor</button>
+            <button type="button" onclick='matrixAction = "row";' title="Keyboard: 'R' - Toggle entire clicked row">Row</button> <button type="button" onclick='matrixAction = "col";' title="Keyboard: 'C' - Toggle entire clicked column">Column</button> <sup onclick="alert('Click on Row/Column and then click on Row/Column which you want to toggle')">&#9432;</sup> &nbsp; &nbsp;
+            <button type="button" onclick='matrixAction = "paste";'title="Keyboard: 'V' - Select matrix to paste to">Paste</button> <sup onclick="alert('Click on Paste and then click on matrix which you want to paste the currently selected matrix')">&#9432;</sup><br>
+            <button type="button" onclick="if(confirm('Do you want to empty the current frame?')){fillBlackVisor();}">Empty visor</button>
             <button type="button" onclick="mirrorVisor()">Copy left to right</button> <sup onclick="alert('Might not work due to wierd config/wiring')">&#9432;</sup><br>
-            Segment color: <input type="color" id="fColor" value="#000000"> <sup onclick="alert('For RGB Matrices\n0;0;0 = black = Visor will have color from the config')">&#9432;</sup><br><br>
-          </div>
-          <div style="margin-left:20px;">
+            Segment color: <input type="color" id="fColor" value="#000000"> <sup onclick="alert('For RGB Matrices\n0;0;0 = black = Visor will have color from the config')">&#9432;</sup><br>
             <label for="timespanVisor">Timespan: </label>
-            <input type="number" id="timespanVisor" value="500" min="1"><br><br>
-            <button onclick="frameGenVisor(-1)">Add visor frame</button>
+            <input type="number" id="timespanVisor" value="500" min="1">
+            <button onclick="frameGenVisor(-1)">Add frame</button>
           </div>
         </div>
-        <br>
-        <p class="timespan">Frames:</p>
         <div id="visorFramesP"></div>
         <div id="editDivVisor" style="display:none">
           <button id="saveEditFrameVisor" value="0">Save frame</button>
           <button onclick="deleteFrameVisor()">Delete frame</button>
-          <button onclick="cloneEarsVisor()">Clone frame</button>
+          <button onclick="cloneVisorFrame()">Clone frame</button>
         </div>
       </div>
     </div> <!-- END OF VISOR PART -->
-    <hr><hr>
-  </main>
-  <footer>
-    1. <button onclick="completeGen()">Generate final JSON</button><br>
-    <form action="./savefile" method="post" id="footerForm">
-      <label for="output">File content / paste here to load:</label><br>
-      <textarea rows="7" cols="50" name="content" id="output" required></textarea><br>
-      2. Name of animation (without .json): <input type="text" name="file" required id="fileName"><br>
-    </form>
-  	<hr>
-    Load anim:
-    <div id="espLoad">
-      <select name="file" id="avaibleanims"></select>
-      <button type="button" onclick="loadAnim(true)">Load selected anim</button>
-      <button type="button" onclick="deleteFile()">Delete selected file</button>
+    <div>
+      <h2>Generate</h2>
+      1. <button onclick="completeGen()">Generate final JSON</button><br>
+      <form action="./savefile" method="post" id="footerForm">
+        <label for="output">File content (paste here to load):</label><br>
+        <textarea rows="7" cols="50" name="content" id="output" required></textarea><br>
+        2. Name of animation (without .json): <input type="text" name="file" required id="fileName" style="margin-top: 5px;"><br>
+      </form>
+      <p>Load animation:</p>
+      <div id="espLoad">
+        <select name="file" id="avaibleanims"></select>
+        <button type="button" onclick="loadAnim(true)">Load selected anim</button>
+        <button type="button" onclick="deleteFile()">Delete selected file</button>
+      </div>
+      <button type="button" onclick="loadAnim(false)">Load from textarea</button>
+      <input type="file" id="localFile" accept=".json" style="display: none;">
+      <button onclick="loadLocalFile()">Load from local file</button>
     </div>
-    <button type="button" onclick="loadAnim(false)">Load from textarea</button>
-    |
-    <input type="file" id="localFile" accept=".json">
-    <button onclick="loadLocalFile()">Load from local file</button>
     <p style="text-align:center">Coded by <a target=”_blank” href="https://github.com/ncplyn" class="rainbow-text">@NCPlyn</a></p>
-  </footer>
+  </main>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"eee83530bd504643b1521b595f3503df","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
 
 <style>
+  button, input[type="submit"], input[type="file"]::file-selector-button {
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.05s ease;
+  }
+  button:hover, input[type="submit"]:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
   #shift-buttons-container {
     position: relative;
     box-sizing: content-box;
     width: 130px;
     height: 105px;
     margin-bottom: 0 !important;
-    margin-left:10px;
+    margin-left:15px;
   }
-  #rotate-button,#rotate-back-button,#invert-button,#shift-up-button,#shift-right-button,#shift-down-button,#shift-left-button {
+  #rotate-button,#rotate-back-button,#invert-button,#shift-up-button,#shift-right-button,#shift-down-button,#shift-left-button,#mirrorVertical-button,#mirrorHorizontal-button {
     position: absolute;
     height: 30px;
     width: 30px;
@@ -165,12 +172,43 @@
     padding: 0;
     font-size: 18px;
     background-color: transparent;
+    border-radius: 0px;
+    border: none;
   }
   input,option,button {
     margin-bottom: 5px;
   }
   input[type=number] {
     width:80px;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: rgba(100, 200, 255, 0.6);
+    box-shadow: 0 0 0 3px rgba(100, 200, 255, 0.1);
+  }
+  input[type="text"], input[type="number"], input[type="file"], select, textarea {
+    /*background: rgba(255, 255, 255, 0.15);*/
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 5px;
+    color: white;
+    padding: 5px 8px;
+    font-size: 14px;
+  }
+  textarea {
+    font-family: 'Courier New', monospace;
+  }
+  input[type="color"] {
+    width: 50px;
+    height: 35px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    vertical-align: middle !important;
+  }
+  select option {
+    background: #52565f;
+    color: #ffffff;
   }
   p {
     margin-block-start: 0.5em;
@@ -198,6 +236,14 @@
     color: white;
     font-family:Verdana;
   }
+  main > div {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 10px 25px;
+    margin-bottom: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  }
   .colorItem {
     width: 40px;
     min-width: 40px;
@@ -208,9 +254,6 @@
     border: solid 1px gray;
     cursor: pointer;
     float: left;
-  }
-  .usedColorsMain {
-    height: 35px;
   }
   .usedColorsMain button {
     margin-top: 5px;
@@ -229,9 +272,9 @@
     border-spacing: 3px;
   }
   .leds-matrix .item {
-    width: 20px;
-    min-width: 20px;
-    max-width: 20px;
+    width: 22px;
+    min-width: 22px;
+    max-width: 22px;
     height: 22px;
     min-height: 22px;
     max-height: 22px;
@@ -239,12 +282,13 @@
     border-radius: 50%;
     box-shadow: inset 0 0 1px #666666;
     background: #808080;
+    box-sizing: border-box;
   }
   .leds-matrix .item.active {
     background: #000000;
     border-style: double;
     border-color: red;
-    border-width: 2px;
+    border-width: 1px;
     box-sizing: border-box;
   }
   .leds-matrix .item:hover {
@@ -270,7 +314,13 @@
   }
   sup {
     cursor: pointer;
+    color: #64b5f6;
+    font-weight: bold;
+    transition: color 0.1s ease;
     vertical-align: middle !important;
+  }
+  sup:hover {
+    color: #90caf9;
   }
   .rainbow-text {
     font-weight: bold;
@@ -285,24 +335,69 @@
     50% {background-position: 100% 25%}
     100% {background-position: 0% 50%}
   }
+  #earsFramesP, #visorFramesP {
+    font-size: 24px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 5px;
+    border-radius: 6px;
+    min-height: 50px;
+    position: relative;
+  }
+  #earsFramesP::before, #visorFramesP::before {
+    content: 'FRAMES';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 50px;
+    color: rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+    z-index: 0;
+    letter-spacing: 10px;
+  }
+  #earsFramesP a, #visorFramesP a {
+    margin: 5px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    display: inline-block;
+    padding: 5px 10px;
+    background: rgba(100, 181, 246, 0.2);
+    border-radius: 5px;
+  }
+  #earsFramesP a:hover, #visorFramesP a:hover {
+    background: rgba(100, 181, 246, 0.3);
+  }
+  #divForSvg {
+    text-align:center;
+    overflow-x: auto;
+  }
+  #matrixes {
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+  }
+  @media (max-width: 1700px) {
+    #matrixes {
+      justify-content: flex-start;
+    }
+  }
 </style>
 
 <script type="text/javascript" src="jquerymin.js"></script>
 <script type="text/javascript" src="jss.min.js"></script>
 <script>
-
-  let visType;
-  let visTypeMouth;
-  let numOfSegm = 0;
-  let numOfBlush = 0;
+  let visType = "", visTypeMouth = "", numOfSegm = 0, numOfBlush = 0, nowEditEarsFrame = 0, curColor = "#000000", isMouseDown = false, nowEditVisorFrame = 0, matrixAction = "";
+  let selMatrix = [], framesEars = [], framesVisor = [];
+  let cachedNeighborMap = {};
   
-  let selMatrix = "t0";
+  const rgb2hex = (rgb) => `${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice(1).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('')}`;
   
+  /*-----------------------------------HTML GENS / LISTENERS-----------------------------------*/
   $("#earConfig").change(function() {
     $('#divForSvg').empty();
     if($("#earConfig").val() == "74") {
-	  for(var x = 1; x <= 2; x++) {
-		$('#divForSvg').append(`<svg id="svg`+x+`" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg"><g fill="black">
+      for(var x = 1; x <= 2; x++) {
+        $('#divForSvg').append(`<svg id="svg`+x+`" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg"><g fill="black">
               <path id="37" d="m350 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="36" d="m286.36 256.36a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="35" d="m260 320a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
@@ -341,10 +436,10 @@
               <path id="2" d="m455.5 71.464a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="1" d="m350 50a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
             </g></svg>`);
-	  }
+      }
     } else if ($("#earConfig").val() == "32") {
       for(var x = 1; x <= 2; x++) {
-		$('#divForSvg').append(`<svg id="svg`+x+`" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg"><g fill="black">
+        $('#divForSvg').append(`<svg id="svg`+x+`" viewBox="0 0 640 640" width="480" height="480" version="1.1" xmlns="http://www.w3.org/2000/svg"><g fill="black">
               <path id="16" d="m248.86 69.66a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="15" d="m159.08 129.08a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="14" d="m101.464 214.5a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
@@ -362,7 +457,7 @@
               <path id="2" d="m455.5 71.464a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
               <path id="1" d="m350 50a30 30 0 1 1-1e-5 -0.02" paint-order="stroke fill markers"/>
             </g></svg>`);
-	  }
+      }
     }
   });
   $("#earsDiv").hide();
@@ -437,6 +532,8 @@
         $("#blush" + x).append("<table class=\"blush\"><tr><td></td><td></td><td class=\"item\" id=\"b" + ((x*2) + 1) + "\"></td></tr><tr><td></td></tr><tr><td class=\"item\" id=\"b" + x*2 + "\"></td><td></td><td></td></tr></table>");
       }
     }
+    
+    cachedNeighborMap = buildNeighborMap(); //build and cache neighbor map
   }
   
   //table leds generator
@@ -453,8 +550,6 @@
     return out.join('');
   }
 
-  const rgb2hex = (rgb) => `${rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/).slice(1).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('')}`
-
   //cliked on used color and set it
   $("#usedColors").on('click', ".colorItem", function() {
     var temp = "#" + rgb2hex($(this).css("background-color"));
@@ -463,27 +558,38 @@
   });
 
   //on color selected, set to global
-  var curColor = "#000000";
   $("#color").change(function() {
     curColor = $(this).val();
     $("#usedColors").append("<div class=\"colorItem\" style=\"background-color:" + curColor + "\"></div>");
   });
 
   $("#fColor").change(function() {
-    jss.set('#t'+selMatrix+' .active', {
-      'background': $("#fColor").val()+' !important'
+    // Apply color to all selected matrices
+    selMatrix.forEach(id => {
+      jss.set('#t'+id+' .active', {
+        'background': $("#fColor").val()+' !important'
+      });
     });
   });
 
   //Hold down to color
-  isMouseDown = false;
   $('body').mousedown(function() {
     isMouseDown = true;
   })
   .mouseup(function() {
     isMouseDown = false;
   });
-
+  
+  /*-----------------------------------EAR FRAME FUNCS-----------------------------------*/
+  //hides animator if not needed
+  $("#typeEars").change(function() {
+    if (($("#typeEars").val() == "custom" || $("#typeEars").val() == "custom_glow") && $("#typeEars").val() != "none") {
+      $("#earsDiv").show();
+    } else {
+      $("#earsDiv").hide();
+    }
+  });
+  
   //colors SVG dots with selected color
   $(document).on('click', 'path', function() {
     $(this).attr('fill', curColor);
@@ -494,11 +600,6 @@
       $(this).attr('fill', curColor);
       $(this).attr('stroke', "gray");
     }
-  });
-  
-  //colors blush dots with selected color
-  $("#matrixes").on('click', '.blush .item', function() {
-    $(this).css("background-color", curColor);
   });
 
   //fills all black, what more to say
@@ -516,16 +617,6 @@
     }
   }
 
-  //hides animator if not needed
-  $("#typeEars").change(function() {
-    if (($("#typeEars").val() == "custom" || $("#typeEars").val() == "custom_glow") && $("#typeEars").val() != "none") {
-      $("#earsDiv").show();
-    } else {
-      $("#earsDiv").hide();
-    }
-  });
-
-  var nowEditEarsFrame = 0;
   //deletes selected frame
   function deleteFrameEars() {
     if (nowEditEarsFrame > -1) {
@@ -549,7 +640,7 @@
     if ($(this).closest('div').attr('id') == "earsFramesP") {
       $("#earsFramesP").find('a[id="'+nowEditEarsFrame+'"]').css("border","");
       nowEditEarsFrame = $(this).attr('id');
-      $(this).css("border","red dotted 1px");
+      $(this).css("border","rgba(100, 200, 255, 0.6) solid 1px"); 
       loadEarsFrame();
     }
   });
@@ -582,82 +673,38 @@
     frameGenEars($(this).attr('value'));
     //$("#editDivEars").hide();
   });
-
-  //get json code for ears and visor, generates final usable code and resets stuff
-  function completeGen() {
-    if ($("#visorConfig").val() == "none" || framesVisor.length == 0 || (framesEars.length == 0 && ( $("#typeEars").val() == "custom"  || $("#typeEars").val() == "custom_glow" ))) {
-      alert("No frames in ears or visor!");
-    } else {
-      var output = "{" + earsGen() + "," + visorGen() + "}";
-      output = output.replace(/"000000"/g, "\"0\"");
-      $("#output").val(output);
-      /*$("#earsFramesP").empty();
-      $("#editDivEars").hide();
-      $("#visorFramesP").empty();
-      $("#editDivVisor").hide();
-      fillBlack();
-      fillBlackVisor();
-      framesEars.length = 0;
-      framesVisor.length = 0;*/
-    }
-  }
-
-  var framesEars = [];
-  //function that get the type of animation and creates entire 'ears' object and returns it
-  function earsGen() {
-    var output = "";
-    if ($("#typeEars").val() == "custom" || $("#typeEars").val() == "custom_glow") {
-      output += "\"ears\":{\"type\":\""+$("#typeEars").val()+"\",\"frames\":[";
-      for (var x = 0; x < framesEars.length; x++) {
-        output += framesEars[x];
-        if (x !== framesEars.length - 1) {
-          output += ",";
-        }
-      }
-      output += "]}"
-    } else {
-      output += "\"ears\":{\"type\":\"" + $("#typeEars").val() + "\"}";
-    }
-    return output;
-  }
-
-  //function that gets data from timespan input and SVG pictures, creates frames formated in JSON
-  //end puts them in array, also can edit those frames by rewriting specific frame
-  function frameGenEars(editing) {
-    if ($("#timespanEars").val().length == 0 && $("#timespanEars").val() > 0) {
-      alert("Timespan missing");
-    } else {
-      var temp = "{\"timespan\":" + $("#timespanEars").val() + ",\"leds\":[";
-	  var ledNum = Number($("#earConfig").val()/2) + 1;
-      for (var x = 1; x < ledNum; x++) {
-        if (x > 1) {
-          temp += ",";
-        }
-        temp += "\"" + (($("#svg1").find("#" + x).attr('fill') || "").substring(1) || "0") + "\"";
-      }
-      for (var x = 1; x < ledNum; x++) {
-        if (x < ledNum) {
-          temp += ",";
-        }
-        temp += "\"" + (($("#svg2").find("#" + x).attr('fill') || "").substring(1) || "0") + "\"";
-      }
-      temp += "]}";
-      if (editing < 0) {
-        framesEars.push(temp);
-        $("#earsFramesP").append("<a id=\"" + (framesEars.length - 1) + "\">" + (framesEars.length - 1) + "</a>");
-      } else {
-        framesEars[editing] = temp;
-      }
-    }
-  }
-
+  
   //clone selected fram to the end of array
   function cloneEarsFrame() {
     framesEars.push(framesEars[nowEditEarsFrame]);
     $("#earsFramesP").append("<a id=\"" + (framesEars.length - 1) + "\">" + (framesEars.length - 1) + "</a>");
   }
-
-  var nowEditVisorFrame = 0;
+  
+  /*-----------------------------------VISOR FRAME FUNCS-----------------------------------*/
+  //if matrix led clicked, add class
+  $("#matrixes").on('click', '.item', function(e) {
+    if(matrixAction == "" && !(e.ctrlKey || e.metaKey))
+      $(this).toggleClass('active');
+  });
+  $("#matrixes").on('mouseenter', '.item', function(e) {
+    if(matrixAction == "" && isMouseDown && !(e.ctrlKey || e.metaKey))
+      $(this).toggleClass('active');
+  });
+  
+  //colors blush dots with selected color
+  $("#matrixes").on('click', '.blush .item', function() {
+    $(this).css("background-color", curColor);
+  });
+  
+  function fillBlackVisor() {
+    for (var x = 0; x < numOfSegm; x++) {
+      hexInputToLeds(x, "0000000000000000");
+    }
+    for (var x = 0; x < numOfBlush*2; x++) {
+      $("#b" + x).css("background-color", "#000000");
+    }
+  }
+  fillBlackVisor();
 
   //deletes selected frame
   function deleteFrameVisor() {
@@ -682,7 +729,7 @@
     if ($(this).closest('div').attr('id') == "visorFramesP") {
       $("#visorFramesP").find('a[id="'+nowEditVisorFrame+'"]').css("border","");
       nowEditVisorFrame = $(this).attr('id');
-      $(this).css("border","red dotted 1px");
+      $(this).css("border","rgba(100, 200, 255, 0.6) solid 1px");
       loadVisorFrame();
     }
   });
@@ -714,161 +761,66 @@
     $("#editDivVisor").show();
     $("#saveEditFrameVisor").attr('value', nowEditVisorFrame);
   }
-
-  //fixes hex pattern
-  function fixPattern(pattern) {
-    pattern = pattern.replace(/[^0-9a-fA-F]/g, '0');
-    return ('0000000000000000' + pattern).substr(-16);
-  }
-
-  //loads leds from hex
-  function hexInputToLeds(segment, value) {
-    var val = fixPattern(value);
-    for (var i = 1; i < 9; i++) {
-      var byte = val.substr(-2 * i, 2);
-
-      byte = parseInt(byte, 16);
-      for (var j = 1; j < 9; j++) {
-        var active = !!(byte & 1 << (j - 1));
-        $('#t' + segment).find('.item[data-row=' + i + '][data-col=' + j + '] ').toggleClass('active', active);
-      }
-    }
-  }
-
+  
   //calls frame generator to save currently editing frame
   $("#saveEditFrameVisor").on('click', function() {
     frameGenVisor($(this).attr('value'));
     //$("#editDivVisor").hide();
   });
-
-  function fillBlackVisor() {
-    for (var x = 0; x < numOfSegm; x++) {
-      hexInputToLeds(x, "0000000000000000");
-    }
-    for (var x = 0; x < numOfBlush*2; x++) {
-      $("#b" + x).css("background-color", "#000000");
-    }
-  }
-  fillBlackVisor();
-
-  //if matrix led clicked, add class
-  $("#matrixes").on('click', '.item', function() {
-    if(matrixAction == "")
-      $(this).toggleClass('active');
-  });
-  $("#matrixes").on('mouseenter', '.item', function() {
-    if(matrixAction == "" && isMouseDown)
-      $(this).toggleClass('active');
-  });
-
-  //return hex of segment
-  function ledsToHex(segment) {
-    var out = [];
-    for (var i = 1; i < 9; i++) {
-      var byte = [];
-      for (var j = 1; j < 9; j++) {
-        var active = $('#t' + segment).find('.item[data-row=' + i + '][data-col=' + j + '] ').hasClass('active');
-        byte.push(active ? '1' : '0');
-      }
-      byte.reverse();
-      byte = parseInt(byte.join(''), 2).toString(16);
-      byte = ('0' + byte).substr(-2);
-      out.push(byte);
-    }
-    out.reverse();
-    return out.join('');
-  }
-
-  //mirrors left half to right one --will work if both sides are wired the same
-  function mirrorVisor() {
-    for (let i = 1; i < 9; i++) {
-      for (let j = 1; j < 9; j++) {
-        let numFix = numOfSegm-1;
-        for (let l = 0; l < numFix/2; l++) {
-          if(numOfSegm % 2 == 1 && numFix == (numOfSegm/2)+1) {l++;}
-          $('#t' + (numFix-l)).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $('#t' + l).find('.item[data-row=' + i + '][data-col=' + (9-j) + '] ').attr("class"));
-        }
-      }
-    }
-    let numFix = numOfBlush*2;
-    for(let i = 0; i < numFix; i++) {
-      $("#matrixes").find("#b"+(numFix-i-1)).css("background-color", $("#matrixes").find("#b"+i).css("background-color"));
-    }
-  }
   
-  function setAction(val) {
-    matrixAction = val;
+  //clone selected frame to the end of array
+  function cloneVisorFrame() {
+    framesVisor.push(framesVisor[nowEditVisorFrame]);
+    $("#visorFramesP").append("<a id=\"" + (framesVisor.length - 1) + "\">" + (framesVisor.length - 1) + "</a>");
   }
-  
-  let matrixAction = "";
-  $("#matrixes").on('click', 'table', function(e) {
-    let tID = $(this).closest('td[id]').attr('id');
-    if(tID !== undefined && tID.includes("t")) {
-      if(matrixAction == "paste") {
+
+  /*-----------------------------------MATRIX MODIFIERS-----------------------------------*/
+  //select/paste/row/col handler
+  $("#matrixes").on("click", function (e) {
+    let $t = $(e.target), $m = $t.closest("td[id^='t']"), r = $t.closest("td[data-row]").attr("data-row"), c = $t.closest("td[data-col]").attr("data-col");
+
+    if (!$m.length) return;
+    let tID = $m.attr("id");
+
+    if (matrixAction == "paste") { //selMatrix[0]
+      if(selMatrix.length > 0) {
         for (var i = 1; i < 9; i++) {
           for (var j = 1; j < 9; j++) {
-            $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $("#t"+selMatrix).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class"));
+            $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + ']').attr("class", $("#t"+selMatrix[0]).find('.item[data-row=' + i + '][data-col=' + j + ']').attr("class"));
           }
         }
-      } else if (matrixAction == "select") {
-        $("#t"+selMatrix).find("table").css("border-color","");
-        $("#"+tID).find("table").css("border-color","red");
-        selMatrix = tID.slice(1);
-        var temp = "#000000";
-        if(jss.get('#t'+selMatrix+' .active')['background-color'] != undefined){
-          temp = "#"+rgb2hex(jss.get('#t'+selMatrix+' .active')['background-color']);
-        }
-        $("#fColor").val(temp);
       }
-      matrixAction = "";
-    }
-  });
-  
-  $("#matrixes").on('click', 'td', function(e) {
-    let iRowID = $(this).closest('td[data-row]').attr('data-row');
-    let iColID = $(this).closest('td[data-col]').attr('data-col');
-    let tID = $(this).closest('td[data-row]').parents('td[id]').attr('id');
-    if(iColID !== undefined && iRowID !== undefined && tID !== undefined && tID.includes("t")) {
-      if(matrixAction == "col") {
-        $('#'+tID).find('.item[data-col=' + iColID + ']').toggleClass('active', $('#'+tID).find('.item[data-col=' + iColID + '].active').length != 8);
-      } else if (matrixAction == "row") {
-        $('#'+tID).find('.item[data-row=' + iRowID + ']').toggleClass('active', $('#'+tID).find('.item[data-row=' + iRowID + '].active').length != 8);
-      } else if (matrixAction == "paste") {
-        for (var i = 1; i < 9; i++) {
-          for (var j = 1; j < 9; j++) {
-            $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $("#t"+selMatrix).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class"));
-          }
+    } else if (matrixAction == "select" || e.ctrlKey || e.metaKey) { //clear all
+      selMatrix.forEach(id => {
+        $("#t"+id).find("table").css("border-color","");
+      });
+      if(e.ctrlKey || e.metaKey) { //Ctrl/Cmd key pressed for multi-select, single select if not
+        let matrixId = tID.slice(1);
+        let index = selMatrix.indexOf(matrixId);
+        if(index > -1) { //deselect if already selected
+          selMatrix.splice(index, 1);
+        } else { //add
+          selMatrix.push(matrixId);
         }
-      } else if (matrixAction == "select") {
-        $("#t"+selMatrix).find("table").css("border-color","");
-        $("#"+tID).find("table").css("border-color","red");
-        selMatrix = tID.slice(1);
-        var temp = "#000000";
-        if(jss.get('#t'+selMatrix+' .active')['background-color'] != undefined){
-          temp = "#"+rgb2hex(jss.get('#t'+selMatrix+' .active')['background-color']);
-        }
-        $("#fColor").val(temp);
+      } else {
+        selMatrix = [tID.slice(1)];
       }
-      matrixAction = "";
+      
+      if(selMatrix.length > 0) { //update color picker from first selected matrix
+        let bg = jss.get(`#t${selMatrix[0]} .active`)["background-color"];
+        $("#fColor").val(bg ? "#" + rgb2hex(bg) : "#000000");
+        
+        selMatrix.forEach(id => { //highlight all selected matrices
+          $("#t"+id).find("table").css("border-color","red");
+        });
+      }
+    } else if (matrixAction == "col" && c !== undefined) {
+      $('#'+tID).find('.item[data-col=' + c + ']').toggleClass('active', $('#'+tID).find('.item[data-col=' + c + '].active').length != 8);
+    } else if (matrixAction == "row" && r !== undefined) {
+      $('#'+tID).find('.item[data-row=' + r + ']').toggleClass('active', $('#'+tID).find('.item[data-row=' + r + '].active').length != 8);
     }
-  });
 
-  $(document).ready(()=>{
-    $(document).keypress(function (event) {
-      let key = (event.keyCode ? event.keyCode : event.which);
-      let charr = String.fromCharCode(key)
-      if(charr == "c") {
-        matrixAction = "col";
-      } else if(charr == "r") {
-        matrixAction = "row";
-      } else if(charr == "p") {
-        matrixAction = "paste";
-      } else if(charr == "s") {
-        matrixAction = "select";
-      } else if(charr == "t") {
-        entireMatrix()
-      }
-    });
+    matrixAction = "";
   });
   
   function Bitmap(hexString) {
@@ -933,6 +885,16 @@
       transpose();
       matrix.reverse();
     }
+    
+    function mirrorHorizontal() {
+      for (let i = 0; i < matrix.length; i++) {
+        matrix[i].reverse();
+      }
+    }
+
+    function mirrorVertical() {
+      matrix.reverse();
+    }
 
     return {
       toHexString: toHexString,
@@ -940,57 +902,334 @@
       shiftRight: shiftRight,
       rotate: rotate,
       rotateBack: rotateBack,
+      mirrorHorizontal: mirrorHorizontal,
+      mirrorVertical: mirrorVertical,
+      getMatrix: () => matrix,
+      setMatrix: (newMatrix) => { matrix = newMatrix; },
     }
   }
   
+  //build neighbor map from visType
+  function buildNeighborMap() {
+    if (!visType) return {};
+    
+    let rows = visType.split('_');
+    let grid = rows.map(row => row.split(';'));
+    let neighborMap = {};
+    
+    // Find position of each matrix in the grid
+    let positions = {};
+    for (let r = 0; r < grid.length; r++) {
+      for (let c = 0; c < grid[r].length; c++) {
+        let cell = grid[r][c].trim();
+        if (cell.startsWith('t')) {
+          let matrixId = cell.substring(1);
+          positions[matrixId] = { row: r, col: c };
+        }
+      }
+    }
+    
+    // Build neighbor relationships
+    for (let id in positions) {
+      let pos = positions[id];
+      neighborMap[id] = {
+        left: null,
+        right: null,
+        up: null,
+        down: null
+      };
+      if (pos.col > 0) { // Check left
+        let leftCell = grid[pos.row][pos.col - 1].trim();
+        if (leftCell.startsWith('t')) {
+          neighborMap[id].left = leftCell.substring(1);
+        }
+      }
+      if (pos.col < grid[pos.row].length - 1) { // Check right
+        let rightCell = grid[pos.row][pos.col + 1].trim();
+        if (rightCell.startsWith('t')) {
+          neighborMap[id].right = rightCell.substring(1);
+        }
+      }
+      if (pos.row > 0 && grid[pos.row - 1][pos.col]) { // Check up
+        let upCell = grid[pos.row - 1][pos.col].trim();
+        if (upCell.startsWith('t')) {
+          neighborMap[id].up = upCell.substring(1);
+        }
+      }
+      if (pos.row < grid.length - 1 && grid[pos.row + 1][pos.col]) { // Check down
+        let downCell = grid[pos.row + 1][pos.col].trim();
+        if (downCell.startsWith('t')) {
+          neighborMap[id].down = downCell.substring(1);
+        }
+      }
+    }
+    return neighborMap;
+  }
+  
+  $('#mirrorHorizontal-button').click(function () {
+    selMatrix.forEach(id => {
+      const bitmap = Bitmap(fixPattern(ledsToHex(id)));
+      bitmap.mirrorHorizontal();
+      hexInputToLeds(id, bitmap.toHexString());
+    });
+  });
+  
+  $('#mirrorVertical-button').click(function () {
+    selMatrix.forEach(id => {
+      const bitmap = Bitmap(fixPattern(ledsToHex(id)));
+      bitmap.mirrorVertical();
+      hexInputToLeds(id, bitmap.toHexString());
+    });
+  });
+  
   $('#invert-button').click(function () {
-    $("#t"+selMatrix).find('.item').toggleClass('active');
+    selMatrix.forEach(id => {
+      $("#t"+id).find('.item').toggleClass('active');
+    });
   });
 
   $('#shift-up-button').click(function () {
-    var val = '00' + fixPattern(ledsToHex(selMatrix)).substr(0, 14);
-    hexInputToLeds(selMatrix, val);
+    // Load all bitmaps first
+    let bitmaps = {};
+    selMatrix.forEach(id => {
+      bitmaps[id] = Bitmap(fixPattern(ledsToHex(id)));
+    });
+    
+    // Capture overflow rows from each matrix
+    let overflows = {};
+    selMatrix.forEach(id => {
+      let mat = bitmaps[id].getMatrix();
+      overflows[id] = mat[0].slice(); // Capture top row
+    });
+    
+    // Shift all matrices up (prepend 00)
+    selMatrix.forEach(id => {
+      var val = '00' + fixPattern(ledsToHex(id)).substr(0, 14);
+      let bitmap = Bitmap(val);
+      bitmaps[id] = bitmap;
+    });
+    
+    // Apply overflows to UP neighbors if they're selected
+    selMatrix.forEach(id => {
+      let neighbor = cachedNeighborMap[id] && cachedNeighborMap[id].up;
+      if (neighbor && selMatrix.includes(neighbor)) {
+        let mat = bitmaps[neighbor].getMatrix();
+        mat[7] = overflows[id]; // Set bottom row of UP neighbor
+        bitmaps[neighbor].setMatrix(mat);
+      }
+    });
+    
+    // Apply all changes
+    selMatrix.forEach(id => {
+      hexInputToLeds(id, bitmaps[id].toHexString());
+    });
   });
 
   $('#shift-down-button').click(function () {
-    var val = fixPattern(ledsToHex(selMatrix)).substr(2, 14) + '00';
-    hexInputToLeds(selMatrix, val);
+    let bitmaps = {};
+    selMatrix.forEach(id => {
+      bitmaps[id] = Bitmap(fixPattern(ledsToHex(id)));
+    });
+    
+    let overflows = {};
+    selMatrix.forEach(id => {
+      let mat = bitmaps[id].getMatrix();
+      overflows[id] = mat[7].slice(); // Capture bottom row
+    });
+    
+    selMatrix.forEach(id => {
+      var val = fixPattern(ledsToHex(id)).substr(2, 14) + '00';
+      let bitmap = Bitmap(val);
+      bitmaps[id] = bitmap;
+    });
+
+    selMatrix.forEach(id => {
+      let neighbor = cachedNeighborMap[id] && cachedNeighborMap[id].down;
+      if (neighbor && selMatrix.includes(neighbor)) {
+        let mat = bitmaps[neighbor].getMatrix();
+        mat[0] = overflows[id]; // Set top row of DOWN neighbor
+        bitmaps[neighbor].setMatrix(mat);
+      }
+    });
+
+    selMatrix.forEach(id => {
+      hexInputToLeds(id, bitmaps[id].toHexString());
+    });
   });
 
   $('#shift-right-button').click(function () {
-    const bitmap = Bitmap(fixPattern(ledsToHex(selMatrix)));
-    bitmap.shiftRight();
-    hexInputToLeds(selMatrix, bitmap.toHexString());
+    let bitmaps = {};
+    selMatrix.forEach(id => {
+      bitmaps[id] = Bitmap(fixPattern(ledsToHex(id)));
+    });
+
+    let overflows = {};
+    selMatrix.forEach(id => {
+      let mat = bitmaps[id].getMatrix();
+      overflows[id] = [];
+      for (let i = 0; i < 8; i++) {
+        overflows[id][i] = mat[i][7]; // Capture rightmost column
+      }
+    });
+
+    selMatrix.forEach(id => {
+      bitmaps[id].shiftRight();
+    });
+
+    selMatrix.forEach(id => {
+      let neighbor = cachedNeighborMap[id] && cachedNeighborMap[id].right;
+      if (neighbor && selMatrix.includes(neighbor)) {
+        let mat = bitmaps[neighbor].getMatrix();
+        for (let i = 0; i < 8; i++) {
+          mat[i][0] = overflows[id][i]; // Set leftmost column of RIGHT neighbor
+        }
+        bitmaps[neighbor].setMatrix(mat);
+      }
+    });
+
+    selMatrix.forEach(id => {
+      hexInputToLeds(id, bitmaps[id].toHexString());
+    });
   });
 
   $('#shift-left-button').click(function () {
-    const bitmap = Bitmap(fixPattern(ledsToHex(selMatrix)));
-    bitmap.shiftLeft();
-    hexInputToLeds(selMatrix, bitmap.toHexString());
+    let bitmaps = {};
+    selMatrix.forEach(id => {
+      bitmaps[id] = Bitmap(fixPattern(ledsToHex(id)));
+    });
+
+    let overflows = {};
+    selMatrix.forEach(id => {
+      let mat = bitmaps[id].getMatrix();
+      overflows[id] = [];
+      for (let i = 0; i < 8; i++) {
+        overflows[id][i] = mat[i][0]; // Capture leftmost column
+      }
+    });
+    
+    selMatrix.forEach(id => {
+      bitmaps[id].shiftLeft();
+    });
+
+    selMatrix.forEach(id => {
+      let neighbor = cachedNeighborMap[id] && cachedNeighborMap[id].left;
+      if (neighbor && selMatrix.includes(neighbor)) {
+        let mat = bitmaps[neighbor].getMatrix();
+        for (let i = 0; i < 8; i++) {
+          mat[i][7] = overflows[id][i]; // Set rightmost column of LEFT neighbor
+        }
+        bitmaps[neighbor].setMatrix(mat);
+      }
+    });
+
+    selMatrix.forEach(id => {
+      hexInputToLeds(id, bitmaps[id].toHexString());
+    });
   });
 
   $('#rotate-button').click(function () {
-    const bitmap = Bitmap(fixPattern(ledsToHex(selMatrix)));
-    bitmap.rotate();
-    hexInputToLeds(selMatrix, bitmap.toHexString());
+    selMatrix.forEach(id => {
+      const bitmap = Bitmap(fixPattern(ledsToHex(id)));
+      bitmap.rotate();
+      hexInputToLeds(id, bitmap.toHexString());
+    });
   });
 
   $('#rotate-back-button').click(function () {
-    const bitmap = Bitmap(fixPattern(ledsToHex(selMatrix)));
-    bitmap.rotateBack();
-    hexInputToLeds(selMatrix, bitmap.toHexString());
-  });
-  
-  $('#entire-button').click(function () {
-    entireMatrix();
+    selMatrix.forEach(id => {
+      const bitmap = Bitmap(fixPattern(ledsToHex(id)));
+      bitmap.rotateBack();
+      hexInputToLeds(id, bitmap.toHexString());
+    });
   });
   
   function entireMatrix() {
-    $("#t"+selMatrix).find('.item').toggleClass('active', $("#t"+selMatrix).find('.item.active').length != 64);
+    selMatrix.forEach(id => {
+      $("#t"+id).find('.item').toggleClass('active', $("#t"+id).find('.item.active').length != 64);
+    });
+  }
+  
+  //mirrors left half to right one --will work if both sides are wired the same
+  function mirrorVisor() {
+    //if visType starts with "t0"
+    let firstMatrix = visType.match(/t\d+/);
+    let isT0First = firstMatrix && firstMatrix[0] === "t0";
+    
+    for (let i = 1; i < 9; i++) {
+      for (let j = 1; j < 9; j++) {
+        let numFix = numOfSegm-1;
+        for (let l = 0; l < numFix/2; l++) {
+          if(numOfSegm % 2 == 1 && numFix == (numOfSegm/2)+1) {l++;}
+          
+          if(isT0First) { //copy from lower numbers to higher numbers
+            $('#t' + (numFix-l)).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $('#t' + l).find('.item[data-row=' + i + '][data-col=' + (9-j) + '] ').attr("class"));
+          } else { //copy from higher numbers to lower numbers
+            $('#t' + l).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $('#t' + (numFix-l)).find('.item[data-row=' + i + '][data-col=' + (9-j) + '] ').attr("class"));
+          }
+        }
+      }
+    }
+    
+    let numFix = numOfBlush*2;
+    for(let i = 0; i < numFix; i++) {
+      if(isT0First) {
+        $("#matrixes").find("#b"+(numFix-i-1)).css("background-color", $("#matrixes").find("#b"+i).css("background-color"));
+      } else {
+        $("#matrixes").find("#b"+i).css("background-color", $("#matrixes").find("#b"+(numFix-i-1)).css("background-color"));
+      }
+    }
   }
 
-  var framesVisor = [];
+  /*-----------------------------------EAR ANIM CODE GEN-----------------------------------*/
+  //function that get the type of animation and creates entire 'ears' object and returns it
+  function earsGen() {
+    var output = "";
+    if ($("#typeEars").val() == "custom" || $("#typeEars").val() == "custom_glow") {
+      output += "\"ears\":{\"type\":\""+$("#typeEars").val()+"\",\"frames\":[";
+      for (var x = 0; x < framesEars.length; x++) {
+        output += framesEars[x];
+        if (x !== framesEars.length - 1) {
+          output += ",";
+        }
+      }
+      output += "]}"
+    } else {
+      output += "\"ears\":{\"type\":\"" + $("#typeEars").val() + "\"}";
+    }
+    return output;
+  }
 
+  //function that gets data from timespan input and SVG pictures, creates frames formated in JSON
+  //end puts them in array, also can edit those frames by rewriting specific frame
+  function frameGenEars(editing) {
+    if ($("#timespanEars").val().length == 0 && $("#timespanEars").val() > 0) {
+      alert("Timespan missing");
+    } else {
+      var temp = "{\"timespan\":" + $("#timespanEars").val() + ",\"leds\":[";
+	  var ledNum = Number($("#earConfig").val()/2) + 1;
+      for (var x = 1; x < ledNum; x++) {
+        if (x > 1) {
+          temp += ",";
+        }
+        temp += "\"" + (($("#svg1").find("#" + x).attr('fill') || "").substring(1) || "0") + "\"";
+      }
+      for (var x = 1; x < ledNum; x++) {
+        if (x < ledNum) {
+          temp += ",";
+        }
+        temp += "\"" + (($("#svg2").find("#" + x).attr('fill') || "").substring(1) || "0") + "\"";
+      }
+      temp += "]}";
+      if (editing < 0) {
+        framesEars.push(temp);
+        $("#earsFramesP").append("<a id=\"" + (framesEars.length - 1) + "\">" + (framesEars.length - 1) + "</a>");
+      } else {
+        framesEars[editing] = temp;
+      }
+    }
+  }
+
+  /*-----------------------------------VISOR ANIM CODE GEN-----------------------------------*/
   function visorGen() {
     var output = "";
     output += '"visor":{"type":"' + $("#typeVisor").val() + '","isMouth":'+visTypeMouth+',"frames":[';
@@ -1044,13 +1283,20 @@
       }
     }
   }
-
-  //clone selected frame to the end of array
-  function cloneEarsVisor() {
-    framesVisor.push(framesVisor[nowEditVisorFrame]);
-    $("#visorFramesP").append("<a id=\"" + (framesVisor.length - 1) + "\">" + (framesVisor.length - 1) + "</a>");
-  }
   
+  /*-----------------------------------OUTPUT ANIM CODE GEN-----------------------------------*/
+  //get json code for ears and visor, generates final usable code
+  function completeGen() {
+    if ($("#visorConfig").val() == "none" || framesVisor.length == 0 || (framesEars.length == 0 && ( $("#typeEars").val() == "custom"  || $("#typeEars").val() == "custom_glow" ))) {
+      alert("No frames in ears or visor!");
+    } else {
+      var output = "{" + earsGen() + "," + visorGen() + "}";
+      output = output.replace(/"000000"/g, "\"0\"");
+      $("#output").val(output);
+    }
+  }
+
+  /*-----------------------------------PLAYBACK-----------------------------------*/
   //check for custom and start loops
   function playAnim(){
     if($("#typeEars").val() == "custom") {
@@ -1089,6 +1335,7 @@
     clearTimeout(earTimeout);
   }
 
+  /*-----------------------------------MISC-----------------------------------*/
   //nuke and reset all
   function nukeAll() {
     if(confirm("You sure to reset all?") == true) {
@@ -1104,7 +1351,83 @@
       $("#usedColors").html("");
     }
   }
+  
+  //key press handler
+  $(document).ready(() => {
+    $(document).keydown(function (event) {
+      if(event.target.nodeName === "INPUT" || event.target.nodeName === "TEXTAREA" || event.target.isContentEditable) return;
+      event.preventDefault();
+      switch (event.key) {
+        case "c":
+          matrixAction = "col";
+          break;
+        case "r":
+          matrixAction = "row";
+          break;
+        case "v":
+          matrixAction = "paste";
+          break;
+        case "s":
+          matrixAction = "select";
+          break;
+        case "t":
+          entireMatrix();
+          break;
+        case "ArrowUp":
+          $('#shift-up-button').click();
+          break;
+        case "ArrowLeft":
+          $('#shift-left-button').click();
+          break;
+        case "ArrowDown":
+          $('#shift-down-button').click();
+          break;
+        case "ArrowRight":
+          $('#shift-right-button').click();
+          break;
+      }
+    });
+  });
+  
+  //fixes hex pattern
+  function fixPattern(pattern) {
+    pattern = pattern.replace(/[^0-9a-fA-F]/g, '0');
+    return ('0000000000000000' + pattern).substr(-16);
+  }
 
+  //loads leds from hex
+  function hexInputToLeds(segment, value) {
+    var val = fixPattern(value);
+    for (var i = 1; i < 9; i++) {
+      var byte = val.substr(-2 * i, 2);
+
+      byte = parseInt(byte, 16);
+      for (var j = 1; j < 9; j++) {
+        var active = !!(byte & 1 << (j - 1));
+        $('#t' + segment).find('.item[data-row=' + i + '][data-col=' + j + '] ').toggleClass('active', active);
+      }
+    }
+  }
+  
+  //return hex of segment
+  function ledsToHex(segment) {
+    var out = [];
+    for (var i = 1; i < 9; i++) {
+      var byte = [];
+      for (var j = 1; j < 9; j++) {
+        var active = $('#t' + segment).find('.item[data-row=' + i + '][data-col=' + j + '] ').hasClass('active');
+        byte.push(active ? '1' : '0');
+      }
+      byte.reverse();
+      byte = parseInt(byte.join(''), 2).toString(16);
+      byte = ('0' + byte).substr(-2);
+      out.push(byte);
+    }
+    out.reverse();
+    return out.join('');
+  }
+
+  /*-----------------------------------File/Anim SAVE/LOAD-----------------------------------*/
   //sends animation to ESP for test
   function postAnim() {
     $.ajax({
@@ -1170,17 +1493,22 @@
   loadFiles();
   
   function loadLocalFile() {
-    let fileToLoad = document.getElementById("localFile").files[0];
-    if(fileToLoad === undefined || fileToLoad.name.includes(".json") == false) {
-      alert("No selected file or not a .json file!");
-    } else {
-      let fileReader = new FileReader();
-      fileReader.onload = function (fileLoadedEvent) {
+    let fileInput = document.getElementById("localFile");
+    fileInput.onchange = function(e) {
+      let fileToLoad = e.target.files[0];
+      if(fileToLoad === undefined || !fileToLoad.name.includes(".json")) {
+        alert("No selected file or not a .json file!");
+      } else {
+        let fileReader = new FileReader();
+        fileReader.onload = function (fileLoadedEvent) {
           $("#output").val(fileLoadedEvent.target.result);
           loadAnim();
-      };
-      fileReader.readAsText(fileToLoad, "UTF-8");
-    }
+        };
+        fileReader.readAsText(fileToLoad, "UTF-8");
+      }
+      fileInput.value = '';
+    };
+    fileInput.click();
   }
   
   function saveToFile() {
