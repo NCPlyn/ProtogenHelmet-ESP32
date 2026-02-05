@@ -2,8 +2,21 @@
 #include <ezButton.h>
 
 #define BTNTIME 800 //under this time in ms is considered short press, over is long press
-int sleepArray[] = {1,2,3,4,7,8,9}; //numbers of pins to wake up with
 #define BUTTONS 7
+
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+int sleepArray[] = {2,3,4,5,8,9,10}; //numbers of pins to wake up with
+ezButton buttonArray[BUTTONS] = { //1... left to right, row by row, pins of buttons
+  ezButton(9), //up left
+  ezButton(3), //up right
+  ezButton(4), //up
+  ezButton(8), //left
+  ezButton(10), //center
+  ezButton(2), //right
+  ezButton(5)  //down
+};
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+int sleepArray[] = {1,2,3,4,7,8,9}; //numbers of pins to wake up with
 ezButton buttonArray[BUTTONS] = { //1... left to right, row by row, pins of buttons
   ezButton(8), //up left
   ezButton(2), //up right
@@ -13,6 +26,7 @@ ezButton buttonArray[BUTTONS] = { //1... left to right, row by row, pins of butt
   ezButton(1), //right
   ezButton(4)  //down
 };
+#endif
 
 unsigned long btnPressTime[BUTTONS];
 String btnAnims[3][BUTTONS];
@@ -46,7 +60,7 @@ static BLEUUID charUUID("FFE1");
 
 NimBLERemoteCharacteristic* pRemoteCharacteristic;
 NimBLERemoteService* pRemoteService;
-NimBLEAdvertisedDevice* pAdvertisedDevice;
+static const NimBLEAdvertisedDevice* pAdvertisedDevice;
 NimBLEClient* pClient;
 
 bool doConnect = false,connected = false,buttonPressed = false;
@@ -55,8 +69,8 @@ int connectTry = 0, functionBtn = -1, animSet = 0, sleepTime = 600;
 unsigned long check0button = 0, lastBlink = 0, wifiblechk = 0, toSleep = 0;
 
 // BLE Scan callback, get a comma-separated list of found devices and check for valid one to connect to
-class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
-  void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
+class ScanCallbacks : public NimBLEScanCallbacks {
+    void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override {
     // Add device name to found devices list
     if (advertisedDevice->getName().length() > 0) {
       if (foundDevices.length() > 0) {
@@ -73,15 +87,15 @@ class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
       doConnect = true;
     }
   }
-};
+} scanCallbacks;
 
 // Perform a new scan and set callback for found device
 void scanBLE(int time) {
   foundDevices = "";
   NimBLEScan* pScan = NimBLEDevice::getScan();
-  pScan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks());
+  pScan->setScanCallbacks(&scanCallbacks, false);
   pScan->setActiveScan(true);
-  pScan->start(time, nullptr, false);
+  pScan->start(time*1000, false);
 }
 
 // Connect to the BLE server and check for valid service/char
@@ -203,7 +217,7 @@ void startWiFiWeb() {
       pRemoteCharacteristic->writeValue("?");
       Serial.println("[I] BT: Sent ?");
       delay(100);
-      String response = pRemoteCharacteristic->readValue();
+      String response = pRemoteCharacteristic->readValue().c_str();
       Serial.println("[I] BT: Received: " + response);
       request->send(200, "text/plain", response);
     } else {
@@ -335,7 +349,7 @@ void loop() {
       if(connectTry < 3) {
         Serial.println("[I] BT: Failed to connect. Retrying...");
         connectTry++;
-        NimBLEDevice::getScan()->start(0,nullptr, false);
+        NimBLEDevice::getScan()->start(5000, false);
       } else {
         Serial.println("[I] BT: Tried to connect 3 times and failed all 3, restart ESP or change BLE Server!");
       }
@@ -346,7 +360,7 @@ void loop() {
     Serial.println("[I] BT: Disconnected from server. Reconnecting...");
     toSleep = millis()-(sleepTime*3000);
     connected = false;
-    NimBLEDevice::getScan()->start(5,nullptr, false);
+    NimBLEDevice::getScan()->start(5000, false);
   }
 
   //get number of connected wificlients/attempted connect and stop scanning, start scanning once none
@@ -364,13 +378,13 @@ void loop() {
         btnPressTime[i] = millis();
         toSleep = millis();
       }
-      if(buttonArray[i].isReleased()) { //short press
+      if(buttonArray[i].isReleased()) {
         long pressDuration = millis() - btnPressTime[i];
-        if(pressDuration < BTNTIME) {
-          if(i == functionBtn) {
+        if(pressDuration < BTNTIME) { //short press
+          if(i == functionBtn) { //if function buttton -> rgb
             pRemoteCharacteristic->writeValue(";rgb");
             Serial.println("[I] BT: Sent: ;rgb");
-          } else {
+          } else { //if not rgb button -> send anim
             if (pRemoteCharacteristic->canWrite()) {
               pRemoteCharacteristic->writeValue(btnAnims[animSet][i]);
               Serial.print("[I] BT: Sent: ");
@@ -378,7 +392,7 @@ void loop() {
             }
           }
           //btnPressTime[i] = 20000000;
-        } else if (pressDuration > BTNTIME && pressDuration < BTNTIME+5000) {
+        } else if (pressDuration > BTNTIME && pressDuration < BTNTIME+5000 && i == functionBtn) { //long press
           if(animSet==2) {animSet=0;} else {animSet++;}
           Serial.println("[I] Animation set to: "+String(animSet));
           pRemoteCharacteristic->writeValue(";set"+String(animSet));
@@ -390,7 +404,11 @@ void loop() {
 
   //status LED
   if(connected && digitalRead(LED_BUILTIN) == LEDOFF) {
-    digitalWrite(LED_BUILTIN,LEDON);
+    #if defined(CONFIG_IDF_TARGET_ESP32C3)
+      digitalWrite(LED_BUILTIN,LEDOFF);
+    #elif defined(CONFIG_IDF_TARGET_ESP32S3)
+      digitalWrite(LED_BUILTIN,LEDON);
+    #endif
   } else if (!connected && lastBlink+1000<millis()) {
     digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
     lastBlink = millis();

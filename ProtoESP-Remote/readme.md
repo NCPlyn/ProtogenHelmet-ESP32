@@ -1,6 +1,6 @@
 # ProtoESP - Remote
 ### Wirelessly control your protogen!
-Powered with Seeeduino **XIAO ESP32-S3** over BLE!  
+Powered with Seeeduino **XIAO ESP32-S3/C3** over BLE!
 *If using Legacy code, this remote won't work, use [this](../../Legacy/BLE-Remote) one.*<br><br>
 ![remote_banner](https://github.com/user-attachments/assets/e69433f9-51b3-4ee4-9bc1-57ae101f678d)
 - Thanks to <a href="https://www.pcbway.com/project/share/ProtoESP_Remote_66722ab2.html"><img src="https://www.electronics-lab.com/wp-content/uploads/2020/04/0x0.png" height="40"></a> for supplying these PCBs for my project! Quick and efficient, with an easy instant quote and ordering system. They offer PCBs with 1-14 layers, silkscreen colors, thicknesses & more. The manufacturing and shipping times are fast (7 days total for me). Reliable choice for prototyping, small production, and even large-batch manufacturing with PCB assembly and stencil services.
@@ -30,15 +30,16 @@ The Gerber file (ProtoESP-Remote_Gerber_2025-04-28.zip) for manufacturing the PC
 - **Make sure** the battery connector has proper polarity, otherwise swap cables in the battery connector and connect battery.
   - Also make sure you fill the backside battery holes under the XIAO to make proper connection to the pads and that they are not shorted together!
 - Connect antenna supplied with the XIAO and stick it to the back of the PCB, to the same with battery.
+- If using ESP32**C3** and you want status LED, solder one 3V led on to the PCB place named "Pair"
 ### Upload
 - Open VS Code (Install if not present on your computer, afterwards install PlatformIO extension)
 - Clone this repository and open this folder and let PIO download needed files
 - *Optional if changed HW: Edit lines 4,5,8-14: times and pins*
-- Connect the MCU and in the PIO tab open either XIAO if you're using XIAO ESP32S3 or esp32-s3-devkitc-1 if using any different/dev ESP32S3 board
+- Connect the MCU and in the PIO tab open either `XIAO ESP32S3` or `XIAO ESP32C3` or `esp32-s3-devkitc-1` if using any different/dev ESP32S3 board
 - Click on `Upload` and after successful operation expand `Platform` dropdown and click on `Upload filesystem image`
-- The builtin LED should now start blinking and in the `Monitor`, no errors should be printed out.
+- The builtin/Pair LED should now start blinking and in the `Monitor`, no errors should be printed out.
 ### Use
-- The builtin LED should either blink (trying to connect), or stay lighted up (connected)
+- The builtin/Pair LED should either blink (trying to connect), or stay lighted up (connected)
 - Connect to the ESP WiFi AP named `ProtoRemote` with password `Proto1234`
 - Open any web browser and visit site `192.168.4.1` with mobile data turned off
 - After 6s the avaiable BLE devices should be filled out in the drop down, select which one is your ProtoESP controller (BLE name is same as WiFi name you set on the ProtoESP controller)
