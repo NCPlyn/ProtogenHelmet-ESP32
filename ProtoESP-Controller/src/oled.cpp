@@ -19,12 +19,9 @@ void SSDOLED::oledBright(int level) const {
 //--------------------------------//OLED Init
 bool SSDOLED::init(uint8_t oledAddr, int brightness, bool INA) {
   INAavail = INA;
-  Wire.begin();
   Wire.beginTransmission(oledAddr); //check for oled on address 0x3c
   byte error = Wire.endTransmission();
-  Wire.end();
   if(error == 0) {
-    u8g2.setBusClock(1000000); //100k = 113ms; 400k = 33ms; 800k = 20ms; 1mhz / 2mhz = 17ms
     u8g2.setI2CAddress(oledAddr*2);
     u8g2.begin();
     u8g2.setFlipMode(2);

@@ -19,16 +19,16 @@
 #define visorLedsNum 704 // How many WS2812 LEDs for visor? (matrixNumber*64)
 #define FADESTEPS 4 //how many steps when fading between frames? (0=disabled; work only for WS2812 displays)
 
-bool earPresent = true; // Are you using ear leds?
+bool earPresent = false; // Are you using ear leds?
 #define earLedsNum 74 // How many? (74 or 32 rn)
 
 bool blushPresent = false; // Are you using blush leds?
 #define blushLedsNum 8 // How many? (might crash under 8)
 bool useRGBblush = true; //Swaps red-green for RGB strip
 
-bool INApresent = true; //Are you using INA219?
+bool INApresent = false; //Are you using INA219?
 
-#define boopMode "KY-032" //"KY-032" for KY-032, "Capac" for capacitive sensor/boop when HIGH, "APDS9960" for ADPS9960, "VL53L1X" for VL53L1X, leave empty for none
+#define boopMode "APDS9960" //"KY-032" for KY-032, "Capac" for capacitive sensor/boop when HIGH, "APDS9960" for ADPS9960, "VL53L1X" for VL53L1X, leave empty for none
 
 #define revertTilt 8000 //The maximum time that animation caused by tilt gets shown (used as if tilt bugs out etc)
 
@@ -98,7 +98,7 @@ AsyncWebServer server(80);
 
 //--------------------------------//Config vars
 bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true, ToFInitDone = false;
-uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims;
+uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims, trueMatrixCount;
 String currentAnim = "", animToLoad = "", availAnims[50], getfilesCache;
 
 //--------------------------------//getting stored anims names and count
@@ -583,6 +583,12 @@ void startWiFiWeb() {
 void setup() {
   Serial.begin(115200);
 
+  if(visorType == "WS2812") {
+    trueMatrixCount = (visorLedsNum/64)+1;
+  } else {
+    trueMatrixCount = MAX72xx_DEVICES;
+  }
+
   pinMode(animBtn, INPUT_PULLUP);
   pinMode(0, INPUT_PULLUP);
   pinMode(fanPWM, OUTPUT);
@@ -659,6 +665,8 @@ void setup() {
 
   //I2C things
   Wire.setPins(I2C_SDA, I2C_SCL);
+  Wire.setClock(400000); //100k = 113ms; 400k = 33ms; (800k = 20ms; 1mhz / 2mhz = 17ms = breaks apds)
+  Wire.begin();
 
   if(cfg.tiltEna) {
     if(myIMU.begin()) {
@@ -696,6 +704,7 @@ void setup() {
     } else {
       ToFInitDone = true;
       apds.enableProximity(true);
+      apds.setProxPulse(APDS9960_PPULSELEN_8US, 8);
     }
   } else if (boopMode == "VL53L1X" && cfg.boopEna) {
     if(!vl53.begin()){
@@ -721,22 +730,50 @@ void setup() {
 
 //--------------------------------//Loop vars
 String oldanim, boopoldanim;
-bool FdisplayVisor = false, FdisplayBlush = false, FdisplayEar = false, booping = false, wasTilt = false, speechFirst = true, speechResetDone = false, speak = false, boopRea = false, remoteSign = false;;
-float zAx,yAx,finalMicAvg,avgMicArr[10];
-int randomNum, boopRead, randomTimespan = 0, startIndex = 1, speaking = 0, currentMicAvg = 0, btnNum = 0, currFade = 1;
-unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastSpeak = 0, lastMillsBoop = 0, lastMillsSpeechAnim = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0, looptime = 0, fadeTime = 0;
+bool FdisplayVisor = false, FdisplayBlush = false, FdisplayEar = false, booping = false, wasTilt = false, boopRea = false, remoteSign = false, speaking = true;
+float zAx,yAx,finalMicAvg,avgMicArr[10], micAttack = 0.35f, micRelease = 0.2f, env = 0.0f, dc = (float)cfg.spMin;
+int boopRead, startIndex = 1, micVolume, currentMicAvg = 0, btnNum = 0, currFade = 1, apdsprox = 255;
+unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastMillsBoop = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0, looptime = 0, fadeTime = 0, laskSpeakAnim = 0, lastBoopCheck = 0;
 byte row = 0;
+
+FramesVisor dynamicSpeak(FramesVisor curFrame, bool isMouth[20], int volume) {
+  int mouthIndexes[trueMatrixCount];
+  int mouthCount = 0;
+
+  // collect true (mouth) indexes
+  for (int i = 0; i < trueMatrixCount; i++) {
+    if (isMouth[i]) {
+      mouthIndexes[mouthCount++] = i;
+    }
+  }
+
+  int half = mouthCount / 2;
+
+  for (int i = 0; i < half; i++) {
+    int x = map(volume, 0, 100, 0, half * 8) - (i * 8);
+    x = constrain(x, 0, 8);
+
+    int leftIndex  = mouthIndexes[half - 1 - i];
+    int rightIndex = mouthIndexes[half + i];
+
+    curFrame.leds[leftIndex]  = misc.speakMatrix(curFrame.leds[leftIndex],  x, true);
+    curFrame.leds[rightIndex] = misc.speakMatrix(curFrame.leds[rightIndex], x, false);
+  }
+
+  return curFrame;
+}
 
 //--------------------------------//Visor bufferer
 void setAllVisor(struct CRGB *ledArray, long ledColor, int visorFrame) {
-  uint64_t tempSegment;
+  FramesVisor tempFrame;
+  if(speaking) {
+    tempFrame = dynamicSpeak(visorNow->frames[visorFrame], visorNow->isMouth, micVolume);
+  } else {
+    tempFrame = visorNow->frames[visorFrame];
+  }
   for(int y = 0; y < numOfSegm; y++) {
-    tempSegment = visorNow->frames[visorFrame].leds[y];
-    if(visorNow->isMouth[y] && speak && randomNum == 0) { //if sets mouth and we are talking
-      tempSegment = misc.speakMatrix(tempSegment);
-    }
     for (int i = 0; i < 8; i++) {
-      row = (tempSegment >> i * 8) & 0xFF;
+      row = (tempFrame.leds[y] >> i * 8) & 0xFF;
       for (int j = 0; j < 8; j++) {
         if(visorType == "WS2812") {
           long tempColor = ledColor; //use given color
@@ -766,11 +803,11 @@ void loop() {
   //--------------------------------//EAR Leds render
   if(earPresent) {
     if(earsNow->type == 0) { //custom
-      if(lastMillsEars+earsNow->frames[currentEarsFrame-1].timespan <= millis() || instantReload) {
+      if(lastMillsEars+earsNow->frames[currentEarsFrame].timespan <= millis() || instantReload) {
+        currentEarsFrame++;
         lastMillsEars = millis();
         if(currentEarsFrame == earsNow->numOfFrames) { currentEarsFrame = 0; } //loop back to first frame if last frame
         for(int y = 0; y < earLedsNum; y++) { earLeds[y] = earsNow->frames[currentEarsFrame].ledColor[y]; } //set ear leds
-        currentEarsFrame++;
         FdisplayEar = true;
       }
     } else if (earsNow->type == 1) { //rainbow
@@ -836,7 +873,8 @@ void loop() {
 
   //--------------------------------//VISOR+BLUSH Leds render
   if(visorNow->type == 0 || (visorNow->type == 1 && visorType == "MAX72XX")) { //custom
-    if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
+    if(lastMillsVisor+visorNow->frames[currentVisorFrame].timespan <= millis() || instantReload) {
+      currentVisorFrame++;
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
       setAllVisor(visorLedsNEW,0,currentVisorFrame); //set visor leds
@@ -844,20 +882,19 @@ void loop() {
         for(int x = 0; x<blushLedsNum; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
         FdisplayBlush = true;
       }
-      currentVisorFrame++;
       instantReload = false;
     }
   } else if (visorNow->type == 1 && visorType == "WS2812") { //all_rainbow
-    if(lastMillsVisor+visorNow->frames[currentVisorFrame-1].timespan <= millis() || instantReload) {
+    if(lastMillsVisor+visorNow->frames[currentVisorFrame].timespan <= millis() || instantReload) {
+      currentVisorFrame++;
       lastMillsVisor = millis();
       if(currentVisorFrame == visorNow->numOfFrames) { currentVisorFrame = 0; }
-      currentVisorFrame++;
       instantReload = false;
     }
     fill_rainbow(visorPixelBuffer, 1, millis()/cfg.rbSpeed, 128/cfg.rbWidth);
-    setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame-1);
+    setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame);
     if(blushPresent) {
-      for(int x = 0; x<blushLedsNum; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame-1].ledsBlush[x]; } //set blush leds
+      for(int x = 0; x<blushLedsNum; x++) { blushLeds[x] = visorNow->frames[currentVisorFrame].ledsBlush[x]; } //set blush leds
       FdisplayBlush = true;
     }
   }
@@ -905,61 +942,63 @@ void loop() {
     } else {
       avgMicArr[currentMicAvg++] = nvol;
     }
+
+    if(laskSpeakCheck+10<=millis()) {
+      finalMicAvg = 0;
+      for (int i = 0; i<10; i++){
+        finalMicAvg+=avgMicArr[i];
+      }
+      //Serial.print(String(finalMicAvg/10));
+      //Serial.print(",");
+      float centered = (finalMicAvg/10) - dc; //DC removal
+      float mag = fabsf(centered);
+      if (mag > env) { // Envelope follower
+        env += (mag - env) * micAttack;
+      } else {
+        env += (mag - env) * micRelease;
+      }
+      if (env < 25.0f) { // Noise gate
+        env = 0.0f;
+      }
+      if (env < 25.0f) { // Update DC only when quiet
+          dc = dc * (1.0f - 0.0005f) + (finalMicAvg/10) * 0.0005f;
+      }
+      micVolume = (int)(env * 100.0f / (float)cfg.spMax + 0.5f); // Normalize 0-100
+      micVolume = constrain(micVolume, 0, 100);
+      //Serial.println(String(micVolume));
+
+      if(micVolume > cfg.spTrig) {
+        if(!speaking) {
+          speaking = true;
+          if(cfg.oledEna && oledInitDone) {
+            oled.speak(true);
+          }
+          Serial.println(F("[I] Speak"));
+        }
+      } else {
+        if(speaking) {
+          speaking = false;
+          if(cfg.oledEna && oledInitDone) {
+            oled.speak(false);
+          }
+          Serial.println(F("[I] unSpeak"));
+        }
+      }
+
+      laskSpeakCheck = millis();
+    }
+
+    if(laskSpeakAnim+60<=millis()) {
+      if(visorNow->type == 0 || (visorNow->type == 1 && visorType == "MAX72XX")) { //custom
+        setAllVisor(visorLedsNEW,0,currentVisorFrame);
+      } else if (visorNow->type == 1 && visorType == "WS2812") { //all_rainbow
+        setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame-1);
+      }
+      laskSpeakAnim = millis();
+    }
   }
   //Serial.println(">SPK1:"+String(micros()-looptime));
   //looptime = micros();
-  
-  if(cfg.speechEna && laskSpeakCheck+10<=millis()) {
-    finalMicAvg = 0;
-    for (int i = 0; i<10; i++){
-      finalMicAvg+=avgMicArr[i];
-    }
-    if(finalMicAvg/10 > cfg.spTrig) {
-      speaking++;
-      lastSpeak = millis();
-    }
-    if(speaking > 4 && !speak) {
-      speak = true;
-      speechResetDone = false;
-      if(cfg.oledEna && oledInitDone) {
-        oled.speak(true);
-      }
-      Serial.println(F("[I] Speak"));
-    }
-    if(lastSpeak+500<millis() && speak) {
-      speak = false;
-      speechFirst = true;
-      if(cfg.oledEna && oledInitDone) {
-        oled.speak(false);
-      }
-      Serial.println(F("[I] unSpeak"));
-      speaking = 0;
-    }
-    laskSpeakCheck = millis();
-  }
-  //--------------------------------//SPEECH Animation
-  if(cfg.speechEna && speak && lastMillsSpeechAnim+randomTimespan<=millis()) {
-    randomTimespan = random(cfg.spMin,cfg.spMax);
-    if(speechFirst == true){
-      randomNum = 0;
-      speechFirst = false;
-    } else {
-      randomNum = random(2);
-    }
-    if(visorNow->type == 0) { //custom
-      setAllVisor(visorLedsNEW,0,currentVisorFrame-1);
-    }
-    lastMillsSpeechAnim = millis();
-  }
-  //--------------------------------//SPEECH Reset frames
-  if(!speechResetDone && !speak && lastMillsSpeechAnim+800<millis()) {
-    if(visorNow->type == 0) { //custom
-      setAllVisor(visorLedsNEW,0,currentVisorFrame-1);
-    } else if (visorNow->type == 1) { //all_rainbow
-      setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame-1);
-    }
-    speechResetDone = true;
-  }
 
   //--------------------------------//Single button anim change
   hwBtn.loop();
@@ -979,7 +1018,7 @@ void loop() {
   }
 
   //--------------------------------//BOOP Detection
-  if(millis() > 200 && cfg.boopEna) {
+  if(lastBoopCheck+100<=millis() && cfg.boopEna) {
     if(boopMode == "KY-032") {
       digitalWrite(T_en, HIGH);
       delayMicroseconds(210);
@@ -1020,13 +1059,15 @@ void loop() {
       }
     } else if (boopMode == "APDS9960") {
       if(ToFInitDone) {
-        if(booping == false && (255 - apds.readProximity()) < cfg.boopThresh) {
+        apdsprox = apds.readProximity();
+        //Serial.println(String(apdsprox));
+        if(booping == false && (255 - apdsprox) < cfg.boopThresh) {
           Serial.println(F("[I] ToF BOOP"));
           booping = true;
           boopoldanim = currentAnim;
           loadAnim(cfg.aBoop,"");
           lastMillsBoop = millis();
-        } else if(booping == true && lastMillsBoop+1000<millis() && (255 - apds.readProximity()) > cfg.boopThresh) {
+        } else if(booping == true && lastMillsBoop+1000<millis() && (255 - apdsprox) > cfg.boopThresh) {
           Serial.println(F("[I] ToF unBOOP"));
           booping = false;
           if(!wasTilt) {
@@ -1076,6 +1117,7 @@ void loop() {
         }
       }
     }
+    lastBoopCheck=millis();
   }
 
   //--------------------------------//OLED routine, ~~10ms qwq~~, 1-5ms.. eh better

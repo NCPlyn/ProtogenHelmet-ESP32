@@ -31,9 +31,9 @@ void Config::setDefault() {
   bOled = 2;
   rbSpeed = 15;
   rbWidth = 8;
-  spMin = 90;
-  spMax = 110;
-  spTrig = 1400;
+  spMin = 850;
+  spMax = 500;
+  spTrig = 10;
   aTilt = "confused.json";
   aUp = "sad.json";
   aBoop = "boop.json",
@@ -52,7 +52,7 @@ void Config::setDefault() {
   wifiName = "ProtoWiFi";
   wifiPass = "Proto1234";
   fanDuty = 255;
-  boopThresh = 10;
+  boopThresh = 15;
   save();
 }
 

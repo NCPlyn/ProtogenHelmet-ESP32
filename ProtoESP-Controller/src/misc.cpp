@@ -9,35 +9,50 @@ float Misc::mapfloat(float x, float in_min, float in_max, float out_min, float o
 }
 
 //--------------------------------//Dynamic speak anim
-uint64_t Misc::speakMatrix(uint64_t input) const {
+uint64_t Misc::speakMatrix(uint64_t input, uint8_t columns, bool inverted) const {
   int darray[8][8];
-  for (int i = 0; i < 8; i++) { //convert int64 to 2darray
-    uint8_t row = (input >> i * 8) & 0xFF;
+
+  // convert uint64_t to 2D array
+  for (int i = 0; i < 8; i++) {
+    uint8_t row = (input >> (i * 8)) & 0xFF;
     for (int j = 0; j < 8; j++) {
       darray[i][j] = bitRead(row, j);
     }
   }
-  for (int i = 0; i < 8; i++) { //do something to 2darray
+
+  // clamp columns to valid range
+  if (columns > 8) columns = 8;
+
+  // process only selected columns
+  for (int c = 0; c < columns; c++) {
+    int i = inverted ? (7 - c) : c;
+
+    // --- ORIGINAL LOGIC (unchanged) ---
     for (int j = 0; j < 8; j++) {
-      if(darray[j][i] == 1 && j != 0) {
+      if (darray[j][i] == 1 && j != 0) {
         darray[j-1][i] = 1;
         break;
       }
     }
+
     for (int j = 7; j > -1; j--) {
-      if(darray[j][i] == 1 && j != 7) {
+      if (darray[j][i] == 1 && j != 7) {
         darray[j+1][i] = 1;
         break;
       }
     }
+    // ----------------------------------
   }
+
+  // convert 2D array back to uint64_t
   uint64_t out = 0;
-  for (int i = 0; i < 8; i++) { //convert 2darray to int64
+  for (int i = 0; i < 8; i++) {
     uint8_t row = 0;
     for (int j = 0; j < 8; j++) {
       bitWrite(row, j, darray[i][j]);
     }
-    out |= (uint64_t)row << i * 8;
+    out |= (uint64_t)row << (i * 8);
   }
+
   return out;
 }

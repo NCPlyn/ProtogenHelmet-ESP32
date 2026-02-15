@@ -5,13 +5,13 @@
   "bleEna":true,
   "oledEna":true,
   "bEar":64,
-  "bVisor":100,
+  "bVisor":5,
   "bOled":2,
   "rbSpeed":15,
   "rbWidth":8,
-  "spMin":90,
-  "spMax":110,
-  "spTrig":1400,
+  "spMin":850,
+  "spMax":500,
+  "spTrig":10,
   "aTilt":"confused.json",
   "aUp":"upset.json",
   "aBoop":"boop.json",
@@ -29,5 +29,5 @@
   "wifiName":"ProtoWiFi",
   "wifiPass":"Proto1234",
   "fanDuty": 255,
-  "boopThresh":10
+  "boopThresh":15
 }

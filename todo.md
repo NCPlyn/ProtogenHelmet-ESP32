@@ -45,19 +45,19 @@
 - [x] Controller readme.md including capabilities, oled explain, add capac/ir/tof boop connection, ears/blush connect, etc..
 - [x] .md with touch sensor types and their uses
 - [x] VL53L1X/APDS9960 TOF support besides the IR KY-032 sensor
+- [x] Remote: NimBLE 2.x upgrade
+- [x] Remote: ESP32C3 full support, pins/LED/PCB/Sleep
+- [x] More fluid/animated dynamic speech (louder = more further)
 
 ### ToDo: Controller
-- [ ] More fluid/animated dynamic speech (louder = more further/wider)
+- [ ] Dynamic speech update (louder += wider, clean code)
+- [ ] Per pixel color visor (WS2812)
+- [ ] New RGB matrix display (SK9822-EC20 nope, different one wire but faster and small pckg or black)
+
 - [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
 - [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
-
-- [ ] Apa102 style led matrix? [LCSC](https://www.lcsc.com/product-detail/RGB-LEDs-Built-in-IC_OPSCO-Optoelectronics-SK9822-EC20_C2909059.html)
 - [ ] Optimize execution speed: xTask?
 - [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
 
-### ToDo: Remote
-- [ ] [I] Update NimBLE
-- [ ] [I] Pins & sleep & PCBbatt for ESP-C3/C6; user LED
-
 ### ToDo: Manuals etc.
-- [ ] Animator guide, visor configs + animation upgrade (isMouth convert/upgrade, matrix color)
+- [ ] Animator guide + visor configs
