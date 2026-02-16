@@ -100,6 +100,7 @@ AsyncWebServer server(80);
 bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true, ToFInitDone = false;
 uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims, trueMatrixCount;
 String currentAnim = "", animToLoad = "", availAnims[50], getfilesCache;
+float micDC = 800;
 
 //--------------------------------//getting stored anims names and count
 void getFilesFunc() {
@@ -133,6 +134,7 @@ struct FramesVisor {
   uint64_t leds[20];
   long ledsBlush[blushLedsNum];
   long fColor[(visorLedsNum/64)+1];
+  long ppColor[(visorLedsNum/64)+1][64];
 };
 
 struct AnimNowVisor {
@@ -264,6 +266,18 @@ bool loadAnim(String anim, String temp) {
       for(int y = 0; y < numOfSegm; y++) {
         visorNow->frames[x].fColor[y] = strtol(doc["visor"]["frames"][x]["fColor"][y].as<String>().c_str(), NULL, 16); //should return 0 if not present
         visorNow->frames[x].leds[y] = strtoull(doc["visor"]["frames"][x]["leds"][y].as<String>().c_str(), NULL, 16); //string to uint64
+      }
+      for(int i = 0; i < (visorLedsNum/64)+1; i++) { //wipe ppColor data
+        for(int o = 0; o < 64; o++) {
+          visorNow->frames[x].ppColor[i][o] = 0;
+        }
+      }
+      int numOfpp = doc["visor"]["frames"][x]["ppColor"].size();
+      for(int y = 0; y < numOfpp; y++) {
+        int numOfppData = doc["visor"]["frames"][x]["ppColor"][y]["data"].size();
+        for(int z = 0; z < numOfppData; z++) { //ppColor[matrix][pixel] = color
+          visorNow->frames[x].ppColor[doc["visor"]["frames"][x]["ppColor"][y]["mIndex"].as<int>()][doc["visor"]["frames"][x]["ppColor"][y]["data"][z][0].as<int>()] = strtol(doc["visor"]["frames"][x]["ppColor"][y]["data"][z][1].as<String>().c_str(), NULL, 16);
+        }
       }
     }
 
@@ -620,6 +634,8 @@ void setup() {
     cfg.setDefault();
   }
 
+  micDC = (float)cfg.spMin;
+
   adc_oneshot_unit_init_cfg_t init_config = {
     .unit_id = ADC_UNIT_1,
     .ulp_mode = ADC_ULP_MODE_DISABLE,
@@ -731,7 +747,7 @@ void setup() {
 //--------------------------------//Loop vars
 String oldanim, boopoldanim;
 bool FdisplayVisor = false, FdisplayBlush = false, FdisplayEar = false, booping = false, wasTilt = false, boopRea = false, remoteSign = false, speaking = true;
-float zAx,yAx,finalMicAvg,avgMicArr[10], micAttack = 0.35f, micRelease = 0.2f, env = 0.0f, dc = (float)cfg.spMin;
+float zAx,yAx,finalMicAvg,avgMicArr[10], micAttack = 0.35f, micRelease = 0.2f, env = 0.0f;
 int boopRead, startIndex = 1, micVolume, currentMicAvg = 0, btnNum = 0, currFade = 1, apdsprox = 255;
 unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastMillsBoop = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0, looptime = 0, fadeTime = 0, laskSpeakAnim = 0, lastBoopCheck = 0;
 byte row = 0;
@@ -777,10 +793,13 @@ void setAllVisor(struct CRGB *ledArray, long ledColor, int visorFrame) {
       for (int j = 0; j < 8; j++) {
         if(visorType == "WS2812") {
           long tempColor = ledColor; //use given color
-          if(ledColor == 0) { //if given color == 0, use config color
-            tempColor = cfg.visColor;
-            if(visorNow->frames[visorFrame].fColor[y] != 0) { //if theres color then 0 in anim, use that
+          if(ledColor == 0) { //if not given a color
+            if(visorNow->frames[visorFrame].ppColor[y][(i*8)+j] != 0) { //use ppColor if available
+              tempColor = visorNow->frames[visorFrame].ppColor[y][(i*8)+j];
+            } else if(visorNow->frames[visorFrame].fColor[y] != 0) { //if not, use fColor if available
               tempColor = visorNow->frames[visorFrame].fColor[y];
+            } else { // else config color
+              tempColor = cfg.visColor;
             }
           }
           if(oldMatrixFix) {
@@ -948,9 +967,10 @@ void loop() {
       for (int i = 0; i<10; i++){
         finalMicAvg+=avgMicArr[i];
       }
-      //Serial.print(String(finalMicAvg/10));
+      finalMicAvg = finalMicAvg/10;
+      //Serial.print(String(finalMicAvg));
       //Serial.print(",");
-      float centered = (finalMicAvg/10) - dc; //DC removal
+      float centered = finalMicAvg - micDC; //DC removal
       float mag = fabsf(centered);
       if (mag > env) { // Envelope follower
         env += (mag - env) * micAttack;
@@ -961,7 +981,7 @@ void loop() {
         env = 0.0f;
       }
       if (env < 25.0f) { // Update DC only when quiet
-          dc = dc * (1.0f - 0.0005f) + (finalMicAvg/10) * 0.0005f;
+          micDC = micDC * (1.0f - 0.0005f) + finalMicAvg * 0.0005f;
       }
       micVolume = (int)(env * 100.0f / (float)cfg.spMax + 0.5f); // Normalize 0-100
       micVolume = constrain(micVolume, 0, 100);
