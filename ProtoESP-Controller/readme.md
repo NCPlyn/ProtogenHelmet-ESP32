@@ -5,10 +5,11 @@
 ### Main features
 - Running on ESP32-**S3**
 - Supports **MAX721x** single color matrices & **[WS2812 8x8 RGB](https://github.com/NCPlyn/ProtogenHelmet-ESP32/tree/ProtoESP/RGBMatrix)** matrices
+- WS2812 RGB Matrices have support for **per pixel color** with **per matrix color**!
 - **Any number of matrices** depending on your liking! All is about you creating proper animation for your setup
 - Fixed support for WS2812 **RGB rings in the ears** that can be also animated
 - Any number of additional (blush) WS2812 LEDs that can be used for blush or any other place
-- **Animator** on the [internet](https://foxxo.cz/proto/animator.html) or on the ESP to make your animations and test them on the go! (**Web playback and ESP irl playback**)
+- Fully featured **Animator** on the [internet](https://foxxo.cz/proto/animator.html) or on the ESP to make your animations and test them on the go! (**Web playback and ESP irl playback**)
 - Support for **remote or push button** from ESP to change animation
 - **OLED support** to see what is your proot doing
 - Dynamic change of animation when speaking, IR/Capacitive/TOF **boop sensors**....

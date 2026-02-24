@@ -4,12 +4,12 @@
 *Not 100% complete, might be buggy, refer to [Legacy](../Legacy) branch.*
 
 ##### Main features
-- Utilizes **MAX7219** matrixes using SPI or **[WS2812B RGB Matrixes](RGBMatrix)** to show faces/animations
+- Utilizes **MAX7219** matrixes using SPI or **[WS2812B RGB Matrixes](RGBMatrix)** (per pixel/matrix color) to show faces/animations
 - Has two additional WS2812 outputs:
 	1. for ring LEDs in the ears (animated or coded);
 	2. for leds under the eyes (can be repurposed for something else)
 - Provides a WiFi AP with **site to control** your protogen (choose animation; change color,brightness,tilt anims,triggers...)
-	- Has copy of an **Animator** , so you can make, edit or test the animations on the fly. Frame by frame, pixel by pixel.
+	- Has copy of an fully featured **Animator** , so you can make, edit or test the animations on the fly. Frame by frame, pixel by pixel.
 - You can change your animations/faces either by:
 	1. Cycling them using a button from the ESP;
 	2. Choosing on the WiFi site on a phone;
@@ -17,7 +17,7 @@
 - & much more with these parts:
 
 ##### Connect and get more features from:
-- **KY-032**: IR Sensor for changing to different animation if booped
+- **KY-032/APDS9960**: IR Sensor for changing to different animation if booped
 - **MAX9814**: Microphone to move protogens mouth (not used to change voice!)
 - **LSM6DS3**: Accelerometer to change animations by tilting your head
 - **SSD1306**: OLED display to show current animation, speaking status, current&voltage (INA219) and more

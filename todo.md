@@ -48,15 +48,15 @@
 - [x] Remote: NimBLE 2.x upgrade
 - [x] Remote: ESP32C3 full support, pins/LED/PCB/Sleep
 - [x] More fluid/animated dynamic speech (louder = more further)
+- [x] /log to see the logs from the start of the ESP
+- [x] Per pixel color visor & animator (WS2812)
 
 ### ToDo: Controller
 - [ ] Dynamic speech update (louder += wider, clean code)
-- [ ] Per pixel color visor (WS2812)
 - [ ] New RGB matrix display (SK9822-EC20 nope, different one wire but faster and small pckg or black)
 
 - [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
 - [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
-- [ ] Optimize execution speed: xTask?
 - [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
 
 ### ToDo: Manuals etc.

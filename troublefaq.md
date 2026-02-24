@@ -48,6 +48,7 @@ If you cannot upload due to an error:
 If both code and filesystem were uploaded but something doesn’t work:
 
 * Open the **PlatformIO Monitor** and check for error messages.
+  * `DARDUINO_USB_CDC_ON_BOOT=1` has to be uncommented for single USB boards in `platformio.ini`
 * If you see `"file not found"` in the monitor or on `192.168.4.1`, it means:
   * The filesystem was **not uploaded** successfully.
 
@@ -68,3 +69,4 @@ If displays glitch or behave incorrectly:
    * Try to reupload the main program and filesystem in normal and viceversa order.
 6. Swap LED matrices or modules if problems persist:
    * Some **cheap MAX clones** are unreliable or faulty across batches.
+7. Check for errors on the **PlatformIO Monitor** or `192.168.4.1/log` to see if modules are failing to init.

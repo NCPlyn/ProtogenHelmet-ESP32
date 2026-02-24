@@ -29,12 +29,6 @@
         <br>
         <button onclick="if(confirm('Do you want to empty the current frame?')){fillBlackVisor();}">Fill black</button>
         <button onclick="mirrorEars()">Copy left to right</button><br>
-        <div class="usedColorsMain">
-          <div class="playBtns"> 
-            Pick color: <input type="color" id="color" value="#000000"> &nbsp;&nbsp;&nbsp; Used colors:
-          </div>
-          <div id="usedColors"></div>
-        </div>
         <div style="clear: both;">
           <label for="timespanEars">Timespan:</label>
           <input type="number" id="timespanEars" value="500" min="1">
@@ -49,9 +43,15 @@
       </div>
     </div> <!-- END OF EARS PART -->
     <div class="usedColorsMain">
-      <button onclick="playAnim();">Play animation</button>
-      <button onclick="stopAnim();">Stop</button>
-      <button onclick="nukeAll();">Reset all</button>
+      <div class="leftBtns">
+        <button onclick="playAnim();">Play animation</button>
+        <button onclick="stopAnim();">Stop</button>
+        <button onclick="nukeAll();">Reset all</button>
+      </div>
+      <div class="playBtns"> 
+        Pick color: <sup onclick="alert('The color which would set the ears color (black = off) or visor RGB pixel color (black = default matrix/visor color)')">&#9432;</sup><input type="color" id="color" value="#000000"> &nbsp;&nbsp;&nbsp; Used colors:
+      </div>
+      <div id="usedColors"></div>
     </div>
     <div> <!-- START OF VISOR PART -->
       <h2>Visor</h2>
@@ -253,14 +253,28 @@
     max-height: 30px;
     border: solid 1px gray;
     cursor: pointer;
-    float: left;
   }
   .usedColorsMain button {
     margin-top: 5px;
   }
+  .usedColorsMain {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  #usedColors {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
   .playBtns {
-    padding-right:6px;
-    float:left;
+    padding-left: 10px;
+    white-space: nowrap;
+  }
+  .leftBtns {
+    display: flex;
+    gap: 6px;
   }
   path {
     cursor: pointer;
@@ -285,7 +299,7 @@
     box-sizing: border-box;
   }
   .leds-matrix .item.active {
-    background: #000000;
+    background: var(--active-color, #000000);
     border-style: double;
     border-color: red;
     border-width: 1px;
@@ -384,7 +398,6 @@
 </style>
 
 <script type="text/javascript" src="jquerymin.js"></script>
-<script type="text/javascript" src="jss.min.js"></script>
 <script>
   let visType = "", visTypeMouth = "", numOfSegm = 0, numOfBlush = 0, nowEditEarsFrame = 0, curColor = "#000000", isMouseDown = false, nowEditVisorFrame = 0, matrixAction = "";
   let selMatrix = [], framesEars = [], framesVisor = [];
@@ -566,9 +579,7 @@
   $("#fColor").change(function() {
     // Apply color to all selected matrices
     selMatrix.forEach(id => {
-      jss.set('#t'+id+' .active', {
-        'background': $("#fColor").val()+' !important'
-      });
+      $('#t'+id).css("--active-color", $("#fColor").val());
     });
   });
 
@@ -684,11 +695,26 @@
   //if matrix led clicked, add class
   $("#matrixes").on('click', '.item', function(e) {
     if(matrixAction == "" && !(e.ctrlKey || e.metaKey))
-      $(this).toggleClass('active');
+      if($(this).hasClass('active') && $("#color").val() != "#000000" && !$(this).attr('style')) {} else {
+        $(this).toggleClass('active');
+      }
+      if($(this).hasClass('active') && $("#color").val() != "#000000") {
+        $(this).css("background", $("#color").val());
+      } else {
+        $(this).removeAttr("style");
+      }
   });
   $("#matrixes").on('mouseenter', '.item', function(e) {
-    if(matrixAction == "" && isMouseDown && !(e.ctrlKey || e.metaKey))
-      $(this).toggleClass('active');
+    if(matrixAction == "" && isMouseDown && !(e.ctrlKey || e.metaKey)) {
+      if($(this).hasClass('active') && $("#color").val() != "#000000" && !$(this).attr('style')) {} else {
+        $(this).toggleClass('active');
+      }
+      if($(this).hasClass('active') && $("#color").val() != "#000000") {
+        $(this).css("background", $("#color").val());
+      } else {
+        $(this).removeAttr("style");
+      }
+    }
   });
   
   //colors blush dots with selected color
@@ -703,6 +729,7 @@
     for (var x = 0; x < numOfBlush*2; x++) {
       $("#b" + x).css("background-color", "#000000");
     }
+    $('td.item').removeAttr('style');
   }
   fillBlackVisor();
 
@@ -741,17 +768,20 @@
     if(obj.fColor == undefined || obj.fColor == "0") {} else {
       for (var x = 0; x < obj.fColor.length; x++) {
         if(obj.fColor[x] == undefined || obj.fColor[x] == "0") {
-          jss.set('#t'+x+' .active', {
-            'background': '#000000 !important'
-          });
+          $('#t'+x).css("--active-color", "#000000");
         } else {
-          jss.set('#t'+x+' .active', {
-            'background': '#'+obj.fColor[x]+' !important'
-          });
+          $('#t'+x).css("--active-color", '#'+obj.fColor[x]);
         }
       }
     }
-    
+    $('td.item').removeAttr('style');
+    if (obj.ppColor) {
+      for (var x = 0; x < obj.ppColor.length; x++) {
+        for (var y = 0; y < obj.ppColor[x].data.length; y++) {
+          $('#t'+obj.ppColor[x].mIndex).find("td.item[data-row=\""+(Math.floor(obj.ppColor[x].data[y][0]/8)+1)+"\"][data-col=\""+((obj.ppColor[x].data[y][0]%8)+1)+"\"]").css("background-color","#"+obj.ppColor[x].data[y][1]);
+        }
+      }
+    }
     for (var x = 0; x < obj.leds.length; x++) {
       hexInputToLeds(x, obj.leds[x])
     }
@@ -786,7 +816,16 @@
       if(selMatrix.length > 0) {
         for (var i = 1; i < 9; i++) {
           for (var j = 1; j < 9; j++) {
-            $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + ']').attr("class", $("#t"+selMatrix[0]).find('.item[data-row=' + i + '][data-col=' + j + ']').attr("class"));
+            let srcElem = $("#t"+selMatrix[0]).find('.item[data-row=' + i + '][data-col=' + j + ']');
+            let dstElem = $("#"+tID).find('.item[data-row=' + i + '][data-col=' + j + ']');
+            dstElem.attr("class", srcElem.attr("class"));
+            // Copy per-pixel color if source has one
+            let srcStyle = srcElem.attr('style');
+            if (srcStyle) {
+              dstElem.css('background-color', srcElem.css('background-color'));
+            } else {
+              dstElem.removeAttr('style');
+            }
           }
         }
       }
@@ -807,8 +846,8 @@
       }
       
       if(selMatrix.length > 0) { //update color picker from first selected matrix
-        let bg = jss.get(`#t${selMatrix[0]} .active`)["background-color"];
-        $("#fColor").val(bg ? "#" + rgb2hex(bg) : "#000000");
+        let bg = $('#t'+selMatrix[0]).css("--active-color");
+        $("#fColor").val(bg ? bg : "#000000");
         
         selMatrix.forEach(id => { //highlight all selected matrices
           $("#t"+id).find("table").css("border-color","red");
@@ -966,11 +1005,61 @@
     return neighborMap;
   }
   
+  /*---COLOR MATRIX HELPERS: read/write per-pixel colors alongside bitmap state---*/
+  // Returns an 8x8 array of color strings (null = no per-pixel color set)
+  // Row 0 = top row of matrix (data-row=1), Col 0 = leftmost (data-col=1)
+  function getColorMatrix(id) {
+    let cm = [];
+    for (let r = 0; r < 8; r++) {
+      cm[r] = [];
+      for (let c = 0; c < 8; c++) {
+        let elem = $('#t'+id).find('td.item[data-row="'+(r+1)+'"][data-col="'+(c+1)+'"]');
+        let style = elem.attr('style');
+        cm[r][c] = style ? elem.css('background-color') : null;
+      }
+    }
+    return cm;
+  }
+
+  // Writes an 8x8 color matrix back to the DOM
+  function applyColorMatrix(id, cm) {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        let elem = $('#t'+id).find('td.item[data-row="'+(r+1)+'"][data-col="'+(c+1)+'"]');
+        if (cm[r][c]) {
+          elem.css('background-color', cm[r][c]);
+        } else {
+          elem.removeAttr('style');
+        }
+      }
+    }
+  }
+
+  // Returns a deep copy of an 8x8 color matrix
+  function cloneColorMatrix(cm) {
+    return cm.map(row => row.slice());
+  }
+
+  // Transposes an 8x8 color matrix in-place
+  function transposeColorMatrix(cm) {
+    for (let i = 0; i < 8; i++) {
+      for (let j = i+1; j < 8; j++) {
+        let tmp = cm[i][j];
+        cm[i][j] = cm[j][i];
+        cm[j][i] = tmp;
+      }
+    }
+  }
+
   $('#mirrorHorizontal-button').click(function () {
     selMatrix.forEach(id => {
       const bitmap = Bitmap(fixPattern(ledsToHex(id)));
       bitmap.mirrorHorizontal();
       hexInputToLeds(id, bitmap.toHexString());
+      // Mirror color matrix horizontally (reverse each row)
+      let cm = getColorMatrix(id);
+      cm.forEach(row => row.reverse());
+      applyColorMatrix(id, cm);
     });
   });
   
@@ -979,101 +1068,129 @@
       const bitmap = Bitmap(fixPattern(ledsToHex(id)));
       bitmap.mirrorVertical();
       hexInputToLeds(id, bitmap.toHexString());
+      // Mirror color matrix vertically (reverse rows)
+      let cm = getColorMatrix(id);
+      cm.reverse();
+      applyColorMatrix(id, cm);
     });
   });
   
   $('#invert-button').click(function () {
     selMatrix.forEach(id => {
       $("#t"+id).find('.item').toggleClass('active');
+      // Per-pixel colors stay on their pixels; no positional change needed for invert
     });
   });
 
   $('#shift-up-button').click(function () {
-    // Load all bitmaps first
-    let bitmaps = {};
+    let bitmaps = {}, colorMats = {};
     selMatrix.forEach(id => {
       bitmaps[id] = Bitmap(fixPattern(ledsToHex(id)));
+      colorMats[id] = getColorMatrix(id);
     });
     
-    // Capture overflow rows from each matrix
-    let overflows = {};
+    // Capture overflow rows (top row of each matrix, before shift)
+    let bitmapOverflows = {}, colorOverflows = {};
     selMatrix.forEach(id => {
-      let mat = bitmaps[id].getMatrix();
-      overflows[id] = mat[0].slice(); // Capture top row
+      bitmapOverflows[id] = bitmaps[id].getMatrix()[0].slice();
+      colorOverflows[id] = colorMats[id][0].slice();
     });
     
-    // Shift all matrices up (prepend 00)
+    // Shift all matrices up
     selMatrix.forEach(id => {
       var val = '00' + fixPattern(ledsToHex(id)).substr(0, 14);
-      let bitmap = Bitmap(val);
-      bitmaps[id] = bitmap;
+      bitmaps[id] = Bitmap(val);
+      // Shift color matrix up: rows 1..7 move to 0..6, row 7 becomes nulls
+      let newCm = [];
+      for (let r = 0; r < 7; r++) newCm[r] = colorMats[id][r+1].slice();
+      newCm[7] = new Array(8).fill(null);
+      colorMats[id] = newCm;
     });
     
-    // Apply overflows to UP neighbors if they're selected
+    // Apply overflows to UP neighbors if selected
     selMatrix.forEach(id => {
       let neighbor = cachedNeighborMap[id] && cachedNeighborMap[id].up;
       if (neighbor && selMatrix.includes(neighbor)) {
         let mat = bitmaps[neighbor].getMatrix();
-        mat[7] = overflows[id]; // Set bottom row of UP neighbor
+        mat[7] = bitmapOverflows[id];
         bitmaps[neighbor].setMatrix(mat);
+        colorMats[neighbor][7] = colorOverflows[id].slice();
       }
     });
     
-    // Apply all changes
     selMatrix.forEach(id => {
       hexInputToLeds(id, bitmaps[id].toHexString());
+      applyColorMatrix(id, colorMats[id]);
     });
   });
 
   $('#shift-down-button').click(function () {
-    let bitmaps = {};
+    let bitmaps = {}, colorMats = {};
     selMatrix.forEach(id => {
       bitmaps[id] = Bitmap(fixPattern(ledsToHex(id)));
+      colorMats[id] = getColorMatrix(id);
     });
     
-    let overflows = {};
+    let bitmapOverflows = {}, colorOverflows = {};
     selMatrix.forEach(id => {
-      let mat = bitmaps[id].getMatrix();
-      overflows[id] = mat[7].slice(); // Capture bottom row
+      bitmapOverflows[id] = bitmaps[id].getMatrix()[7].slice();
+      colorOverflows[id] = colorMats[id][7].slice();
     });
     
     selMatrix.forEach(id => {
       var val = fixPattern(ledsToHex(id)).substr(2, 14) + '00';
-      let bitmap = Bitmap(val);
-      bitmaps[id] = bitmap;
+      bitmaps[id] = Bitmap(val);
+      // Shift color matrix down: rows 0..6 move to 1..7, row 0 becomes nulls
+      let newCm = [];
+      newCm[0] = new Array(8).fill(null);
+      for (let r = 1; r < 8; r++) newCm[r] = colorMats[id][r-1].slice();
+      colorMats[id] = newCm;
     });
 
     selMatrix.forEach(id => {
       let neighbor = cachedNeighborMap[id] && cachedNeighborMap[id].down;
       if (neighbor && selMatrix.includes(neighbor)) {
         let mat = bitmaps[neighbor].getMatrix();
-        mat[0] = overflows[id]; // Set top row of DOWN neighbor
+        mat[0] = bitmapOverflows[id];
         bitmaps[neighbor].setMatrix(mat);
+        colorMats[neighbor][0] = colorOverflows[id].slice();
       }
     });
 
     selMatrix.forEach(id => {
       hexInputToLeds(id, bitmaps[id].toHexString());
+      applyColorMatrix(id, colorMats[id]);
     });
   });
 
   $('#shift-right-button').click(function () {
-    let bitmaps = {};
+    let bitmaps = {}, colorMats = {};
     selMatrix.forEach(id => {
       bitmaps[id] = Bitmap(fixPattern(ledsToHex(id)));
+      colorMats[id] = getColorMatrix(id);
     });
 
-    let overflows = {};
+    let bitmapOverflows = {}, colorOverflows = {};
     selMatrix.forEach(id => {
       let mat = bitmaps[id].getMatrix();
-      overflows[id] = [];
+      bitmapOverflows[id] = [];
+      colorOverflows[id] = [];
       for (let i = 0; i < 8; i++) {
-        overflows[id][i] = mat[i][7]; // Capture rightmost column
+        bitmapOverflows[id][i] = mat[i][7]; // rightmost col
+        colorOverflows[id][i] = colorMats[id][i][7];
       }
     });
 
     selMatrix.forEach(id => {
       bitmaps[id].shiftRight();
+      // Shift color matrix right: cols 0..6 <- cols 1..7 wait — shiftRight moves pixels right,
+      // so col[j] <- col[j-1]; col[0] = null
+      let newCm = cloneColorMatrix(colorMats[id]);
+      for (let r = 0; r < 8; r++) {
+        for (let c = 7; c > 0; c--) newCm[r][c] = colorMats[id][r][c-1];
+        newCm[r][0] = null;
+      }
+      colorMats[id] = newCm;
     });
 
     selMatrix.forEach(id => {
@@ -1081,7 +1198,8 @@
       if (neighbor && selMatrix.includes(neighbor)) {
         let mat = bitmaps[neighbor].getMatrix();
         for (let i = 0; i < 8; i++) {
-          mat[i][0] = overflows[id][i]; // Set leftmost column of RIGHT neighbor
+          mat[i][0] = bitmapOverflows[id][i];
+          colorMats[neighbor][i][0] = colorOverflows[id][i];
         }
         bitmaps[neighbor].setMatrix(mat);
       }
@@ -1089,26 +1207,37 @@
 
     selMatrix.forEach(id => {
       hexInputToLeds(id, bitmaps[id].toHexString());
+      applyColorMatrix(id, colorMats[id]);
     });
   });
 
   $('#shift-left-button').click(function () {
-    let bitmaps = {};
+    let bitmaps = {}, colorMats = {};
     selMatrix.forEach(id => {
       bitmaps[id] = Bitmap(fixPattern(ledsToHex(id)));
+      colorMats[id] = getColorMatrix(id);
     });
 
-    let overflows = {};
+    let bitmapOverflows = {}, colorOverflows = {};
     selMatrix.forEach(id => {
       let mat = bitmaps[id].getMatrix();
-      overflows[id] = [];
+      bitmapOverflows[id] = [];
+      colorOverflows[id] = [];
       for (let i = 0; i < 8; i++) {
-        overflows[id][i] = mat[i][0]; // Capture leftmost column
+        bitmapOverflows[id][i] = mat[i][0]; // leftmost col
+        colorOverflows[id][i] = colorMats[id][i][0];
       }
     });
     
     selMatrix.forEach(id => {
       bitmaps[id].shiftLeft();
+      // Shift color matrix left: col[c] <- col[c+1]; col[7] = null
+      let newCm = cloneColorMatrix(colorMats[id]);
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 7; c++) newCm[r][c] = colorMats[id][r][c+1];
+        newCm[r][7] = null;
+      }
+      colorMats[id] = newCm;
     });
 
     selMatrix.forEach(id => {
@@ -1116,7 +1245,8 @@
       if (neighbor && selMatrix.includes(neighbor)) {
         let mat = bitmaps[neighbor].getMatrix();
         for (let i = 0; i < 8; i++) {
-          mat[i][7] = overflows[id][i]; // Set rightmost column of LEFT neighbor
+          mat[i][7] = bitmapOverflows[id][i];
+          colorMats[neighbor][i][7] = colorOverflows[id][i];
         }
         bitmaps[neighbor].setMatrix(mat);
       }
@@ -1124,22 +1254,33 @@
 
     selMatrix.forEach(id => {
       hexInputToLeds(id, bitmaps[id].toHexString());
+      applyColorMatrix(id, colorMats[id]);
     });
   });
 
   $('#rotate-button').click(function () {
     selMatrix.forEach(id => {
       const bitmap = Bitmap(fixPattern(ledsToHex(id)));
-      bitmap.rotate();
+      bitmap.rotate(); // reverse rows then transpose
       hexInputToLeds(id, bitmap.toHexString());
+      // Rotate color matrix clockwise: reverse rows then transpose
+      let cm = getColorMatrix(id);
+      cm.reverse();
+      transposeColorMatrix(cm);
+      applyColorMatrix(id, cm);
     });
   });
 
   $('#rotate-back-button').click(function () {
     selMatrix.forEach(id => {
       const bitmap = Bitmap(fixPattern(ledsToHex(id)));
-      bitmap.rotateBack();
+      bitmap.rotateBack(); // transpose then reverse rows
       hexInputToLeds(id, bitmap.toHexString());
+      // Rotate color matrix counter-clockwise: transpose then reverse rows
+      let cm = getColorMatrix(id);
+      transposeColorMatrix(cm);
+      cm.reverse();
+      applyColorMatrix(id, cm);
     });
   });
   
@@ -1162,9 +1303,19 @@
           if(numOfSegm % 2 == 1 && numFix == (numOfSegm/2)+1) {l++;}
           
           if(isT0First) { //copy from lower numbers to higher numbers
-            $('#t' + (numFix-l)).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $('#t' + l).find('.item[data-row=' + i + '][data-col=' + (9-j) + '] ').attr("class"));
+            let srcElem = $('#t' + l).find('.item[data-row=' + i + '][data-col=' + (9-j) + '] ');
+            let dstElem = $('#t' + (numFix-l)).find('.item[data-row=' + i + '][data-col=' + j + '] ');
+            dstElem.attr("class", srcElem.attr("class"));
+            let srcStyle = srcElem.attr('style');
+            if (srcStyle) { dstElem.css('background-color', srcElem.css('background-color')); }
+            else { dstElem.removeAttr('style'); }
           } else { //copy from higher numbers to lower numbers
-            $('#t' + l).find('.item[data-row=' + i + '][data-col=' + j + '] ').attr("class", $('#t' + (numFix-l)).find('.item[data-row=' + i + '][data-col=' + (9-j) + '] ').attr("class"));
+            let srcElem = $('#t' + (numFix-l)).find('.item[data-row=' + i + '][data-col=' + (9-j) + '] ');
+            let dstElem = $('#t' + l).find('.item[data-row=' + i + '][data-col=' + j + '] ');
+            dstElem.attr("class", srcElem.attr("class"));
+            let srcStyle = srcElem.attr('style');
+            if (srcStyle) { dstElem.css('background-color', srcElem.css('background-color')); }
+            else { dstElem.removeAttr('style'); }
           }
         }
       }
@@ -1251,28 +1402,36 @@
       var temp = "{\"timespan\":" + $("#timespanVisor").val() + ",\"fColor\":[";
       for (var x = 0; x < numOfSegm; x++) {
         var temp2 = "0";
-        if(jss.get('#t'+x+' .active')['background-color'] != undefined){
-          temp2 = rgb2hex(jss.get('#t'+x+' .active')['background-color']);
-          if(temp2=="000000") { temp2 = "0"; }
+        if($('#t'+x).css("--active-color") != undefined) {
+          temp2 = $('#t'+x).css("--active-color").replace("#", "");
         }
-        temp += "\"" + temp2 + "\"";
-        if (x != numOfSegm-1) {
-          temp += ",";
+        temp += ((x>0)?",":"")+"\"" + ((temp2=="000000")?"0":temp2) + "\"";
+      }
+      temp += "],\"ppColor\":[";
+      for (var x = 0; x < numOfSegm; x++) {
+        var temp3 = "", doAdd = false, doSep = false
+        temp3 = ((x>0)?",":"")+"{\"mIndex\":"+x+",\"data\":[";
+        for (var y = 0; y < 64; y++) {
+          var elem = $('#t'+x).find("td.item[data-row=\""+(Math.floor(y/8)+1)+"\"][data-col=\""+((y%8)+1)+"\"]")
+          if(elem.attr('style') != undefined) {
+            if(doAdd && y>0) {
+              temp3+=",";
+            }
+            doAdd = true
+            temp3+="["+y+",\""+rgb2hex(elem.css("background-color"))+"\"]";
+          }
+        }
+        if(doAdd) {
+          temp+=temp3+"]}";
         }
       }
       temp += "],\"leds\":[";
       for (var x = 0; x < numOfSegm; x++) {
-        temp += "\"" + ledsToHex(x) + "\"";
-        if (x != numOfSegm-1) {
-          temp += ",";
-        }
+        temp += ((x>0)?",":"")+"\"" + ledsToHex(x) + "\"";
       }
       temp += "],\"ledsBlush\":["; //TBD
       for (var x = 0; x < numOfBlush*2; x++) {
-        temp += "\"" + rgb2hex($("#b" + x).css("background-color")) + "\"";
-        if (x != (numOfBlush*2)-1) {
-          temp += ",";
-        }
+        temp += ((x>0)?",":"")+"\"" + rgb2hex($("#b" + x).css("background-color")) + "\"";
       }
       temp += "]}";
       if (editing < 0) {

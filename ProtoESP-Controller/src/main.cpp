@@ -89,6 +89,35 @@ Adafruit_APDS9960 apds;
 #include "Adafruit_VL53L1X.h"
 Adafruit_VL53L1X vl53;
 
+//--------------------------------//realtime logger
+#define LOG_BUFFER_SIZE (50 * 1024)  // 50 KB
+
+char *logBuffer = nullptr;
+size_t logIndex = 0;
+
+void logPrint(const char *str) {
+  Serial.println(str);
+  if (!logBuffer) return;
+  size_t len = strlen(str);
+  size_t needed = len + 1; //newline
+  if (logIndex + needed >= LOG_BUFFER_SIZE) {
+    logIndex = 0;
+    logBuffer[0] = '\0';
+  }
+  memcpy(logBuffer + logIndex, str, len);
+  logIndex += len;
+  logBuffer[logIndex++] = '\n';
+  logBuffer[logIndex] = '\0';
+}
+
+inline void logPrint(const __FlashStringHelper *str) {
+  logPrint((const char*)str);
+}
+
+void logPrint(const String &str) {
+    logPrint(str.c_str());
+}
+
 //--------------------------------//web / wifi
 #include "WiFi.h"
 #include "ESPAsyncWebServer.h"
@@ -202,25 +231,24 @@ bool loadAnim(String anim, String temp) {
 
   if (currentAnim != anim || anim == "POSTAnimLoad") {
     if(anim == "POSTAnimLoad") {
-      Serial.println(F("[I] POST load"));
+      logPrint(F("[I] POST load"));
       error = deserializeJson(doc, temp);
     } else {
       delay(25);
       File file = LittleFS.open("/anims/"+anim, "r");
       if (!file) {
-        Serial.println(F("[E] There was an error opening the animation file!"));
+        logPrint(F("[E] There was an error opening the animation file!"));
         file.close();
         return false;
       }
-      Serial.println(F("[I] Animation file opened!"));
+      logPrint(F("[I] Animation file opened!"));
       ReadBufferingStream bufferedFile{file, 64};
       error = deserializeJson(doc, bufferedFile);
       file.close();
     }
     
     if(error){
-      Serial.print(F("[E] Failed to deserialize animation file! : "));
-      Serial.println(error.c_str());
+      logPrint("[E] Failed to deserialize animation file! : " + String(error.c_str()));
       return false;
     }
 
@@ -339,8 +367,7 @@ class MyCallbacks: public NimBLECharacteristicCallbacks {
           }
         }
       }
-      Serial.print(F("[I] BT Recv.: "));
-      Serial.println(temp);
+      logPrint("[I] BT Recv.: "+temp);
     };
 } chrCallbacks;
 
@@ -484,11 +511,11 @@ void startWiFiWeb() {
     if(request->hasParam("file", true) && request->hasParam("content", true)) {
       File file = LittleFS.open("/anims/"+request->getParam("file", true)->value()+".json", "w");
       if (!file) {
-        Serial.println(F("[E] There was an error opening the file for saving an animation!"));
+        logPrint(F("[E] There was an error opening the file for saving an animation!"));
         file.close();
         request->send(200, "text/plain", F("Error opening file for writing!"));
       } else {
-        Serial.println(F("[I] File saved!"));
+        logPrint(F("[I] File saved!"));
         file.print(request->getParam("content", true)->value());
         file.close();
         getfilesProper = true;
@@ -563,7 +590,7 @@ void startWiFiWeb() {
         visorNow->type = 0;
       if(cfg.oledEna && oledInitDone)
         oled.writeRGB(vTAcro[visorNow->type]);
-        Serial.println("[I] Changing visor type to: "+visorTypes[visorNow->type]);
+        logPrint("[I] Changing visor type to: "+visorTypes[visorNow->type]);
     }
     request->redirect("/saved.html?main");
   });
@@ -584,6 +611,10 @@ void startWiFiWeb() {
       }
       request->send(200, "text/plain", "Data not ready!");
     }
+  });
+  
+  server.on("/log", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", logBuffer);
   });
 
   server.onNotFound([](AsyncWebServerRequest *request){request->send(404, "text/plain", "Not found");});
@@ -617,20 +648,23 @@ void setup() {
   hwBtn.setDebounceTime(50);
 
   if(!LittleFS.begin(true)) {
-    Serial.println(F("[E] An Error has occurred while mounting LittleFS! Halting"));
+    logPrint(F("[E] An Error has occurred while mounting LittleFS! Halting"));
     while(1){};
   }
 
   if(psramInit() && ESP.getFreePsram() != 0) {
     earsNow = (AnimNowEars *)ps_malloc(sizeof(AnimNowEars));
     visorNow = (AnimNowVisor *)ps_malloc(sizeof(AnimNowVisor));
+    logBuffer = (char*) ps_malloc(LOG_BUFFER_SIZE);
+    logIndex = 0;
+    logBuffer[0] = '\0';
   } else {
-    Serial.println(F("[E] Could not init PSRAM, either this ESP doesn't have one or is malfunctioning, halting..."));
+    logPrint(F("[E] Could not init PSRAM, either this ESP doesn't have one or is malfunctioning, halting..."));
     while(1){};
   }
 
   if(!cfg.load()) {
-    Serial.println(F("[E] An Error has occurred while loading config file! Loading defaults"));
+    logPrint(F("[E] An Error has occurred while loading config file! Loading defaults"));
     cfg.setDefault();
   }
 
@@ -675,7 +709,7 @@ void setup() {
   getFilesFunc();
   if(cfg.bleEna) { //you can disable BLE in config
     if(!startBLE()) {
-      Serial.println(F("[E] An Error has occurred while starting BLE!"));
+      logPrint(F("[E] An Error has occurred while starting BLE!"));
     }
   }
 
@@ -686,7 +720,7 @@ void setup() {
 
   if(cfg.tiltEna) {
     if(myIMU.begin()) {
-      Serial.println(F("[E] An Error has occurred while initializing LSM!"));
+      logPrint(F("[E] An Error has occurred while initializing LSM!"));
       cfg.tiltEna = false;
     } else {
       tiltInitDone = true;
@@ -695,7 +729,7 @@ void setup() {
 
   if(cfg.oledEna) {
     if(!oled.init(oledAddr,cfg.bOled,INApresent)) {
-      Serial.println(F("[E] An Error has occurred while initializing SSD1306!"));
+      logPrint(F("[E] An Error has occurred while initializing SSD1306!"));
       cfg.oledEna = false;
     } else {
       oledInitDone = true;
@@ -706,7 +740,7 @@ void setup() {
 
   if(INApresent && oledInitDone) {
     if(!ina219.begin()) {
-      Serial.println(F("[E] An Error has occurred while initializing INA219 chip!"));
+      logPrint(F("[E] An Error has occurred while initializing INA219 chip!"));
       INApresent = false;
     } else {
       ina219.setCalibration_16V_8A();
@@ -716,7 +750,7 @@ void setup() {
   if(boopMode == "APDS9960" && cfg.boopEna) {
     if(!apds.begin()){
       cfg.boopEna = false;
-      Serial.println(F("[E] An Error has occurred while initializing APDS9960 chip!"));
+      logPrint(F("[E] An Error has occurred while initializing APDS9960 chip!"));
     } else {
       ToFInitDone = true;
       apds.enableProximity(true);
@@ -725,11 +759,11 @@ void setup() {
   } else if (boopMode == "VL53L1X" && cfg.boopEna) {
     if(!vl53.begin()){
       cfg.boopEna = false;
-      Serial.println(F("[E] An Error has occurred while initializing VL53L1X chip!"));
+      logPrint(F("[E] An Error has occurred while initializing VL53L1X chip!"));
     } else {
       if (!vl53.startRanging()) {
         cfg.boopEna = false;
-        Serial.println(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
+        logPrint(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
       } else {
         ToFInitDone = true;
         vl53.setTimingBudget(50);
@@ -740,8 +774,8 @@ void setup() {
   while(millis()<2000) {yield();} //2s delay for the anim to load properly (idk why but it doesnt without this or with 1s)
   loadAnim("default.json","");
 
-  Serial.println("[I] Free heap: "+String(ESP.getFreeHeap()));
-  Serial.println("[I] Free PSRAM: "+String(ESP.getFreePsram()));
+  logPrint("[I] Free heap: "+String(ESP.getFreeHeap()));
+  logPrint("[I] Free PSRAM: "+String(ESP.getFreePsram()));
 }
 
 //--------------------------------//Loop vars
@@ -755,27 +789,25 @@ byte row = 0;
 FramesVisor dynamicSpeak(FramesVisor curFrame, bool isMouth[20], int volume) {
   int mouthIndexes[trueMatrixCount];
   int mouthCount = 0;
-
-  // collect true (mouth) indexes
-  for (int i = 0; i < trueMatrixCount; i++) {
+  for (int i = 0; i < trueMatrixCount; i++) { // collect true (mouth) indexes
     if (isMouth[i]) {
       mouthIndexes[mouthCount++] = i;
     }
   }
-
   int half = mouthCount / 2;
-
   for (int i = 0; i < half; i++) {
     int x = map(volume, 0, 100, 0, half * 8) - (i * 8);
-    x = constrain(x, 0, 8);
-
     int leftIndex  = mouthIndexes[half - 1 - i];
     int rightIndex = mouthIndexes[half + i];
-
-    curFrame.leds[leftIndex]  = misc.speakMatrix(curFrame.leds[leftIndex],  x, true);
-    curFrame.leds[rightIndex] = misc.speakMatrix(curFrame.leds[rightIndex], x, false);
+    if (x < 1) {
+      curFrame.leds[leftIndex]  = curFrame.leds[leftIndex];
+      curFrame.leds[rightIndex] = curFrame.leds[rightIndex];
+    } else {
+      x = constrain(x, 0, 8);
+      curFrame.leds[leftIndex]  = misc.speakMatrix(curFrame.leds[leftIndex],  x, true);
+      curFrame.leds[rightIndex] = misc.speakMatrix(curFrame.leds[rightIndex], x, false);
+    }
   }
-
   return curFrame;
 }
 
@@ -921,26 +953,26 @@ void loop() {
   //--------------------------------//TILT
   if(lastMillsTilt+100<=millis() && cfg.tiltEna) {
     if(misc.isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.upX,cfg.upY,cfg.upZ,cfg.tiltTol) && !wasTilt) {
-      Serial.println(F("[I] Tilt: UP!"));
+      logPrint(F("[I] Tilt: UP!"));
       wasTilt = true;
       oldanim = currentAnim;
       tiltChange = millis();
       loadAnim(cfg.aUp,"");
     } else if (misc.isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.tiltX,cfg.tiltY,cfg.tiltZ,cfg.tiltTol) && !wasTilt) {
-      Serial.println(F("[I] Tilt: Side!"));
+      logPrint(F("[I] Tilt: Side!"));
       wasTilt = true;
       oldanim = currentAnim;
       tiltChange = millis();
       loadAnim(cfg.aTilt,"");
     } else if ((tiltChange+revertTilt<millis() || misc.isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.neutralX,cfg.neutralY,cfg.neutralZ,cfg.tiltTol)) && wasTilt) {
-      Serial.println(F("[I] Tilt: Neutral!"));
+      logPrint(F("[I] Tilt: Neutral!"));
       wasTilt = false;
       loadAnim(oldanim,"");
     }
     lastMillsTilt = millis();
   } else if (!tiltInitDone && cfg.tiltEna) {
     if(myIMU.begin()) {
-      Serial.println(F("[E] An Error has occurred while connecting to LSM!"));
+      logPrint(F("[E] An Error has occurred while connecting to LSM!"));
       cfg.tiltEna = false;
     } else {
       tiltInitDone = true;
@@ -993,7 +1025,7 @@ void loop() {
           if(cfg.oledEna && oledInitDone) {
             oled.speak(true);
           }
-          Serial.println(F("[I] Speak"));
+          logPrint(F("[I] Speak"));
         }
       } else {
         if(speaking) {
@@ -1001,7 +1033,7 @@ void loop() {
           if(cfg.oledEna && oledInitDone) {
             oled.speak(false);
           }
-          Serial.println(F("[I] unSpeak"));
+          logPrint(F("[I] unSpeak"));
         }
       }
 
@@ -1033,7 +1065,7 @@ void loop() {
       } else {
         animToLoad = availAnims[btnNum];
       }
-      Serial.println("Changing to "+availAnims[btnNum]+", amount of anims: "+String(totalAnims));
+      logPrint("Changing to "+availAnims[btnNum]+", amount of anims: "+String(totalAnims));
     }
   }
 
@@ -1045,7 +1077,7 @@ void loop() {
       if(booping == false && !digitalRead(T_in)) {
         delayMicroseconds(395);
         if(!digitalRead(T_in)) {
-          Serial.println(F("[I] IR BOOP"));
+          logPrint(F("[I] IR BOOP"));
           booping = true;
           boopoldanim = currentAnim;
           loadAnim(cfg.aBoop,"");
@@ -1054,7 +1086,7 @@ void loop() {
         digitalWrite(T_en, LOW);
       } else if(booping == true && lastMillsBoop+1000<millis() && digitalRead(T_in)) {
         digitalWrite(T_en, LOW);
-        Serial.println(F("[I] IR unBOOP"));
+        logPrint(F("[I] IR unBOOP"));
         booping = false;
         if(!wasTilt) {
           loadAnim(boopoldanim,"");
@@ -1064,14 +1096,14 @@ void loop() {
       if(booping == false && digitalRead(T_in)) {
         delayMicroseconds(395);
         if(digitalRead(T_in)) {
-          Serial.println(F("[I] Touch BOOP"));
+          logPrint(F("[I] Touch BOOP"));
           booping = true;
           boopoldanim = currentAnim;
           loadAnim(cfg.aBoop,"");
           lastMillsBoop = millis();
         }
       } else if(booping == true && lastMillsBoop+1000<millis() && !digitalRead(T_in)) {
-        Serial.println(F("[I] Touch unBOOP"));
+        logPrint(F("[I] Touch unBOOP"));
         booping = false;
         if(!wasTilt) {
           loadAnim(boopoldanim,"");
@@ -1082,13 +1114,13 @@ void loop() {
         apdsprox = apds.readProximity();
         //Serial.println(String(apdsprox));
         if(booping == false && (255 - apdsprox) < cfg.boopThresh) {
-          Serial.println(F("[I] ToF BOOP"));
+          logPrint(F("[I] ToF BOOP"));
           booping = true;
           boopoldanim = currentAnim;
           loadAnim(cfg.aBoop,"");
           lastMillsBoop = millis();
         } else if(booping == true && lastMillsBoop+1000<millis() && (255 - apdsprox) > cfg.boopThresh) {
-          Serial.println(F("[I] ToF unBOOP"));
+          logPrint(F("[I] ToF unBOOP"));
           booping = false;
           if(!wasTilt) {
             loadAnim(boopoldanim,"");
@@ -1097,7 +1129,7 @@ void loop() {
       } else {
         if(!apds.begin()){
           cfg.boopEna = false;
-          Serial.println(F("[E] An Error has occurred while initializing APDS9960 chip!"));
+          logPrint(F("[E] An Error has occurred while initializing APDS9960 chip!"));
         } else {
           ToFInitDone = true;
           apds.enableProximity(true);
@@ -1110,13 +1142,13 @@ void loop() {
           distance = vl53.distance();
         }
         if(booping == false && distance < cfg.boopThresh && distance != -1) {
-          Serial.println(F("[I] ToF BOOP"));
+          logPrint(F("[I] ToF BOOP"));
           booping = true;
           boopoldanim = currentAnim;
           loadAnim(cfg.aBoop,"");
           lastMillsBoop = millis();
         } else if(booping == true && lastMillsBoop+1000<millis() && distance > cfg.boopThresh && distance != -1) {
-          Serial.println(F("[I] ToF unBOOP"));
+          logPrint(F("[I] ToF unBOOP"));
           booping = false;
           if(!wasTilt) {
             loadAnim(boopoldanim,"");
@@ -1125,11 +1157,11 @@ void loop() {
       } else {
         if(!vl53.begin()){
           cfg.boopEna = false;
-          Serial.println(F("[E] An Error has occurred while initializing VL53L1X chip!"));
+          logPrint(F("[E] An Error has occurred while initializing VL53L1X chip!"));
         } else {
           if (!vl53.startRanging()) {
             cfg.boopEna = false;
-            Serial.println(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
+            logPrint(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
           } else {
             ToFInitDone = true;
             vl53.setTimingBudget(50);
@@ -1163,7 +1195,7 @@ void loop() {
   }
   if (!oledInitDone && cfg.oledEna) {
     if(!oled.init(oledAddr,cfg.bOled,INApresent)) {
-      Serial.println(F("[E] An Error has occurred while initializing SSD1306."));
+      logPrint(F("[E] An Error has occurred while initializing SSD1306."));
       cfg.oledEna = false;
     } else {
       oledInitDone = true;
@@ -1258,7 +1290,7 @@ void loop() {
 
   //press boot button for 10sec to reset
   if(check0button+10000 < millis() && check0button+10500 > millis() && digitalRead(0) == LOW) {
-    Serial.println(F("[I] Resetting to defaults"));
+    logPrint(F("[I] Resetting to defaults"));
     cfg.setDefault();
     delay(20);
     ESP.restart();
