@@ -4,6 +4,7 @@
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
 #include <LittleFS.h>
 #include <StreamUtils.h>
+#include <ESPAsyncWebServer.h>
 
 //--------------------------------//CRC checksum class
 class CrcWriter {
@@ -28,4 +29,8 @@ public:
   void setDefault();
   bool save();
   bool load();
+  bool getBool(AsyncWebServerRequest *req, const char *name, bool &out);
+  bool getInt(AsyncWebServerRequest *req, const char *name, int &out);
+  bool getFloat(AsyncWebServerRequest *req, const char *name, float &out);
+  bool getString(AsyncWebServerRequest *req, const char *name, String &out);
 };

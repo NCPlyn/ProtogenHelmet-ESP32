@@ -51,13 +51,11 @@
 - [x] /log to see the logs from the start of the ESP
 - [x] Per pixel color visor & animator (WS2812)
 
-### ToDo: Controller
-- [ ] Dynamic speech update (louder += wider, clean code)
+### ToDo
 - [ ] New RGB matrix display (SK9822-EC20 nope, different one wire but faster and small pckg or black)
 
+- [ ] Dynamic speech update (louder += wider, clean code)
 - [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
 - [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
 - [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
-
-### ToDo: Manuals etc.
 - [ ] Animator guide + visor configs

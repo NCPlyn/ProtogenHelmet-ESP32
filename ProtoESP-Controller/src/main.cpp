@@ -71,7 +71,6 @@ ezButton hwBtn(animBtn);
 Config cfg;
 
 #include "Misc.h" //Misc/helping functions
-Misc misc;
 
 #include "oled.h"
 SSDOLED oled;
@@ -424,80 +423,49 @@ void startWiFiWeb() {
   });
 
   server.on("/saveconfig", HTTP_GET, [](AsyncWebServerRequest *request){ //saves config
-    //enabled or disabled features
-    if(request->hasParam("boopEna"))
-      std::istringstream(request->getParam("boopEna")->value().c_str()) >> std::boolalpha >> cfg.boopEna;
-    if(request->hasParam("speechEna"))
-      std::istringstream(request->getParam("speechEna")->value().c_str()) >> std::boolalpha >> cfg.speechEna;
-    if(request->hasParam("tiltEna"))
-      std::istringstream(request->getParam("tiltEna")->value().c_str()) >> std::boolalpha >> cfg.tiltEna;
-    if(request->hasParam("bleEna"))
-      std::istringstream(request->getParam("bleEna")->value().c_str()) >> std::boolalpha >> cfg.bleEna;
-    if(request->hasParam("oledEna"))
-      std::istringstream(request->getParam("oledEna")->value().c_str()) >> std::boolalpha >> cfg.oledEna;
+    //features enable
+    cfg.getBool(request, "boopEna", cfg.boopEna);
+    cfg.getBool(request, "speechEna", cfg.speechEna);
+    cfg.getBool(request, "tiltEna", cfg.tiltEna);
+    cfg.getBool(request, "bleEna", cfg.bleEna);
+    cfg.getBool(request, "oledEna", cfg.oledEna);
     //brightness
-    if(request->hasParam("bEar"))
-      cfg.bEar = request->getParam("bEar")->value().toInt();
-    if(request->hasParam("bVisor"))
-      cfg.bVisor = request->getParam("bVisor")->value().toInt();
-    if(request->hasParam("bOled"))
-      cfg.bOled = request->getParam("bOled")->value().toInt();
-      if(cfg.oledEna && oledInitDone) {
-        oled.oledBright(cfg.bOled);
-      }
-    //anims configs
-    if(request->hasParam("rbSpeed"))
-      cfg.rbSpeed = request->getParam("rbSpeed")->value().toInt();
-    if(request->hasParam("rbWidth"))
-      cfg.rbWidth = request->getParam("rbWidth")->value().toInt();
-    if(request->hasParam("spMin"))
-      cfg.spMin = request->getParam("spMin")->value().toInt();
-    if(request->hasParam("spMax"))
-      cfg.spMax = request->getParam("spMax")->value().toInt();
-    if(request->hasParam("spTrig"))
-      cfg.spTrig = request->getParam("spTrig")->value().toInt();
-    if(request->hasParam("aTilt"))
-      cfg.aTilt = String(request->getParam("aTilt")->value());
-    if(request->hasParam("aUp"))
-      cfg.aUp = String(request->getParam("aUp")->value());
-    if(request->hasParam("aBoop"))
-      cfg.aBoop = String(request->getParam("aBoop")->value());
-    //neutral tilt
-    if(request->hasParam("neutralX"))
-      cfg.neutralX = request->getParam("neutralX")->value().toFloat();
-    if(request->hasParam("neutralY"))
-      cfg.neutralY = request->getParam("neutralY")->value().toFloat();
-    if(request->hasParam("neutralZ"))
-      cfg.neutralZ = request->getParam("neutralZ")->value().toFloat();
-    //side tilt
-    if(request->hasParam("tiltX"))
-      cfg.tiltX = request->getParam("tiltX")->value().toFloat();
-    if(request->hasParam("tiltY"))
-      cfg.tiltY = request->getParam("tiltY")->value().toFloat();
-    if(request->hasParam("tiltZ"))
-      cfg.tiltZ = request->getParam("tiltZ")->value().toFloat();
-    //up tilt
-    if(request->hasParam("upX"))
-      cfg.upX = request->getParam("upX")->value().toFloat();
-    if(request->hasParam("upY"))
-      cfg.upY = request->getParam("upY")->value().toFloat();
-    if(request->hasParam("upZ"))
-      cfg.upZ = request->getParam("upZ")->value().toFloat();
-    //tilt tolerant
-    if(request->hasParam("tiltTol"))
-      cfg.tiltTol = request->getParam("tiltTol")->value().toFloat();
-    //color
-    if(request->hasParam("visColor"))
-      cfg.visColorStr = String(request->getParam("visColor")->value());
-      cfg.visColor = strtol(cfg.visColorStr.c_str()+1, NULL, 16);
+    cfg.getInt(request, "bEar", cfg.bEar);
+    cfg.getInt(request, "bVisor", cfg.bVisor);
+    if(cfg.getInt(request, "bOled", cfg.bOled)) {
+        if(cfg.oledEna && oledInitDone)
+            oled.oledBright(cfg.bOled);
+    }
+    //animation settings
+    cfg.getInt(request, "rbSpeed", cfg.rbSpeed);
+    cfg.getInt(request, "rbWidth", cfg.rbWidth);
+    cfg.getInt(request, "spMin", cfg.spMin);
+    cfg.getInt(request, "spMax", cfg.spMax);
+    cfg.getInt(request, "spTrig", cfg.spTrig);
+    //tilt animations
+    cfg.getString(request, "aTilt", cfg.aTilt);
+    cfg.getString(request, "aUp", cfg.aUp);
+    cfg.getString(request, "aBoop", cfg.aBoop);
+    //tilt neutral
+    cfg.getFloat(request, "neutralX", cfg.neutralX);
+    cfg.getFloat(request, "neutralY", cfg.neutralY);
+    cfg.getFloat(request, "neutralZ", cfg.neutralZ);
+    //tilt triggers
+    cfg.getFloat(request, "tiltX", cfg.tiltX);
+    cfg.getFloat(request, "tiltY", cfg.tiltY);
+    cfg.getFloat(request, "tiltZ", cfg.tiltZ);
+    cfg.getFloat(request, "upX", cfg.upX);
+    cfg.getFloat(request, "upY", cfg.upY);
+    cfg.getFloat(request, "upZ", cfg.upZ);
+    cfg.getFloat(request, "tiltTol", cfg.tiltTol);
+    //RGB visor color
+    if(cfg.getString(request, "visColor", cfg.visColorStr))
+        cfg.visColor = strtol(cfg.visColorStr.c_str() + 1, NULL, 16);
     //wifi
-    if(request->hasParam("wifiName"))
-      cfg.wifiName = String(request->getParam("wifiName")->value());
-    if(request->hasParam("wifiPass"))
-      cfg.wifiPass = String(request->getParam("wifiPass")->value());
-    //boop sensors
-    if(request->hasParam("boopThresh"))
-      cfg.boopThresh = request->getParam("boopThresh")->value().toInt();
+    cfg.getString(request, "wifiName", cfg.wifiName);
+    cfg.getString(request, "wifiPass", cfg.wifiPass);
+    //boop threshold
+    cfg.getInt(request, "boopThresh", cfg.boopThresh);
     delay(25);
     if(cfg.save()) {
       instantReload = true;
@@ -804,8 +772,8 @@ FramesVisor dynamicSpeak(FramesVisor curFrame, bool isMouth[20], int volume) {
       curFrame.leds[rightIndex] = curFrame.leds[rightIndex];
     } else {
       x = constrain(x, 0, 8);
-      curFrame.leds[leftIndex]  = misc.speakMatrix(curFrame.leds[leftIndex],  x, true);
-      curFrame.leds[rightIndex] = misc.speakMatrix(curFrame.leds[rightIndex], x, false);
+      curFrame.leds[leftIndex]  = speakMatrix(curFrame.leds[leftIndex],  x, true);
+      curFrame.leds[rightIndex] = speakMatrix(curFrame.leds[rightIndex], x, false);
     }
   }
   return curFrame;
@@ -952,19 +920,19 @@ void loop() {
 
   //--------------------------------//TILT
   if(lastMillsTilt+100<=millis() && cfg.tiltEna) {
-    if(misc.isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.upX,cfg.upY,cfg.upZ,cfg.tiltTol) && !wasTilt) {
+    if(isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.upX,cfg.upY,cfg.upZ,cfg.tiltTol) && !wasTilt) {
       logPrint(F("[I] Tilt: UP!"));
       wasTilt = true;
       oldanim = currentAnim;
       tiltChange = millis();
       loadAnim(cfg.aUp,"");
-    } else if (misc.isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.tiltX,cfg.tiltY,cfg.tiltZ,cfg.tiltTol) && !wasTilt) {
+    } else if (isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.tiltX,cfg.tiltY,cfg.tiltZ,cfg.tiltTol) && !wasTilt) {
       logPrint(F("[I] Tilt: Side!"));
       wasTilt = true;
       oldanim = currentAnim;
       tiltChange = millis();
       loadAnim(cfg.aTilt,"");
-    } else if ((tiltChange+revertTilt<millis() || misc.isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.neutralX,cfg.neutralY,cfg.neutralZ,cfg.tiltTol)) && wasTilt) {
+    } else if ((tiltChange+revertTilt<millis() || isApproxEqual(myIMU.readFloatAccelX(),myIMU.readFloatAccelY(),myIMU.readFloatAccelZ(),cfg.neutralX,cfg.neutralY,cfg.neutralZ,cfg.tiltTol)) && wasTilt) {
       logPrint(F("[I] Tilt: Neutral!"));
       wasTilt = false;
       loadAnim(oldanim,"");
@@ -981,7 +949,7 @@ void loop() {
 
   //looptime = micros();
   //--------------------------------//SPEECH Detection
-  if(cfg.speechEna) { //~~8.8ms qwq~~ nuuh 1.2 with 32samples
+  if(cfg.speechEna) { //1.045uS
     int nvol = 0, micline = 0, rawInput = 0;
     for (int i = 0; i<32; i++){
       adc_oneshot_read(adc_handle, MICpin, &rawInput);
@@ -1040,7 +1008,7 @@ void loop() {
       laskSpeakCheck = millis();
     }
 
-    if(laskSpeakAnim+60<=millis()) {
+    if(laskSpeakAnim+60<=millis() && speaking) {
       if(visorNow->type == 0 || (visorNow->type == 1 && visorType == "MAX72XX")) { //custom
         setAllVisor(visorLedsNEW,0,currentVisorFrame);
       } else if (visorNow->type == 1 && visorType == "WS2812") { //all_rainbow
@@ -1050,7 +1018,6 @@ void loop() {
     }
   }
   //Serial.println(">SPK1:"+String(micros()-looptime));
-  //looptime = micros();
 
   //--------------------------------//Single button anim change
   hwBtn.loop();
@@ -1069,7 +1036,8 @@ void loop() {
     }
   }
 
-  //--------------------------------//BOOP Detection
+  //looptime = micros();
+  //--------------------------------//BOOP Detection; 14-800uS
   if(lastBoopCheck+100<=millis() && cfg.boopEna) {
     if(boopMode == "KY-032") {
       digitalWrite(T_en, HIGH);
@@ -1171,6 +1139,7 @@ void loop() {
     }
     lastBoopCheck=millis();
   }
+  //Serial.println(">BP:"+String(micros()-looptime));
 
   //--------------------------------//OLED routine, ~~10ms qwq~~, 1-5ms.. eh better
   if(cfg.oledEna && oledInitDone && vaStatLast+1000<millis()) {

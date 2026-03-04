@@ -195,3 +195,28 @@ bool Config::load() {
 
   return true;
 }
+
+bool Config::getBool(AsyncWebServerRequest *req, const char *name, bool &out) {
+    if (!req->hasParam(name)) return false;
+    String v = req->getParam(name)->value();
+    out = (v == "true" || v == "1" || v == "on");
+    return true;
+}
+
+bool Config::getInt(AsyncWebServerRequest *req, const char *name, int &out) {
+    if (!req->hasParam(name)) return false;
+    out = req->getParam(name)->value().toInt();
+    return true;
+}
+
+bool Config::getFloat(AsyncWebServerRequest *req, const char *name, float &out) {
+    if (!req->hasParam(name)) return false;
+    out = req->getParam(name)->value().toFloat();
+    return true;
+}
+
+bool Config::getString(AsyncWebServerRequest *req, const char *name, String &out) {
+    if (!req->hasParam(name)) return false;
+    out = req->getParam(name)->value();
+    return true;
+}

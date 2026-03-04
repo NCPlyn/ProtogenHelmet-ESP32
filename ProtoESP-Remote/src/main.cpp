@@ -201,7 +201,7 @@ void setDefault() {
   functionBtn = -1;
   sleepTime = 600;
   wifiName = "ProtoRemote";
-  wifiPass = "Proto123";
+  wifiPass = "Proto1234";
   BLE = "ProtoBLE";
 }
 
