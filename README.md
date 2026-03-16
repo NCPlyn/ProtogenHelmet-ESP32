@@ -1,7 +1,6 @@
 # ProtoESP
 ### _Protogen ESP32 controller for MAX7219 / WS2812 Matrix_
 **ESP32-S3** code which makes your protogen alive with animations and interactivity!  
-*Not 100% complete, might be buggy, refer to [Legacy](../Legacy) branch.*
 
 ##### Main features
 - Utilizes **MAX7219** matrixes using SPI or **[WS2812B RGB Matrixes](RGBMatrix)** (per pixel/matrix color) to show faces/animations
