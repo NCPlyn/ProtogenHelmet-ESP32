@@ -1,6 +1,6 @@
 # ProtoESP - Controler
 ### The working brain of your Protogen!
-![IMG_20230228_191415](https://github.com/user-attachments/assets/cc3951e1-8a25-4073-93dd-ec07dff64e9a)
+<img height="1000" alt="image" src="https://github.com/user-attachments/assets/6b79b956-88d0-4afd-9708-690fa0a9c2e1" />
 
 ### Main features
 - Running on ESP32-**S3**
