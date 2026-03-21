@@ -60,6 +60,7 @@ Any amount is more than welcome! Don't forget to add contact info or DM me, so I
 - [**Jura**](https://www.instagram.com/jura_furr/), Thank you for your donation!
 - [**buckethead_robin**](https://www.instagram.com/buckethead_robin), Thank you for your donation!
 - [**TechArtsJon**](http://instagram.com/js_dennison), Thank you for your donation!
+- **Moldepan**, Thank you for your donation!
 
 ## Use / license
 - GPL 3.0 code license applies
