@@ -394,10 +394,6 @@ bool startBLE() {
   pCharacteristic->setValue(totalAnims);
   pCharacteristic->setCallbacks(&chrCallbacks);
 
-  if(!pService->start()) {
-    return false;
-  }
-
   pAdvertising = NimBLEDevice::getAdvertising();
   pAdvertising->setName(stdStr);
   pAdvertising->addServiceUUID(BLEUUID(pService->getUUID()));
@@ -405,7 +401,6 @@ bool startBLE() {
   if(!pAdvertising->start(0)) {
     return false;
   }
-
   return true;
 }
 
@@ -683,8 +678,8 @@ void setup() {
 
   //I2C things
   Wire.setPins(I2C_SDA, I2C_SCL);
-  Wire.setClock(400000); //100k = 113ms; 400k = 33ms; (800k = 20ms; 1mhz / 2mhz = 17ms = breaks apds)
   Wire.begin();
+  Wire.setClock(400000); //100k = 113ms; 400k = 33ms; (800k = 20ms; 1mhz / 2mhz = 17ms = breaks apds)
 
   if(cfg.tiltEna) {
     if(myIMU.begin()) {
