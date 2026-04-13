@@ -31,6 +31,7 @@ The Gerber file (ProtoESP-Remote_Gerber_2025-04-28.zip) for manufacturing the PC
   - Also make sure you fill the backside battery holes under the XIAO to make proper connection to the pads and that they are not shorted together!
 - Connect antenna supplied with the XIAO and stick it to the back of the PCB, to the same with battery.
 - If using ESP32**C3** and you want status LED, solder one 3V led on to the PCB place named "Pair"
+- If you want, you can put the remote into [3D printed case](cover/)
 ### Upload
 - Open VS Code (Install if not present on your computer, afterwards install PlatformIO extension)
 - Clone this repository and open this folder and let PIO download needed files
