@@ -62,7 +62,8 @@ Any amount is more than welcome! Don't forget to add contact info or DM me, so I
 - [**TechArtsJon**](http://instagram.com/js_dennison), Thank you for your donation!
 - **Moldepan**, Thank you for your donation!
 
-## Use / license
+## Personal/Business use / license
+- **If you make/sell Proots running on this Project (Software/Matrices), PLEASE make atleast one time donation, as this project has taken hundreds of hours of coding, designing, troubleshooting and more since 2020**
 - GPL 3.0 code license applies
 - If you use this code, try to make your protogen unique and change the animations up a little bit in the Animator!
-- Sharing and small credit won't hurt right?
+- I do **NOT** allow the removal of my credit on the bottom of the pages in the index.html & animator.html!
