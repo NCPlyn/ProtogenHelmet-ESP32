@@ -15,9 +15,8 @@
 
 #define visorType "WS2812" // What displays are you using? (WS2812 or MAX72XX so far)
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW //flip up-down: ::DR1CR0RR1_HW , flip left-right: ::PAROLA_HW , flip both: ::ICSTATION_HW
-#define MAX72xx_DEVICES 11 // How many MAX72xx matrices for visor?
-#define visorLedsNum 704 // How many WS2812 LEDs for visor? (matrixNumber*64)
-#define FADESTEPS 4 //how many steps when fading between frames? (0=disabled; work only for WS2812 displays)
+#define MATRIXESNUM 11 // How many matrices for visor? 11
+#define FADESTEPS 4 //how many steps when fading between frames? (0=disabled; only for WS2812 displays)
 
 bool earPresent = false; // Are you using ear leds?
 #define earLedsNum 74 // How many? (74 or 32 rn)
@@ -37,9 +36,6 @@ bool INApresent = false; //Are you using INA219?
 #define oledAddr 60 //define oled on address 0x3c
 
 //--------------------------------//No touching after this!
-
-#define MaxFEars 30 //Max amount of Ear frames (hardcoded to assign memory)
-#define MaxFVisor 30 //Max amount of Visor frames
 
 #include <Arduino.h>
 
@@ -126,7 +122,8 @@ AsyncWebServer server(80);
 
 //--------------------------------//Config vars
 bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true, ToFInitDone = false;
-uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims, trueMatrixCount;
+uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims;
+uint16_t visorLedsNum = MATRIXESNUM*64;
 String currentAnim = "", animToLoad = "", availAnims[50], getfilesCache;
 float micDC = 800;
 
@@ -154,22 +151,22 @@ struct FramesEars {
 struct AnimNowEars {
   int type;
   int numOfFrames;
-  FramesEars frames[MaxFEars]; //max amount of ear frames
+  FramesEars* frames = nullptr;
 };
 
 struct FramesVisor {
   int timespan;
-  uint64_t leds[20];
+  uint64_t leds[MATRIXESNUM];
   long ledsBlush[blushLedsNum];
-  long fColor[(visorLedsNum/64)+1];
-  long ppColor[(visorLedsNum/64)+1][64];
+  long fColor[MATRIXESNUM];
+  long ppColor[MATRIXESNUM][64];
 };
 
 struct AnimNowVisor {
   int type;
   int numOfFrames;
-  FramesVisor frames[MaxFVisor]; //max amount of visor frames
-  bool isMouth[20];
+  FramesVisor* frames = nullptr;
+  bool isMouth[MATRIXESNUM];
 };
 
 AnimNowEars* earsNow;
@@ -179,13 +176,13 @@ AnimNowVisor* visorNow;
 #include <MD_MAX72xx.h>
 #include <SPI.h>
 
-MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, MAX_MOSI, MAX_CLK, MAX_CS, MAX72xx_DEVICES);
+MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, MAX_MOSI, MAX_CLK, MAX_CS, MATRIXESNUM);
 
 //--------------------------------//WS2812 LEDs
 CRGB earLeds[earLedsNum];
 CRGB blushLeds[blushLedsNum];
-CRGB visorLeds[visorLedsNum];
-CRGB visorLedsNEW[visorLedsNum];
+CRGB visorLeds[MATRIXESNUM*64];
+CRGB visorLedsNEW[MATRIXESNUM*64];
 CRGB c2Leds[earLedsNum+blushLedsNum];
 
 CLEDController *ledController[2];
@@ -251,6 +248,10 @@ bool loadAnim(String anim, String temp) {
       return false;
     }
 
+    // Free previously allocated frames
+    if (earsNow->frames) { free(earsNow->frames); earsNow->frames = nullptr; }
+    if (visorNow->frames) { free(visorNow->frames); visorNow->frames = nullptr; }
+
     currentAnim = anim;
 
     //Ears anim type
@@ -262,6 +263,7 @@ bool loadAnim(String anim, String temp) {
     }
     //Ears anim load
     earsNow->numOfFrames = doc["ears"]["frames"].size();
+    earsNow->frames = (FramesEars*) ps_malloc(sizeof(FramesEars) * earsNow->numOfFrames);
     for(int x = 0; x < earsNow->numOfFrames; x++) {
       earsNow->frames[x].timespan = doc["ears"]["frames"][x]["timespan"].as<int>();
       for(int y = 0; y < doc["ears"]["frames"][x]["leds"].size(); y++) {
@@ -281,6 +283,7 @@ bool loadAnim(String anim, String temp) {
     }
     //Visor anim load
     visorNow->numOfFrames = doc["visor"]["frames"].size();
+    visorNow->frames = (FramesVisor*) ps_malloc(sizeof(FramesVisor) * visorNow->numOfFrames);
     for(int x = 0; x < visorNow->numOfFrames; x++) {
       visorNow->frames[x].timespan = doc["visor"]["frames"][x]["timespan"].as<int>();
       numAnimBlush = (uint8_t)doc["visor"]["frames"][x]["ledsBlush"].size();
@@ -294,7 +297,7 @@ bool loadAnim(String anim, String temp) {
         visorNow->frames[x].fColor[y] = strtol(doc["visor"]["frames"][x]["fColor"][y].as<String>().c_str(), NULL, 16); //should return 0 if not present
         visorNow->frames[x].leds[y] = strtoull(doc["visor"]["frames"][x]["leds"][y].as<String>().c_str(), NULL, 16); //string to uint64
       }
-      for(int i = 0; i < (visorLedsNum/64)+1; i++) { //wipe ppColor data
+      for(int i = 0; i < MATRIXESNUM; i++) { //wipe ppColor data
         for(int o = 0; o < 64; o++) {
           visorNow->frames[x].ppColor[i][o] = 0;
         }
@@ -325,6 +328,7 @@ bool loadAnim(String anim, String temp) {
 #define CONFIG_BT_NIMBLE_MAX_CONNECTIONS 2
 #define CONFIG_BT_NIMBLE_ROLE_CENTRAL_DISABLED
 #define CONFIG_BT_NIMBLE_ROLE_OBSERVER_DISABLED
+#define CONFIG_BT_NIMBLE_MEM_ALLOC_MODE_EXTERNAL 1
 #include "NimBLEDevice.h"
 
 BLEServer *pServer = NULL;
@@ -591,12 +595,6 @@ void startWiFiWeb() {
 void setup() {
   Serial.begin(115200);
 
-  if(visorType == "WS2812") {
-    trueMatrixCount = (visorLedsNum/64)+1;
-  } else {
-    trueMatrixCount = MAX72xx_DEVICES;
-  }
-
   pinMode(animBtn, INPUT_PULLUP);
   pinMode(0, INPUT_PULLUP);
   pinMode(fanPWM, OUTPUT);
@@ -616,8 +614,8 @@ void setup() {
   }
 
   if(psramInit() && ESP.getFreePsram() != 0) {
-    earsNow = (AnimNowEars *)ps_malloc(sizeof(AnimNowEars));
-    visorNow = (AnimNowVisor *)ps_malloc(sizeof(AnimNowVisor));
+    earsNow  = (AnimNowEars *)  ps_calloc(1, sizeof(AnimNowEars));
+    visorNow = (AnimNowVisor *) ps_calloc(1, sizeof(AnimNowVisor));
     logBuffer = (char*) ps_malloc(LOG_BUFFER_SIZE);
     logIndex = 0;
     logBuffer[0] = '\0';
@@ -747,12 +745,11 @@ bool FdisplayVisor = false, FdisplayBlush = false, FdisplayEar = false, booping 
 float zAx,yAx,finalMicAvg,avgMicArr[10], micAttack = 0.35f, micRelease = 0.2f, env = 0.0f;
 int boopRead, startIndex = 1, micVolume, currentMicAvg = 0, btnNum = 0, currFade = 1, apdsprox = 255;
 unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastMillsBoop = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0, looptime = 0, fadeTime = 0, laskSpeakAnim = 0, lastBoopCheck = 0;
-byte row = 0;
 
-FramesVisor dynamicSpeak(FramesVisor curFrame, bool isMouth[20], int volume) {
-  int mouthIndexes[trueMatrixCount];
+void dynamicSpeak(uint64_t *leds, bool isMouth[MATRIXESNUM], int volume) {
+  int mouthIndexes[MATRIXESNUM];
   int mouthCount = 0;
-  for (int i = 0; i < trueMatrixCount; i++) { // collect true (mouth) indexes
+  for (int i = 0; i < MATRIXESNUM; i++) { // collect true (mouth) indexes
     if (isMouth[i]) {
       mouthIndexes[mouthCount++] = i;
     }
@@ -762,29 +759,23 @@ FramesVisor dynamicSpeak(FramesVisor curFrame, bool isMouth[20], int volume) {
     int x = map(volume, 0, 100, 0, half * 8) - (i * 8);
     int leftIndex  = mouthIndexes[half - 1 - i];
     int rightIndex = mouthIndexes[half + i];
-    if (x < 1) {
-      curFrame.leds[leftIndex]  = curFrame.leds[leftIndex];
-      curFrame.leds[rightIndex] = curFrame.leds[rightIndex];
-    } else {
+    if (x > 0) {
       x = constrain(x, 0, 8);
-      curFrame.leds[leftIndex]  = speakMatrix(curFrame.leds[leftIndex],  x, true);
-      curFrame.leds[rightIndex] = speakMatrix(curFrame.leds[rightIndex], x, false);
+      leds[leftIndex]  = speakMatrix(leds[leftIndex],  x, true);
+      leds[rightIndex] = speakMatrix(leds[rightIndex], x, false);
     }
   }
-  return curFrame;
 }
 
-//--------------------------------//Visor bufferer
 void setAllVisor(struct CRGB *ledArray, long ledColor, int visorFrame) {
-  FramesVisor tempFrame;
+  uint64_t tempLeds[MATRIXESNUM];
+  memcpy(tempLeds, visorNow->frames[visorFrame].leds, sizeof(tempLeds));
   if(speaking) {
-    tempFrame = dynamicSpeak(visorNow->frames[visorFrame], visorNow->isMouth, micVolume);
-  } else {
-    tempFrame = visorNow->frames[visorFrame];
+    dynamicSpeak(tempLeds, visorNow->isMouth, micVolume);
   }
   for(int y = 0; y < numOfSegm; y++) {
     for (int i = 0; i < 8; i++) {
-      row = (tempFrame.leds[y] >> i * 8) & 0xFF;
+      byte row = (tempLeds[y] >> i * 8) & 0xFF; //---------remove byte from upper global
       for (int j = 0; j < 8; j++) {
         if(visorType == "WS2812") {
           long tempColor = ledColor; //use given color
@@ -1006,10 +997,8 @@ void loop() {
     if(laskSpeakAnim+60<=millis() && speaking) {
       if(visorNow->type == 0 || (visorNow->type == 1 && visorType == "MAX72XX")) { //custom
         setAllVisor(visorLedsNEW,0,currentVisorFrame);
-      } else if (visorNow->type == 1 && visorType == "WS2812") { //all_rainbow
-        setAllVisor(visorLeds,((long)visorPixelBuffer[0].r << 16) | ((long)visorPixelBuffer[0].g << 8 ) | (long)visorPixelBuffer[0].b,currentVisorFrame-1);
+        laskSpeakAnim = millis();
       }
-      laskSpeakAnim = millis();
     }
   }
   //Serial.println(">SPK1:"+String(micros()-looptime));
