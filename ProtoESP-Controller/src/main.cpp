@@ -718,16 +718,22 @@ void setup() {
       apds.setProxPulse(APDS9960_PPULSELEN_8US, 8);
     }
   } else if (boopMode == "VL53L1X" && cfg.boopEna) {
-    if(!vl53.begin()){
+    Wire.beginTransmission(0x29);
+    if(Wire.endTransmission() != 0) {
       cfg.boopEna = false;
-      logPrint(F("[E] An Error has occurred while initializing VL53L1X chip!"));
+      logPrint(F("[E] An Error has occurred while finding VL53L1X chip!"));
     } else {
-      if (!vl53.startRanging()) {
+      if(!vl53.begin()) {
         cfg.boopEna = false;
-        logPrint(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
+        logPrint(F("[E] An Error has occurred while initializing VL53L1X chip!"));
       } else {
-        ToFInitDone = true;
-        vl53.setTimingBudget(50);
+        if (!vl53.startRanging()) {
+          cfg.boopEna = false;
+          logPrint(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
+        } else {
+          ToFInitDone = true;
+          vl53.setTimingBudget(50);
+        }
       }
     }
   }
@@ -1107,16 +1113,22 @@ void loop() {
           }
         }
       } else {
-        if(!vl53.begin()){
+        Wire.beginTransmission(0x29);
+        if(Wire.endTransmission() != 0) {
           cfg.boopEna = false;
-          logPrint(F("[E] An Error has occurred while initializing VL53L1X chip!"));
+          logPrint(F("[E] An Error has occurred while finding VL53L1X chip!"));
         } else {
-          if (!vl53.startRanging()) {
+          if(!vl53.begin()){
             cfg.boopEna = false;
-            logPrint(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
+            logPrint(F("[E] An Error has occurred while initializing VL53L1X chip!"));
           } else {
-            ToFInitDone = true;
-            vl53.setTimingBudget(50);
+            if (!vl53.startRanging()) {
+              cfg.boopEna = false;
+              logPrint(F("[E] An Error has occurred while starting ranging with VL53L1X chip!"));
+            } else {
+              ToFInitDone = true;
+              vl53.setTimingBudget(50);
+            }
           }
         }
       }
