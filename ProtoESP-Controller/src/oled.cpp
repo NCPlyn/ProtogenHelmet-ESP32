@@ -24,7 +24,8 @@ void SSDOLED::oledBright(int level) const
 }
 
 //--------------------------------//OLED Init
-bool SSDOLED::init(uint8_t oledAddr, int brightness, bool INA) {
+bool SSDOLED::init(uint8_t oledAddr, int brightness, bool INA)
+{
         INAavail = INA;
 
         Wire.beginTransmission(oledAddr); //check for oled on address 0x3c
@@ -41,7 +42,8 @@ bool SSDOLED::init(uint8_t oledAddr, int brightness, bool INA) {
 }
 
 //--------------------------------//Animation name
-int SSDOLED::writeAnim(String anim) const {
+int SSDOLED::writeAnim(String anim) const
+{
         u8g2.setDrawColor(0);
         u8g2.drawBox(0, 0, 128, 35);
         u8g2.setDrawColor(1);
@@ -53,7 +55,8 @@ int SSDOLED::writeAnim(String anim) const {
 }
 
 //--------------------------------//INA Voltage & Current
-void SSDOLED::writeINA(float volt, float amp) const {
+void SSDOLED::writeINA(float volt, float amp) const
+{
         u8g2.setDrawColor(0);
         u8g2.drawBox(0, 32, 128, 13); //0-128 ; 32-45
         u8g2.setDrawColor(1);
@@ -73,85 +76,107 @@ namespace
                 const uint8_t* ON_bits, OFF_bits;
                 int area_x,             area_y;
                 int area_w,             area_h;
-
         };
-        constexpr SymbolLayout SPK_SML = {
-                x       = 45,                   y               = 50,
-                width   = spk_width,            height          = spk_height,
-                ON_bits = spkONsml_bits,        OFF_bits        = spkOFFsml_bits,
-                area_x  = 5,                    area_y          = 6,
-                area_w  = 3,                    area_h          = 2
+        constexpr SymbolLayout SPK_SML
+        {
+                45,             50,
+                spk_width,      spk_height,
+                spkONsml_bits,  spkOFFsml_bits,
+                5,              6,
+                3,              2
         };
-        constexpr SymbolLayout SPK_LRG = {
-                x       = 45,                   y               = 36,
-                width   = spk_width * 2,        height          = spk_height * 2,
-                ON_bits = spkONlrg_bits,        OFF_bits        = spkOFFlrg_bits,
-                area_x  = 5,                    area_y          = 4,
-                area_w  = 5,                    area_h          = 4
+        constexpr SymbolLayout SPK_LRG
+        {
+                45,             36,
+                spk_width * 2,  spk_height * 2,
+                spkONlrg_bits,  spkOFFlrg_bits,
+                5,              4,
+                5,              4
         };
-        constexpr SymbolLayout REM_SML = {
-                x       = 8,                    y               = 49,
-                width   = rem_width,            height          = rem_height,
-                ON_bits = remONsml_bits,        OFF_bits        = remOFFsml_bits,
-                area_x  = 1,                    area_y          = 6,
-                area_w  = 2,                    area_h          = 2
+        constexpr SymbolLayout REM_SML
+        {
+                8,              49,
+                rem_width,      rem_height,
+                remONsml_bits,  remOFFsml_bits,
+                1,              6,
+                2,              2
         };
-        constexpr SymbolLayout REM_LRG = {
-                x       = 2,                    y               = 36,
-                width   = rem_width * 2,        height          = rem_height * 2,
-                ON_bits = remONlrg_bits,        OFF_bits        = remOFFlrg_bits,
-                area_x  = 0,                    area_y          = 4,
-                area_w  = 4,                    area_h          = 4
+        constexpr SymbolLayout REM_LRG
+        {
+                2,              36,
+                rem_width * 2,  rem_height * 2,
+                remONlrg_bits,  remOFFlrg_bits,
+                0,              4,
+                4,              4
         };
-
 }
 
 //--------------------------------//Speaking symbol
-void SSDOLED::speak(bool show) const {
-    const SymbolLayout& cfg = INAavail ? SPK_SML : SPK_LRG;
-    u8g2.drawXBM(cfg.x, cfg.y, cfg.width, cfg.height, show ? cfg.ON_bits : cfg.OFF_bits);
-    u8g2.updateDisplayArea(cfg.area_x, cfg.area_y, cfg.area_w, cfg.area_h);
+void SSDOLED::speak(bool show) const
+{
+        const SymbolLayout& cfg = INAavail ? SPK_SML : SPK_LRG;
+
+        u8g2.drawXBM(cfg.x,         cfg.y,
+                     cfg.width,     cfg.height,
+                     show ? cfg.ON_bits : cfg.OFF_bits);
+
+        u8g2.updateDisplayArea(cfg.area_x, cfg.area_y,
+                               cfg.area_w, cfg.area_h);
 }
 
 //--------------------------------//Remote symbol
-void SSDOLED::remote(bool show) const {
-    const SymbolLayout& cfg = INAavail ? REM_SML : REM_LRG;
-    u8g2.drawXBM(cfg.x, cfg.y, cfg.width, cfg.height, show ? cfg.ON_bits : cfg.OFF_bits);
-    u8g2.updateDisplayArea(cfg.area_x, cfg.area_y, cfg.area_w, cfg.area_h);
+void SSDOLED::remote(bool show) const
+{
+        const SymbolLayout& cfg = INAavail ? REM_SML : REM_LRG;
+
+        u8g2.drawXBM(cfg.x,         cfg.y,
+                     cfg.width,     cfg.height,
+                     show ? cfg.ON_bits : cfg.OFF_bits);
+
+        u8g2.updateDisplayArea(cfg.area_x, cfg.area_y,
+                               cfg.area_w, cfg.area_h);
 }
 //--------------------------------//Remote set number
-void SSDOLED::writeSet(int setNum) const {
-  if(INAavail) {
-    u8g2.setDrawColor(0);
-    u8g2.drawBox(20, 50, 10, 13); //20-30 ; 50-63
-    u8g2.setDrawColor(1);
-    u8g2.setFont(u8g2_font_t0_22b_tf);
-    u8g2.drawStr(19, 63, String(setNum).c_str());
-    u8g2.updateDisplayArea(2, 6, 2, 2);
-  } else {
-    u8g2.setDrawColor(0);
-    u8g2.drawBox(25, 40, 13, 21); //25-38 ; 40-61
-    u8g2.setDrawColor(1);
-    u8g2.setFont(u8g2_font_helvB18_tn);
-    u8g2.drawStr(26, 59, String(setNum).c_str());
-    u8g2.updateDisplayArea(3, 5, 2, 3);
-  }
+void SSDOLED::writeSet(int setNum) const
+{
+        if(INAavail)
+        {
+                u8g2.setDrawColor(0);
+                u8g2.drawBox(20, 50, 10, 13); //20-30 ; 50-63
+                u8g2.setDrawColor(1);
+                u8g2.setFont(u8g2_font_t0_22b_tf);
+                u8g2.drawStr(19, 63, String(setNum).c_str());
+                u8g2.updateDisplayArea(2, 6, 2, 2);
+        }
+        else
+        {
+                u8g2.setDrawColor(0);
+                u8g2.drawBox(25, 40, 13, 21); //25-38 ; 40-61
+                u8g2.setDrawColor(1);
+                u8g2.setFont(u8g2_font_helvB18_tn);
+                u8g2.drawStr(26, 59, String(setNum).c_str());
+                u8g2.updateDisplayArea(3, 5, 2, 3);
+        }
 }
 
 //--------------------------------//RGB acronym status
-void SSDOLED::writeRGB(String name) const {
-  u8g2.setFont(u8g2_font_t0_22b_tr);
-  if(INAavail) {
-    u8g2.setDrawColor(0);
-    u8g2.drawBox(69, 49, 53, 15); //69-122 ; 49-64
-    u8g2.setDrawColor(1);
-    u8g2.drawStr(70, 63, name.c_str());
-    u8g2.updateDisplayArea(8, 6, 8, 2);
-  } else {
-    u8g2.setDrawColor(0);
-    u8g2.drawBox(75, 41, 53, 20); //75-128 ; 41-61
-    u8g2.setDrawColor(1);
-    u8g2.drawStr(76, 55, name.c_str());
-    u8g2.updateDisplayArea(9, 5, 7, 3);
-  }
+void SSDOLED::writeRGB(String name) const
+{
+        u8g2.setFont(u8g2_font_t0_22b_tr);
+        if(INAavail)
+        {
+                u8g2.setDrawColor(0);
+                u8g2.drawBox(69, 49, 53, 15); //69-122 ; 49-64
+                u8g2.setDrawColor(1);
+                u8g2.drawStr(70, 63, name.c_str());
+                u8g2.updateDisplayArea(8, 6, 8, 2);
+        }
+        else
+        {
+                u8g2.setDrawColor(0);
+                u8g2.drawBox(75, 41, 53, 20); //75-128 ; 41-61
+                u8g2.setDrawColor(1);
+                u8g2.drawStr(76, 55, name.c_str());
+                u8g2.updateDisplayArea(9, 5, 7, 3);
+        }
 }
