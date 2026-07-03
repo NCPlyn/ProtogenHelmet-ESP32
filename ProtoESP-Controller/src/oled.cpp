@@ -42,7 +42,7 @@ bool SSDOLED::init(uint8_t oledAddr, int brightness, bool INA)
 }
 
 //--------------------------------//Animation name
-int SSDOLED::writeAnim(String anim) const
+int SSDOLED::writeAnim(const String & anim) const
 {
         u8g2.setDrawColor(0);
         u8g2.drawBox(0, 0, 128, 35);
@@ -60,13 +60,17 @@ void SSDOLED::writeINA(float volt, float amp) const
         u8g2.setDrawColor(0);
         u8g2.drawBox(0, 32, 128, 13); //0-128 ; 32-45
         u8g2.setDrawColor(1);
-        String toShow = String(volt,2)+"V "+String(amp/1000,2)+"A";
-        float width = u8g2.getStrWidth(toShow.c_str());
+        char toShow[24];
+        snprintf(toShow, sizeof(toShow), "%.2fV %.2fA", volt, amp / 1000);
+        float width = u8g2.getStrWidth(toShow);
         u8g2.setFont(u8g2_font_t0_22b_tr);
-        u8g2.drawStr((128 - width) / 2, 45, toShow.c_str());
+        u8g2.drawStr((128 - width) / 2, 45, toShow);
         u8g2.updateDisplayArea(0, 4, 16, 2);
 }
 
+/* Layouts for speak (SPK) and remote (REM) symbols
+ * NOTE: please just follow the format of the table when doing
+ * any expansion on it*/
 namespace
 {
         struct SymbolLayout
@@ -139,13 +143,15 @@ void SSDOLED::remote(bool show) const
 //--------------------------------//Remote set number
 void SSDOLED::writeSet(int setNum) const
 {
+        char numBuf[16] = {};
+        snprintf(numBuf, sizeof(numBuf), "%d", setNum);
         if(INAavail)
         {
                 u8g2.setDrawColor(0);
                 u8g2.drawBox(20, 50, 10, 13); //20-30 ; 50-63
                 u8g2.setDrawColor(1);
                 u8g2.setFont(u8g2_font_t0_22b_tf);
-                u8g2.drawStr(19, 63, String(setNum).c_str());
+                u8g2.drawStr(19, 63, numBuf);
                 u8g2.updateDisplayArea(2, 6, 2, 2);
         }
         else
@@ -154,13 +160,13 @@ void SSDOLED::writeSet(int setNum) const
                 u8g2.drawBox(25, 40, 13, 21); //25-38 ; 40-61
                 u8g2.setDrawColor(1);
                 u8g2.setFont(u8g2_font_helvB18_tn);
-                u8g2.drawStr(26, 59, String(setNum).c_str());
+                u8g2.drawStr(26, 59, numBuf);
                 u8g2.updateDisplayArea(3, 5, 2, 3);
         }
 }
 
 //--------------------------------//RGB acronym status
-void SSDOLED::writeRGB(String name) const
+void SSDOLED::writeRGB(const String & name) const
 {
         u8g2.setFont(u8g2_font_t0_22b_tr);
         if(INAavail)
