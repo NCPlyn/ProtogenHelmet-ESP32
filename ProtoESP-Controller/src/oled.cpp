@@ -73,13 +73,21 @@ void SSDOLED::writeINA(float volt, float amp) const
  * any expansion on it*/
 namespace
 {
+        /* Layout structure for symbols.
+         * - draw area (draw_x, draw_y, draw_w, draw_h)
+         *   defines where the XBM bitmap is drawn in the framebuffer.
+         * - ON_bits and OFF_bits are the bitmaps to draw,
+         *   depends on the state of the argument show.
+         * - update area (area_x, area_y, area_w, area_h) defines the minimal
+         *   physical screen region to refresh via I2C after drawing.
+         */
         struct SymbolLayout
         {
-                int x,                  y;
-                int width,              height;
-                const uint8_t* ON_bits, OFF_bits;
-                int area_x,             area_y;
-                int area_w,             area_h;
+                int draw_x,             draw_y;         // draw start
+                int draw_w,             draw_h;         // draw size
+                const uint8_t* ON_bits, OFF_bits;       // XBM bitmaps
+                int area_x,             area_y;         // refresh start
+                int area_w,             area_h;         // refresh size
         };
         constexpr SymbolLayout SPK_SML
         {
@@ -120,8 +128,8 @@ void SSDOLED::speak(bool show) const
 {
         const SymbolLayout& cfg = INAavail ? SPK_SML : SPK_LRG;
 
-        u8g2.drawXBM(cfg.x,         cfg.y,
-                     cfg.width,     cfg.height,
+        u8g2.drawXBM(cfg.draw_x,        cfg.draw_y,
+                     cfg.draw_w,        cfg.draw_h,
                      show ? cfg.ON_bits : cfg.OFF_bits);
 
         u8g2.updateDisplayArea(cfg.area_x, cfg.area_y,
@@ -133,8 +141,8 @@ void SSDOLED::remote(bool show) const
 {
         const SymbolLayout& cfg = INAavail ? REM_SML : REM_LRG;
 
-        u8g2.drawXBM(cfg.x,         cfg.y,
-                     cfg.width,     cfg.height,
+        u8g2.drawXBM(cfg.draw_x,        cfg.draw_y,
+                     cfg.draw_w,        cfg.draw_h,
                      show ? cfg.ON_bits : cfg.OFF_bits);
 
         u8g2.updateDisplayArea(cfg.area_x, cfg.area_y,
