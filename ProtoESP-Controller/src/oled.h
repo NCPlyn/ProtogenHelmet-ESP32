@@ -72,9 +72,9 @@ public:
   	bool init(uint8_t,int,bool);
 	void oledBright(int) const;
   	void writeSet(int) const;
-  	int writeAnim(String) const;
+  	int writeAnim(const String &) const;
   	void writeINA(float,float) const;
-  	void writeRGB(String) const;
+  	void writeRGB(const String &) const;
   	void speak(bool) const;
   	void remote(bool) const;
 };
