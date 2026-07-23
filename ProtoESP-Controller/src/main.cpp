@@ -50,34 +50,7 @@ Adafruit_APDS9960 apds;
 #include "Adafruit_VL53L1X.h"
 Adafruit_VL53L1X vl53;
 
-//--------------------------------//realtime logger
-#define LOG_BUFFER_SIZE (50 * 1024)  // 50 KB
-
-char *logBuffer = nullptr;
-size_t logIndex = 0;
-
-void logPrint(const char *str) {
-  Serial.println(str);
-  if (!logBuffer) return;
-  size_t len = strlen(str);
-  size_t needed = len + 1; //newline
-  if (logIndex + needed >= LOG_BUFFER_SIZE) {
-    logIndex = 0;
-    logBuffer[0] = '\0';
-  }
-  memcpy(logBuffer + logIndex, str, len);
-  logIndex += len;
-  logBuffer[logIndex++] = '\n';
-  logBuffer[logIndex] = '\0';
-}
-
-inline void logPrint(const __FlashStringHelper *str) {
-  logPrint((const char*)str);
-}
-
-void logPrint(const String &str) {
-    logPrint(str.c_str());
-}
+#include "logger.h" // realtime logger
 
 //--------------------------------//web / wifi
 #include "WiFi.h"
