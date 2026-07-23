@@ -1,5 +1,5 @@
 ## Boop sensors
-- Choose which one you want to use and then specify such in the main.cpp under `#define boopMode`
+- Choose which one you want to use and then specify such in the src/config.h under `#define boopMode`
 
 ### KY-032
 ![](img/KY-032.png)
