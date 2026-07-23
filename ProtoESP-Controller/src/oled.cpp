@@ -4,16 +4,21 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0,/* reset=*/ U8X8_PIN_NONE);
 
 //--------------------------------//OLED Brightness
 void SSDOLED::oledBright(int level) const {
-    if(level == 0) { //dim
-      u8g2.sendF("ca", 0x0d9, (15 << 4) | 0 );
-      u8g2.sendF("ca", 0x0db, 0 << 4);
-    } else if (level == 1) { //mid
-      u8g2.sendF("ca", 0x0d9, (15 << 4) | 15 );
-      u8g2.sendF("ca", 0x0db, 0 << 4);
-    } else if (level == 2) { //normal
-      u8g2.sendF("ca", 0x0d9, (15 << 4) | 15 );
-      u8g2.sendF("ca", 0x0db, 7 << 4);
-    }
+  switch(level)
+  {
+  case 0: // dim
+    u8g2.sendF("ca", 0x0d9, (15 << 4) | 0 );
+    u8g2.sendF("ca", 0x0db, 0 << 4);
+    break;
+  case 1: // mid
+    u8g2.sendF("ca", 0x0d9, (15 << 4) | 15 );
+    u8g2.sendF("ca", 0x0db, 0 << 4);
+    break;
+  case 2: // normal
+    u8g2.sendF("ca", 0x0d9, (15 << 4) | 15 );
+    u8g2.sendF("ca", 0x0db, 7 << 4);
+    break;
+  }
 }
 
 //--------------------------------//OLED Init
@@ -21,15 +26,12 @@ bool SSDOLED::init(uint8_t oledAddr, int brightness, bool INA) {
   INAavail = INA;
   Wire.beginTransmission(oledAddr); //check for oled on address 0x3c
   byte error = Wire.endTransmission();
-  if(error == 0) {
-    u8g2.setI2CAddress(oledAddr*2);
-    u8g2.begin();
-    u8g2.setFlipMode(2);
-    oledBright(brightness);
-    return true;
-  } else {
-    return false;
-  }
+  if(error != 0) return false;
+  u8g2.setI2CAddress(oledAddr << 1);
+  u8g2.begin();
+  u8g2.setFlipMode(2);
+  oledBright(brightness);
+  return true;
 }
 
 //--------------------------------//Animation name
@@ -134,3 +136,4 @@ void SSDOLED::writeRGB(String name) const {
     u8g2.updateDisplayArea(9, 5, 7, 3);
   }
 }
+

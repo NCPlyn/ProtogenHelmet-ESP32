@@ -9,10 +9,20 @@
 //--------------------------------//CRC checksum class
 class CrcWriter {
 public:
-  CrcWriter();
-  size_t write(uint8_t c);
-  size_t write(const uint8_t *buffer, size_t length);
-  uint32_t hash() const;
+  CrcWriter() {
+    _hash = _hasher.crc32(NULL, 0);
+  }
+  size_t write(uint8_t c) {
+    _hash = _hasher.crc32_upd(&c, 1);
+    return 1;
+  }
+  size_t write(const uint8_t *buffer, size_t length) {
+    _hash = _hasher.crc32_upd(buffer, length);
+    return length;
+  }
+  uint32_t hash() const {
+    return _hash;
+  }
 private:
   FastCRC32 _hasher;
   uint32_t _hash;
@@ -34,3 +44,4 @@ public:
   bool getFloat(AsyncWebServerRequest *req, const char *name, float &out);
   bool getString(AsyncWebServerRequest *req, const char *name, String &out);
 };
+
