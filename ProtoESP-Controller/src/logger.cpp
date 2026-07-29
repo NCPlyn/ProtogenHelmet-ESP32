@@ -1,9 +1,9 @@
+#include "logger.h"
+#include <string.h>
 //--------------------------------//realtime logger
 
-#include "logger.h"
-
-extern char * logBuffer = nullptr;
-extern size_t logIndex = 0;
+char * logBuffer = nullptr;
+size_t logIndex = 0;
 
 void logPrint(const char *str) {
   Serial.println(str);

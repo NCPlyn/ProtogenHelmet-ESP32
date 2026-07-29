@@ -1,3 +1,4 @@
+#pragma once
 #include <Arduino.h>
 #include <u8g2lib.h>
 #include <Wire.h>

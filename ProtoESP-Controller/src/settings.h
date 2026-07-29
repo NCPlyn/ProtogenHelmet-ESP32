@@ -1,3 +1,4 @@
+#pragma once
 //Make sure you have everything connected by the schematic in the repository and set these defines correctly!
 
 #define MICpin ADC_CHANNEL_0 //Microphone, pin 1

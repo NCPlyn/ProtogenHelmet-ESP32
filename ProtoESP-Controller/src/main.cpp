@@ -1,18 +1,13 @@
-/* configurations are moved to config.h
+/* Settings are moved to settings.h
  * No touching after this!
  */
-
-#include "config.h"
+#include "settings.h"
 #include <Arduino.h>
 
 #include "esp_adc/adc_oneshot.h"
 adc_oneshot_unit_handle_t adc_handle;
 
-#define earTypeSize 6
-#define visTypeSize 2
-String earTypes[earTypeSize] = {"custom","rainbow","white_noise","corner_sabers","custom_glow","none"}; //available ear type animations
-String visorTypes[visTypeSize] = {"custom","all_rainbow"}; //available visor type animations
-String vTAcro[visTypeSize] = {"cust","rnbw"}; //OLED acronyms for visor type animations
+#include "animTypes.h" // earTypes, visorTypes and vTAcro
 
 #include <ezButton.h>
 ezButton hwBtn(animBtn);
@@ -59,57 +54,11 @@ Adafruit_VL53L1X vl53;
 
 AsyncWebServer server(80);
 
-//--------------------------------//Config vars
-bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true, ToFInitDone = false;
-uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims;
-uint16_t visorLedsNum = MATRIXESNUM*64;
-String currentAnim = "", animToLoad = "", availAnims[50], getfilesCache;
-float micDC = 800;
+#include "configVars.h" // Config vars
 
-//--------------------------------//getting stored anims names and count
-void getFilesFunc() {
-  getfilesCache = "";
-  totalAnims = 0;
-  File root = LittleFS.open("/anims");
-  File file = root.openNextFile();
-  while(file){
-    availAnims[totalAnims] = String(file.name());
-    getfilesCache += availAnims[totalAnims] + ";";
-    totalAnims++;
-    file = root.openNextFile();
-  }
-  getfilesProper = false;
-}
+#include "getFiles.h" // getting stored anims names and count
 
-//--------------------------------//Structs for anims in psram
-struct FramesEars {
-  int timespan;
-  long ledColor[earLedsNum];
-};
-
-struct AnimNowEars {
-  int type;
-  int numOfFrames;
-  FramesEars* frames = nullptr;
-};
-
-struct FramesVisor {
-  int timespan;
-  uint64_t leds[MATRIXESNUM];
-  long ledsBlush[blushLedsNum];
-  long fColor[MATRIXESNUM];
-  long ppColor[MATRIXESNUM][64];
-};
-
-struct AnimNowVisor {
-  int type;
-  int numOfFrames;
-  FramesVisor* frames = nullptr;
-  bool isMouth[MATRIXESNUM];
-};
-
-AnimNowEars* earsNow;
-AnimNowVisor* visorNow;
+#include "animStructs.h" //Structs for anims in psram
 
 //--------------------------------//MAX LEDs
 #include <MD_MAX72xx.h>
@@ -131,8 +80,8 @@ CRGB visorPixelBuffer[10];
 uint8_t noiseData[earLedsNum];
 
 DEFINE_GRADIENT_PALETTE( blackWhite_gp ) {
-  0,   100,  0, 0,
-  120,   0,  0, 0,
+  0,   100,  0,   0,
+  120,   0,  0,   0,
   255, 255,  255, 255
 };
 CRGBPalette16 blackWhite = blackWhite_gp;
@@ -159,109 +108,7 @@ const std::vector<std::vector<int>> lookupDiag2 =
  {13,25,24,9},
  {12,11,10}};
 
-//--------------------------------//Load functions
-bool loadAnim(String anim, String temp) {
-  JsonDocument doc;
-  DeserializationError error;
-
-  if (currentAnim != anim || anim == "POSTAnimLoad") {
-    if(anim == "POSTAnimLoad") {
-      logPrint(F("[I] POST load"));
-      error = deserializeJson(doc, temp);
-    } else {
-      delay(25);
-      File file = LittleFS.open("/anims/"+anim, "r");
-      if (!file) {
-        logPrint(F("[E] There was an error opening the animation file!"));
-        file.close();
-        return false;
-      }
-      logPrint(F("[I] Animation file opened!"));
-      ReadBufferingStream bufferedFile{file, 64};
-      error = deserializeJson(doc, bufferedFile);
-      file.close();
-    }
-    
-    if(error){
-      logPrint("[E] Failed to deserialize animation file! : " + String(error.c_str()));
-      return false;
-    }
-
-    // Free previously allocated frames
-    if (earsNow->frames) { free(earsNow->frames); earsNow->frames = nullptr; }
-    if (visorNow->frames) { free(visorNow->frames); visorNow->frames = nullptr; }
-
-    currentAnim = anim;
-
-    //Ears anim type
-    for(int o=0;o<earTypeSize;o++) {
-      if(doc["ears"]["type"].as<String>() == earTypes[o]) {
-        earsNow->type = o;
-        break;
-      }
-    }
-    //Ears anim load
-    earsNow->numOfFrames = doc["ears"]["frames"].size();
-    earsNow->frames = (FramesEars*) ps_malloc(sizeof(FramesEars) * earsNow->numOfFrames);
-    for(int x = 0; x < earsNow->numOfFrames; x++) {
-      earsNow->frames[x].timespan = doc["ears"]["frames"][x]["timespan"].as<int>();
-      for(int y = 0; y < doc["ears"]["frames"][x]["leds"].size(); y++) {
-        earsNow->frames[x].ledColor[y] = strtol(doc["ears"]["frames"][x]["leds"][y].as<String>().c_str(), NULL, 16);
-      }
-    }
-    //Visor anim type
-    for(int o=0;o<visTypeSize;o++) {
-      if(doc["visor"]["type"].as<String>() == visorTypes[o]) {
-        visorNow->type = o;
-        break;
-      }
-    }
-    //isMouth
-    for(int y = 0; y < doc["visor"]["isMouth"].size(); y++) {
-      visorNow->isMouth[y] = doc["visor"]["isMouth"][y].as<bool>();
-    }
-    //Visor anim load
-    visorNow->numOfFrames = doc["visor"]["frames"].size();
-    visorNow->frames = (FramesVisor*) ps_malloc(sizeof(FramesVisor) * visorNow->numOfFrames);
-    for(int x = 0; x < visorNow->numOfFrames; x++) {
-      visorNow->frames[x].timespan = doc["visor"]["frames"][x]["timespan"].as<int>();
-      numAnimBlush = (uint8_t)doc["visor"]["frames"][x]["ledsBlush"].size();
-      for(int y = 0; y < numAnimBlush; y++) {
-        if(y<blushLedsNum) {
-          visorNow->frames[x].ledsBlush[y] = strtol(doc["visor"]["frames"][x]["ledsBlush"][y].as<String>().c_str(), NULL, 16);
-        }
-      }
-      numOfSegm = doc["visor"]["frames"][x]["leds"].size();
-      for(int y = 0; y < numOfSegm; y++) {
-        visorNow->frames[x].fColor[y] = strtol(doc["visor"]["frames"][x]["fColor"][y].as<String>().c_str(), NULL, 16); //should return 0 if not present
-        visorNow->frames[x].leds[y] = strtoull(doc["visor"]["frames"][x]["leds"][y].as<String>().c_str(), NULL, 16); //string to uint64
-      }
-      for(int i = 0; i < MATRIXESNUM; i++) { //wipe ppColor data
-        for(int o = 0; o < 64; o++) {
-          visorNow->frames[x].ppColor[i][o] = 0;
-        }
-      }
-      int numOfpp = doc["visor"]["frames"][x]["ppColor"].size();
-      for(int y = 0; y < numOfpp; y++) {
-        int numOfppData = doc["visor"]["frames"][x]["ppColor"][y]["data"].size();
-        for(int z = 0; z < numOfppData; z++) { //ppColor[matrix][pixel] = color
-          visorNow->frames[x].ppColor[doc["visor"]["frames"][x]["ppColor"][y]["mIndex"].as<int>()][doc["visor"]["frames"][x]["ppColor"][y]["data"][z][0].as<int>()] = strtol(doc["visor"]["frames"][x]["ppColor"][y]["data"][z][1].as<String>().c_str(), NULL, 16);
-        }
-      }
-    }
-
-    instantReload = true;
-    currentVisorFrame = 0;
-    currentEarsFrame = 0;
-
-    if(cfg.oledEna && oledInitDone) {
-      oled.writeAnim(anim.substring(0,anim.length()-5));
-      oled.writeRGB(vTAcro[visorNow->type]);
-    }
-    return true;
-  }
-  return false;
-}
+#include <loadFunctions.h> // Load functions
 
 //--------------------------------//BLE
 #define CONFIG_BT_NIMBLE_MAX_CONNECTIONS 2
@@ -691,61 +538,7 @@ float zAx,yAx,finalMicAvg,avgMicArr[10], micAttack = 0.35f, micRelease = 0.2f, e
 int boopRead, startIndex = 1, micVolume, currentMicAvg = 0, btnNum = 0, currFade = 1, apdsprox = 255;
 unsigned long lastMillsEars = 0, lastMillsVisor = 0, lastMillsTilt = 0, laskSpeakCheck = 0, lastMillsBoop = 0, lastFLED = 0, vaStatLast = 0, btnPressTime = 0, tiltChange = 0, check0button = 0, looptime = 0, fadeTime = 0, laskSpeakAnim = 0, lastBoopCheck = 0;
 
-void dynamicSpeak(uint64_t *leds, bool isMouth[MATRIXESNUM], int volume) {
-  int mouthIndexes[MATRIXESNUM];
-  int mouthCount = 0;
-  for (int i = 0; i < MATRIXESNUM; i++) { // collect true (mouth) indexes
-    if (isMouth[i]) {
-      mouthIndexes[mouthCount++] = i;
-    }
-  }
-  int half = mouthCount / 2;
-  for (int i = 0; i < half; i++) {
-    int x = map(volume, 0, 100, 0, half * 8) - (i * 8);
-    int leftIndex  = mouthIndexes[half - 1 - i];
-    int rightIndex = mouthIndexes[half + i];
-    if (x > 0) {
-      x = constrain(x, 0, 8);
-      leds[leftIndex]  = speakMatrix(leds[leftIndex],  x, true);
-      leds[rightIndex] = speakMatrix(leds[rightIndex], x, false);
-    }
-  }
-}
-
-void setAllVisor(struct CRGB *ledArray, long ledColor, int visorFrame) {
-  uint64_t tempLeds[MATRIXESNUM];
-  memcpy(tempLeds, visorNow->frames[visorFrame].leds, sizeof(tempLeds));
-  if(speaking) {
-    dynamicSpeak(tempLeds, visorNow->isMouth, micVolume);
-  }
-  for(int y = 0; y < numOfSegm; y++) {
-    for (int i = 0; i < 8; i++) {
-      byte row = (tempLeds[y] >> i * 8) & 0xFF; //---------remove byte from upper global
-      for (int j = 0; j < 8; j++) {
-        if(visorType == "WS2812") {
-          long tempColor = ledColor; //use given color
-          if(ledColor == 0) { //if not given a color
-            if(visorNow->frames[visorFrame].ppColor[y][(i*8)+j] != 0) { //use ppColor if available
-              tempColor = visorNow->frames[visorFrame].ppColor[y][(i*8)+j];
-            } else if(visorNow->frames[visorFrame].fColor[y] != 0) { //if not, use fColor if available
-              tempColor = visorNow->frames[visorFrame].fColor[y];
-            } else { // else config color
-              tempColor = cfg.visColor;
-            }
-          }
-          if(oldMatrixFix) {
-            ledArray[(y*64)+(i*8)+((i%2!=0)?j:7-j)] = (bitRead(row,j))?tempColor:CRGB::Black; //includes fix for bad rgbmatrix
-          } else {
-            ledArray[(y*64)+(i*8)+j] = (bitRead(row,j))?tempColor:CRGB::Black;
-          }
-        } else if (visorType == "MAX72XX") {
-          mx.setPoint(i, j+(y*8), bitRead(row, j)); //MAXstuff
-        }
-      }
-    }
-  }
-  FdisplayVisor = true;
-}
+#include <visorDynamics.h>
 
 void loop() {
   ElegantOTA.loop();

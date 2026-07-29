@@ -1,11 +1,11 @@
-//--------------------------------//realtime logger
-
 #pragma once
+#include <Arduino.h>
+//--------------------------------//realtime logger
 
 #define LOG_BUFFER_SIZE (50 * 1024)  // 50 KB
 
-char * logBuffer;
-size_t logIndex;
+extern char * logBuffer;
+extern size_t logIndex;
 
 void logPrint(const char * str);
 

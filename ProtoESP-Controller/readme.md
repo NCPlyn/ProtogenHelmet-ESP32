@@ -30,7 +30,7 @@
 ### Upload
 - Install if not already: VS Code + PlatformIO extension and Python 3
 - Clone this repository, open this folder with PlatformIO and let it download all needed files
-- In `src/config.h`:
+- In `src/settings.h`:
   - Change `visorType` definition for the display you have (WS2812 or MAX72XX)
   - Change `MAX72xx_DEVICES` or `visorLedsNum` to the correct amount of matrices/LEDs connected
   - Change `HARDWARE_TYPE` accordingly if your matrices are flipped or mirrored

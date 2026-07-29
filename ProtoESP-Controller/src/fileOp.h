@@ -1,3 +1,4 @@
+#pragma once
 #include <FastCRC.h>
 #define ARDUINOJSON_USE_DOUBLE 0
 #include <ArduinoJson.h>
