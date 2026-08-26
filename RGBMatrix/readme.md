@@ -6,6 +6,8 @@ RGB version of the very popular LED matrix. Made because 8x8 single-color MAX721
 ## Production files
 The Gerber files needed for production are in the **`v3`** and **`v4`** folders, ready to be sent to PCBWay or JLCPCB for panelization/manufacture.
 
+You need to have the PCBs themselves made (panelize in 2x3 grid) and also order **PCB ASSEMBLY** with the BOM and PnP files to have the LEDs mounted/soldered on! (The cost of one working matrix is **4,5-8€, NOT 0,5€**!)
+
 #### Do not test your luck
 Both v3 and v4 have diodes that can fail with inproper reflow temperatures, so select these assembly settings for JLCPCB:
 - Surface Finish: **LeadFree HASL**
