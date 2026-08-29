@@ -1,3 +1,5 @@
+#pragma once
+#include "devices.h"
 #include <Arduino.h>
 #include <u8g2lib.h>
 #include <Wire.h>
@@ -60,6 +62,8 @@ static unsigned char remOFFlrg_bits[] = {
  0x00,0x00,0xfc,0x00,0x00,0xfc,0x00,0x00,0xfc,0x00,0x00,0xfc};
 
 class SSDOLED {
+private:
+  bool INAavail = false;
 public:
   bool init(uint8_t,int,bool);
   void oledBright(int) const;
@@ -69,6 +73,4 @@ public:
   void writeRGB(String) const;
   void speak(bool) const;
   void remote(bool) const;
-private:
-  bool INAavail = false;
 };

@@ -30,7 +30,7 @@
 ### Upload
 - Install if not already: VS Code + PlatformIO extension and Python 3
 - Clone this repository, open this folder with PlatformIO and let it download all needed files
-- In `src/main.cpp`:
+- In `src/settings.h`:
   - Change `visorType` definition for the display you have (WS2812 or MAX72XX)
   - Change `MAX72xx_DEVICES` or `visorLedsNum` to the correct amount of matrices/LEDs connected
   - Change `HARDWARE_TYPE` accordingly if your matrices are flipped or mirrored
@@ -87,6 +87,7 @@ build_flags =
 	-mfix-esp32-psram-cache-issue
 ;	-DCORE_DEBUG_LEVEL=5
 	-DELEGANTOTA_USE_ASYNC_WEBSERVER=1
+    -std=gnu++17
 lib_deps = 
 	bblanchon/StreamUtils@1.9.0
 	fastled/FastLED@3.7.8
