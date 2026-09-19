@@ -28,7 +28,7 @@
       <div id="earsDiv">
         <div id="divForSvg"></div>
         <br>
-        <button onclick="if(confirm('Do you want to empty the current frame?')){fillBlackVisor();}">Fill black</button>
+        <button onclick="if(confirm('Do you want to empty the current frame?')){fillBlack();}">Fill black</button>
         <button onclick="mirrorEars()">Copy left to right</button><br>
         <div style="clear: both;">
           <label for="timespanEars">Timespan:</label>
@@ -742,7 +742,7 @@
         if (x < ledCount) {
           $("#svg1").find("#" + (x + 1)).attr('fill', "#" + obj.leds[x]);
         } else {
-          $("#svg2").find("#" + (x - ledCount)).attr('fill', "#" + obj.leds[x]);
+          $("#svg2").find("#" + (x - ledCount + 1)).attr('fill', "#" + obj.leds[x]);
         }
       }
     } else {
@@ -1515,21 +1515,23 @@
         temp += ((x>0)?",":"")+"\"" + ((temp2=="000000")?"0":temp2) + "\"";
       }
       temp += "],\"ppColor\":[";
+      var doSep = false;
       for (var x = 0; x < numOfSegm; x++) {
-        var temp3 = "", doAdd = false, doSep = false
-        temp3 = ((x>0)?",":"")+"{\"mIndex\":"+x+",\"data\":[";
+        var temp3 = "{\"mIndex\":"+x+",\"data\":[";
+        var doAdd = false;
         for (var y = 0; y < 64; y++) {
           var elem = $('#t'+x).find("td.item[data-row=\""+(Math.floor(y/8)+1)+"\"][data-col=\""+((y%8)+1)+"\"]")
           if(elem.attr('style') != undefined) {
-            if(doAdd && y>0) {
+            if(doAdd) {
               temp3+=",";
             }
-            doAdd = true
+            doAdd = true;
             temp3+="["+y+",\""+rgb2hex(elem.css("background-color"))+"\"]";
           }
         }
         if(doAdd) {
-          temp+=temp3+"]}";
+          temp+=(doSep?",":"")+temp3+"]}";
+          doSep = true;
         }
       }
       temp += "],\"leds\":[";
