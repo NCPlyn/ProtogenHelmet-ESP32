@@ -97,11 +97,11 @@ boolean Adafruit_APDS9960::begin(uint16_t iTimeMS, apds9960AGain_t aGain,
     return false;
   }
 
-  /* Make sure we're actually connected */
+  /* Make sure we're actually connected
   uint8_t x = read8(APDS9960_ID);
   if (x != 0xAB && x != 0xA8) {
     return false;
-  }
+  }*/
 
   /* Set default integration time and gain */
   setADCIntegrationTime(iTimeMS);
