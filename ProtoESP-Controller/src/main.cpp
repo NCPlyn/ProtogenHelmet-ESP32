@@ -806,7 +806,6 @@ void setAllVisor(struct CRGB *ledArray, long ledColor, int visorFrame) {
     }
   }
   FdisplayVisor = true;
-  currFade = 1;
 }
 
 void loop() {
@@ -989,11 +988,14 @@ void loop() {
         }
       } else {
         if(speaking) {
+          logPrint(F("[I] unSpeak"));
           speaking = false;
           if(cfg.oledEna && oledInitDone) {
             oled.speak(false);
           }
-          logPrint(F("[I] unSpeak"));
+          if(visorNow->type == 0 || (visorNow->type == 1 && visorType == "MAX72XX")) {
+            setAllVisor(visorLedsNEW,0,currentVisorFrame);
+          }
         }
       }
 

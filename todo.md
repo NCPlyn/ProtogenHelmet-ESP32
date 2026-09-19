@@ -50,12 +50,11 @@
 - [x] More fluid/animated dynamic speech (louder = more further)
 - [x] /log to see the logs from the start of the ESP
 - [x] Per pixel color visor & animator (WS2812)
+- [x] Dynamic speech update (more reactive, louder += wider, clean code)
+- [x] New v4 RGB matrix display (cheaper 2 layer WS2812-2020)
 
 ### ToDo
-- [ ] New RGB matrix display (SK9822-EC20 nope, different one wire but faster and small pckg or black)
-
-- [ ] Dynamic speech update (louder += wider, clean code)
-- [ ] Support Adafruit LED Backpack I2C matrixes; define face {"1;x70","2;x70","1;x71",...}
-- [ ] More RGB anims/modes (Rainbow from boop:front wave, entire rgb waves when wiggle...)
-- [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
+- [ ] More RGB anims/modes (On boop rainbow from front on current animation etc...)
+- [ ] Support Adafruit LED Backpack I2C matrixes (define face {"1;x70","2;x70","1;x71",...})
 - [ ] Animator guide + visor configs
+- [ ] FastLED 3.9.13+... [GitHub-issue](https://github.com/FastLED/FastLED/issues/1894)
