@@ -1,24 +1,5 @@
 #include "fileOp.h"
 
-//--------------------------------//CRC checksum class
-CrcWriter::CrcWriter() {
-  _hash = _hasher.crc32(NULL, 0);
-}
-
-size_t CrcWriter::write(uint8_t c) {
-  _hash = _hasher.crc32_upd(&c, 1);
-  return 1;
-}
-
-size_t CrcWriter::write(const uint8_t *buffer, size_t length) {
-  _hash = _hasher.crc32_upd(buffer, length);
-  return length;
-}
-
-uint32_t CrcWriter::hash() const {
-  return _hash;
-}
-
 //--------------------------------//Config variables store/save/load/default
 void Config::setDefault() {
   boopEna = true;
