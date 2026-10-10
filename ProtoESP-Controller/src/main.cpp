@@ -124,7 +124,7 @@ AsyncWebServer server(80);
 bool instantReload = false, oledInitDone = false, tiltInitDone = false, getfilesProper = true, ToFInitDone = false;
 uint8_t currentEarsFrame = 0, currentVisorFrame = 0, numOfSegm, numAnimBlush, totalAnims;
 uint16_t visorLedsNum = MATRIXESNUM*64;
-String currentAnim = "", animToLoad = "", availAnims[50], getfilesCache;
+String currentAnim = "", animToLoad = "", animPostBody = "", availAnims[50], getfilesCache;
 float micDC = 800;
 
 //--------------------------------//getting stored anims names and count
@@ -503,11 +503,13 @@ void startWiFiWeb() {
     }
   });
 
-  server.on("/change", HTTP_GET, [](AsyncWebServerRequest *request){ //loads anim from selected avaible anims
+  server.on("/change", HTTP_GET, [](AsyncWebServerRequest *request){ //queue anim; loop() loads it
     if(request->hasParam("anim")) {
-      if(request->getParam("anim")->value() == currentAnim) {
+      String name = request->getParam("anim")->value();
+      if(name == currentAnim) {
         request->redirect("/saved.html?main");
-      } else if(loadAnim(request->getParam("anim")->value(),"")) {
+      } else if(LittleFS.exists("/anims/"+name)) {
+        animToLoad = name;
         request->redirect("/saved.html?main");
       } else {
         request->send(200, "text/plain", F("Loading animation has failed!"));
@@ -517,13 +519,11 @@ void startWiFiWeb() {
     }
   });
 
-  server.on("/change", HTTP_POST, [](AsyncWebServerRequest *request){ //loads anim from POST request
+  server.on("/change", HTTP_POST, [](AsyncWebServerRequest *request){ //queue preview JSON; loop() loads it
     if(request->hasParam("anim", true)) {
-      if(loadAnim("POSTAnimLoad",request->getParam("anim", true)->value())) {
-        request->redirect("/saved.html?main");
-      } else {
-        request->send(200, "text/plain", F("Loading animation has failed!"));
-      }
+      animPostBody = request->getParam("anim", true)->value();
+      animToLoad = "POSTAnimLoad";
+      request->redirect("/saved.html?main");
     } else {
       request->send(200, "text/plain", F("No valid parameters detected!"));
     }
@@ -1268,8 +1268,12 @@ void loop() {
   }
 
   if(animToLoad != "") {
-    loadAnim(animToLoad,"");
+    String name = animToLoad;
+    String body;
+    if(name == "POSTAnimLoad") body = animPostBody;
     animToLoad = "";
+    if(name == "POSTAnimLoad") animPostBody = "";
+    loadAnim(name, body);
     wasTilt = false;
     booping = false;
   }
